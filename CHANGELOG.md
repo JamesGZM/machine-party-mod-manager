@@ -4,6 +4,12 @@
 
 Notable changes for players and contributors. Versions follow the desktop app version.
 
+## 0.2.5 — unreleased
+
+- Adds an **Actions** menu to the left of the catalog search box with **Install selected**, **Update selected** and **Uninstall selected**. Every catalog card now has a persistent checkbox keyed by mod id: tick the cards first, then choose an action. Menu badges show how many of the *ticked* cards match each operation, updated live. Nothing is ever run on unticked or ineligible cards, and an empty selection shows a friendly hint instead of running anything.
+- A confirmation dialog lists the exact mods about to be processed (with stronger wording for uninstall) and reports any ticked cards filtered out as ineligible. Execution reuses the existing single-mod commands serially, with a fresh eligibility and game-closed check before every write, a rescan after failures, a per-mod progress dialog and a succeeded / failed / skipped summary. Successfully processed mods are unticked; failed and skipped ones stay selected for a one-click retry.
+- The button and dropdown now form one interaction area: a transparent bridge covers the gap, hover and click stay in sync, and the menu only closes when the pointer leaves the whole area, the user clicks outside, presses Escape, or picks an action. The search box is roughly twice as wide and aligned with the Actions button in a compact flex row that adapts to narrow windows.
+
 ## 0.2.4 — 2026-11-21
 
 - Moves mod card covers from built-in desktop UI assets to optional Cloudflare R2 image hosting served through the catalog Worker ([ADR-016](docs/en/architecture/ADR-016-r2-mod-covers.md)), trimming ~5.8 MB from the desktop installer and allowing catalog cover updates without reinstalling the app.

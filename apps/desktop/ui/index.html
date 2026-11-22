@@ -33,9 +33,45 @@
           </div>
           <p id="subtitle"></p>
         </div>
-        <label id="search" class="field search" data-icon="search">
-          <input type="search" placeholder="搜索模组名称" aria-label="搜索模组" />
-        </label>
+        <div class="head-tools">
+          <div class="ops" id="batch-ops" hidden>
+            <button id="batch-toggle" class="btn btn-secondary ops-toggle" type="button"
+                    aria-haspopup="menu" aria-expanded="false" aria-controls="batch-menu">
+              <span data-i18n="batchActions">操作</span>
+            </button>
+            <div class="ops-menu" id="batch-menu" role="menu" aria-label="操作">
+              <div class="ops-menu-inner">
+                <button class="ops-item" type="button" role="menuitem" data-kind="install">
+                  <span class="ops-icon" data-icon="download"></span>
+                  <span class="ops-label">
+                    <b data-i18n="batchInstall">一键安装</b>
+                    <small data-i18n="batchInstallHint">安装尚未安装的模组</small>
+                  </span>
+                  <span class="ops-count" id="ops-count-install">0</span>
+                </button>
+                <button class="ops-item" type="button" role="menuitem" data-kind="update">
+                  <span class="ops-icon" data-icon="refresh"></span>
+                  <span class="ops-label">
+                    <b data-i18n="batchUpdate">一键更新</b>
+                    <small data-i18n="batchUpdateHint">更新已安装且有新版的模组</small>
+                  </span>
+                  <span class="ops-count" id="ops-count-update">0</span>
+                </button>
+                <button class="ops-item" type="button" role="menuitem" data-kind="uninstall">
+                  <span class="ops-icon" data-icon="close"></span>
+                  <span class="ops-label">
+                    <b data-i18n="batchUninstall">一键卸载</b>
+                    <small data-i18n="batchUninstallHint">卸载由管理器安装的模组</small>
+                  </span>
+                  <span class="ops-count" id="ops-count-uninstall">0</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          <label id="search" class="field search" data-icon="search">
+            <input type="search" placeholder="搜索模组名称" aria-label="搜索模组" />
+          </label>
+        </div>
       </header>
       <div id="content"></div>
     </main>

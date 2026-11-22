@@ -148,7 +148,266 @@ main {
   color: var(--text-muted);
 }
 .search {
-  width: min(36%, 340px);
+  /* Roughly double the previous fluid width. flex-shrink keeps it from
+     overflowing on medium windows; min-width stops it collapsing to nothing. */
+  flex: 0 1 240px;
+  width: 240px;
+  min-width: 140px;
+}
+
+/* Batch operations: dropdown beside the search box */
+.head-tools {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: var(--space-2);
+}
+.ops {
+  position: relative;
+  flex: none;
+}
+.ops-toggle {
+  white-space: nowrap;
+}
+.ops-toggle::after {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-left: 2px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+.ops.open .ops-toggle::after {
+  transform: translateY(1px) rotate(225deg);
+}
+.ops-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 20;
+  min-width: min(320px, 86vw);
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition:
+    opacity var(--duration-fast) var(--ease-out),
+    transform var(--duration-fast) var(--ease-out),
+    visibility var(--duration-fast) var(--ease-out);
+}
+.ops.open .ops-menu {
+  visibility: visible;
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+/* Transparent bridge across the 8px gap between button and menu. The pointer
+   stays inside the .ops subtree the whole way, so mouseleave never fires
+   while travelling from the button into the menu. */
+.ops-menu::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -10px;
+  height: 10px;
+}
+.ops-menu-inner {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-2);
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-dialog);
+}
+.ops-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out);
+}
+.ops-item:hover {
+  background: var(--bg-raised);
+}
+.ops-icon {
+  display: flex;
+  color: var(--accent);
+}
+.ops-label {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.ops-label b {
+  font-weight: 600;
+}
+.ops-label small {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+}
+.ops-count {
+  min-width: 24px;
+  padding: 2px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--wine-900);
+  box-shadow: inset 0 0 0 1px var(--line);
+  color: var(--text-secondary);
+  font: 600 var(--text-xs) var(--font-mono);
+  text-align: center;
+}
+.ops-item.ops-empty {
+  opacity: 0.62;
+}
+
+/* Batch selection bar and card checkboxes */
+.batch-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card), inset 3px 0 0 var(--accent);
+}
+.batch-info {
+  flex: 1 1 240px;
+  display: grid;
+  gap: 2px;
+}
+.batch-info strong {
+  font: 700 var(--text-lg) / 1.3 var(--font-ui);
+  color: var(--text);
+}
+.batch-info p {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+.batch-count {
+  flex: none;
+  padding: 3px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--wine-900);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+  color: var(--accent);
+  font: 600 var(--text-sm) var(--font-mono);
+}
+.batch-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.batch-check {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  padding: 5px;
+  border-radius: var(--radius-pill);
+  background: #120c0de6;
+  box-shadow: inset 0 0 0 1px #ffffff2b;
+  cursor: pointer;
+}
+.batch-check:hover {
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.batch-check input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+.batch-check-box {
+  position: relative;
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: var(--wine-900);
+  box-shadow: inset 0 0 0 1.5px var(--text-muted);
+}
+.batch-check input:checked + .batch-check-box {
+  background: var(--accent);
+  box-shadow: inset 0 0 0 1.5px var(--accent);
+}
+.batch-check input:checked + .batch-check-box::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 5px;
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid var(--on-accent);
+  border-bottom: 2px solid var(--on-accent);
+  transform: rotate(-45deg);
+}
+.batch-check input:focus-visible + .batch-check-box {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.batch-check input:disabled + .batch-check-box {
+  opacity: 0.6;
+}
+.batch-check:has(input:disabled) {
+  cursor: default;
+}
+.card.batch-selected {
+  box-shadow: 0 0 0 2px var(--accent), var(--shadow-card);
+}
+.batch-confirm-list {
+  width: 100%;
+  max-height: 34vh;
+  overflow-y: auto;
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  list-style: none;
+  background: var(--bg-raised);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.batch-confirm-list li {
+  padding-block: 3px;
+  color: var(--text);
+}
+.batch-steps {
+  max-height: 42vh;
+  overflow-y: auto;
+}
+.batch-steps li span:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.batch-steps li span:last-child {
+  flex: none;
+  max-width: 55%;
+  text-align: right;
+}
+.batch-steps li.batch-ok span:last-child { color: var(--success); }
+.batch-steps li.batch-fail span:last-child { color: var(--danger); }
+.batch-steps li.batch-skip span:last-child { color: var(--warning); }
+.batch-summary {
+  width: 100%;
+  font-weight: 600;
+  color: var(--text);
 }
 
 /* Catalog */
@@ -377,7 +636,17 @@ main {
     flex-direction: column;
     align-items: stretch;
   }
+  .head-tools {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  .ops-menu {
+    right: auto;
+    left: 0;
+  }
   .search {
-    width: 100%;
+    flex: 1 1 200px;
+    width: auto;
+    min-width: 0;
   }
 }

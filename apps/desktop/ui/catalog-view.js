@@ -1,4 +1,8 @@
 import { coverUrl, downloadUrl } from "./online-catalog.js";
+import {
+  BATCH_KINDS, batchAction, batchConfirmKey, batchEligible, batchEmptyKey, batchRunningKey,
+  batchSelectAll, batchSelectedCount, batchSummary, batchTargets, batchToggle, canRunBatch
+} from "./batch.js";
 import { installationProblem, catalogAction, uninstallEntry } from "./mod-action.js";
 import { clearPackage, downloadMod, installMod, verifyPackage, isDesktop, openProject, uninstallMod, updateMod } from "./bridge.js";
 import { confirmGameExit } from "./game-exit-dialog.js";
@@ -416,11 +420,399 @@ function card(mod, index) {
 
   const footer = element("div", "", "card-actions");
   footer.append(primaryAction(mod));
-  item.append(cover(mod, name), body, footer);
+  const coverBox = cover(mod, name);
+  // Selection lives in state.selectedMods keyed by mod id, so every catalog
+  // card is tickable at all times - the user picks cards first, then chooses
+  // an operation from the top menu. Search/sort/filter never loses a tick.
+  if (state.page === "catalog") {
+    item.classList.toggle("batch-selected", state.selectedMods.includes(mod.id));
+    coverBox.append(batchCheckbox(mod));
+  }
+  item.append(coverBox, body, footer);
   return item;
 }
 
+// ---- Batch operations -------------------------------------------------
+// The batch flow reuses the single-mod commands; the only new logic is the
+// persistent card selection and a serial driver that rechecks each row before
+// touching disk. Nothing outside the user's ticked cards is ever executed.
+const BATCH_BUSY = "__batch__";
+
+const batchRow = mod => ({
+  ready: Boolean(state.game) && state.scan === "ready",
+  action: currentAction(mod),
+  removable: Boolean(removalEntry(mod))
+});
+
+// Menu badges count the intersection of the live selection with each
+// operation's condition - never the whole catalog.
+export function batchCounts() {
+  return BATCH_KINDS.map(kind => ({
+    kind,
+    count: batchSelectedCount(state.mods, kind, batchRow, state.selectedMods)
+  }));
+}
+
+// Badges are refreshed in place: a full render would drop the focus of the
+// checkbox / search box the user is interacting with.
+export function refreshMenuCounts() {
+  for (const {kind, count} of batchCounts()) {
+    const counter = $("#ops-count-" + kind);
+    if (counter) counter.textContent = String(count);
+    const item = document.querySelector('.ops-item[data-kind="' + kind + '"]');
+    if (item) item.classList.toggle("ops-empty", count === 0);
+  }
+}
+
+let selectionBarRefs = null;
+
+function syncSelectionBar() {
+  if (!selectionBarRefs || !selectionBarRefs.bar.isConnected) {
+    selectionBarRefs = null;
+    return;
+  }
+  const {count, all, clear} = selectionBarRefs;
+  const running = state.batch?.phase === "running";
+  count.textContent = t("batchSelected").replace("{count}", String(state.selectedMods.length));
+  all.disabled = running;
+  clear.disabled = running || !state.selectedMods.length;
+}
+
+function selectionBarButton(text, action, variant, disabled) {
+  const el = element("button", text, "btn btn-" + variant);
+  el.type = "button";
+  el.disabled = disabled;
+  el.onclick = action;
+  return el;
+}
+
+// Every catalog card gets a checkbox. Tick state is stored by mod id, so it
+// survives sorting, search filtering and page switches.
+function batchCheckbox(mod) {
+  const label = element("label", "", "batch-check");
+  label.setAttribute("aria-label", t("batchSelectMod").replace("{mod}", nameOf(mod)));
+  label.title = nameOf(mod);
+  const input = document.createElement("input");
+  input.type = "checkbox";
+  input.checked = state.selectedMods.includes(mod.id);
+  input.disabled = state.batch?.phase === "running";
+  input.onchange = () => {
+    if (state.batch?.phase === "running") return;
+    state.selectedMods = batchToggle(state.selectedMods, mod.id, input.checked);
+    label.closest(".card")?.classList.toggle("batch-selected", input.checked);
+    syncSelectionBar();
+    refreshMenuCounts();
+  };
+  label.append(input, element("span", "", "batch-check-box"));
+  return label;
+}
+
+// A light, always-present selection strip. Execution itself is triggered from
+// the top menu, so there is no second "run" entry point.
+function renderSelectionBar(content) {
+  const running = state.batch?.phase === "running";
+  const bar = element("section", "", "batch-bar");
+  bar.setAttribute("role", "region");
+  bar.setAttribute("aria-label", t("batchActions"));
+  const info = element("div", "", "batch-info");
+  info.append(
+    element("strong", t("batchActions")),
+    element("p", t("batchSelectHint"))
+  );
+  const count = element("span", "", "batch-count");
+  const actions = element("div", "", "batch-actions");
+  const all = selectionBarButton(t("batchSelectAll"), () => {
+    const visible = visibleMods(state.mods, {query: $("#search input").value}).map(mod => mod.id);
+    state.selectedMods = batchSelectAll(state.selectedMods, visible);
+    render();
+  }, "secondary", running);
+  const clear = selectionBarButton(t("batchClear"), () => {
+    state.selectedMods = [];
+    render();
+  }, "ghost", running || !state.selectedMods.length);
+  actions.append(all, clear);
+  bar.append(info, count, actions);
+  content.append(bar);
+  selectionBarRefs = {bar, count, all, clear};
+  syncSelectionBar();
+}
+
+function batchNotify(text) {
+  show(t("batchActions"), element("p", text), button(t("close"), closeDialog, "primary"));
+}
+
+// A menu item always acts on the current ticked cards. Cards that no longer
+// match the operation are filtered out and reported in the confirmation.
+function runFromMenu(kind) {
+  if (!BATCH_KINDS.includes(kind) || state.batch?.phase === "running") return;
+  if (!state.selectedMods.length) return batchNotify(t("batchNeedSelection"));
+  if (!state.game) return batchNotify(t("batchNeedGame"));
+  if (state.scan !== "ready") return batchNotify(t("batchScanning"));
+  const {queue, filtered} = batchTargets(state.mods, kind, batchRow, state.selectedMods);
+  if (!canRunBatch(queue)) return batchNotify(t(batchEmptyKey(kind)));
+  confirmBatchRun(kind, queue, filtered);
+}
+
+// Explicit confirmation before any write - uninstall uses a deliberately
+// stronger wording because it restores original game files.
+function confirmBatchRun(kind, queue, filtered) {
+  const list = element("ul", "", "batch-confirm-list");
+  for (const id of queue) {
+    const mod = state.mods.find(item => item.id === id);
+    list.append(element("li", mod ? nameOf(mod) : id));
+  }
+  const note = filtered.length
+    ? element("p", t("batchFilteredHint").replace("{count}", String(filtered.length)), "panel-note")
+    : element("p", t("batchConfirmHint"), "panel-note");
+  show(t(batchConfirmKey(kind)).replace("{count}", String(queue.length)),
+    list, note,
+    button(t("batchCancel"), closeDialog, "secondary"),
+    button(t("batchConfirm"), () => startBatch(kind, queue), "primary"));
+}
+
+export function setupBatchMenu() {
+  const ops = $("#batch-ops");
+  const toggle = $("#batch-toggle");
+  const menu = $("#batch-menu");
+  let hoverTimer = 0;
+  let leaveTimer = 0;
+  let hoverOpened = false;
+
+  const isOpen = () => ops.classList.contains("open");
+  const setOpen = open => {
+    ops.classList.toggle("open", open);
+    toggle.setAttribute("aria-expanded", String(open));
+  };
+
+  // Button and menu are siblings inside the same .ops container, and a
+  // transparent ::before on the menu bridges the 8px gap. Moving the pointer
+  // from the button into the menu therefore never leaves .ops. The short
+  // delay plus a :hover recheck also guards against out-of-order mouseleave.
+  ops.addEventListener("mouseenter", () => {
+    window.clearTimeout(leaveTimer);
+    if (toggle.disabled || isOpen()) return;
+    hoverTimer = window.setTimeout(() => {
+      if (toggle.disabled || isOpen() || !ops.matches(":hover")) return;
+      hoverOpened = true;
+      setOpen(true);
+    }, 60);
+  });
+  ops.addEventListener("mouseleave", () => {
+    window.clearTimeout(hoverTimer);
+    leaveTimer = window.setTimeout(() => {
+      if (!ops.matches(":hover")) {
+        hoverOpened = false;
+        setOpen(false);
+      }
+    }, 140);
+  });
+  toggle.addEventListener("click", () => {
+    if (toggle.disabled) return;
+    window.clearTimeout(hoverTimer);
+    window.clearTimeout(leaveTimer);
+    // Hover may already have opened the menu. In that case a click confirms
+    // the open state instead of toggling it shut; a further click closes it.
+    if (isOpen() && hoverOpened) {
+      hoverOpened = false;
+      return;
+    }
+    hoverOpened = false;
+    setOpen(!isOpen());
+  });
+  document.addEventListener("click", event => {
+    if (!ops.contains(event.target)) {
+      hoverOpened = false;
+      setOpen(false);
+    }
+  });
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+      hoverOpened = false;
+      setOpen(false);
+    }
+  });
+  for (const item of menu.querySelectorAll(".ops-item")) {
+    item.addEventListener("click", () => {
+      if (state.batch?.phase === "running") return;
+      hoverOpened = false;
+      window.clearTimeout(leaveTimer);
+      setOpen(false);
+      runFromMenu(item.dataset.kind);
+    });
+  }
+}
+
+async function rescanBatch(path) {
+  if (state.game !== path) return;
+  try { await syncGameMods(true); } catch { /* scan failures are surfaced by the next recheck */ }
+}
+
+// Executes one selected mod. Returns "ok", "skip" or "abort"; throws on failure.
+async function executeBatchItem(kind, id, path, onProgress, signal, owns) {
+  const mod = state.mods.find(item => item.id === id);
+  if (!mod || !batchEligible(kind, batchRow(mod))) return "skip";
+  if (state.game !== path || !state.pckDir) return "abort";
+  const dir = state.pckDir;
+  if (!await confirmGameExit(path, dir, () => owns() && state.pckDir === dir)) return "abort";
+  if (!owns()) return "abort";
+  const latest = state.mods.find(item => item.id === id) || mod;
+  const action = batchAction(kind);
+  if (action === "uninstall") {
+    const entry = removalEntry(latest);
+    if (!entry) return "skip";
+    const result = await uninstallMod(path, entry, dir);
+    applyValidation(result, path);
+    if (result.modStates[entry.id] !== "vanilla") throw result.modStates[entry.id] || "uninstallFailed";
+    return "ok";
+  }
+  if (cached(latest)) {
+    onProgress(t("usingCache"));
+  } else {
+    onProgress(t("working"));
+    await downloadMod(latest, pct => onProgress(pct + "%"), signal);
+    if (!owns()) return "abort";
+    state.packages[latest.id] = latest.package.sha256;
+  }
+  if (!owns()) return "abort";
+  await verifyPackage(latest);
+  if (!owns()) return "abort";
+  const from = state.inventory[inventoryKey(latest)];
+  let result;
+  try {
+    result = action === "updateMod"
+      ? await updateMod(path, latest, from, dir)
+      : await installMod(path, latest, false, dir, []);
+  } catch (error) {
+    // The new version is on disk; only the follow-up rescan failed.
+    if (action === "updateMod" && String(error).startsWith("modUpdatedRescan")) {
+      await rescanBatch(path);
+      return "ok";
+    }
+    throw error;
+  }
+  applyValidation(result, path);
+  const problem = installationProblem(result, latest);
+  if (problem) throw problem;
+  return "ok";
+}
+
+function startBatch(kind, queue) {
+  // Guard against a double submit from the confirmation dialog.
+  if (state.batch?.phase === "running") return;
+  const batch = {kind, phase: "running", ids: queue.slice()};
+  state.batch = batch;
+  state.busyMod = BATCH_BUSY;
+  render();
+  // A driver-level failure must never leave the UI stuck in "running".
+  void runBatchDialog(batch, queue).catch(error => {
+    console.error("batch operation failed", error);
+    const dialog = $("dialog");
+    $("#close").disabled = false;
+    if (dialog.open) {
+      show(t("failed"), element("p", String(error), "error"),
+        button(t("batchConfirm"), closeDialog, "primary"));
+    } else {
+      state.busyMod = "";
+      state.batch = null;
+      render();
+    }
+  });
+}
+
+async function runBatchDialog(batch, queue) {
+  const kind = batch.kind;
+  const path = state.game;
+  const dialog = $("dialog");
+  const close = $("#close");
+  const controller = new AbortController();
+  const preventCancel = event => event.preventDefault();
+
+  const list = element("ol", "", "install-steps batch-steps");
+  list.setAttribute("aria-live", "polite");
+  const bar = progress();
+  const rows = new Map();
+  for (const id of queue) {
+    const mod = state.mods.find(item => item.id === id);
+    const li = element("li");
+    const status = element("span", t("batchItemPending"));
+    li.append(element("span", mod ? nameOf(mod) : id), status);
+    list.append(li);
+    rows.set(id, {li, status});
+  }
+  const owns = () => !controller.signal.aborted && dialog.open && list.isConnected;
+  const setStatus = (id, text, tone) => {
+    const row = rows.get(id);
+    if (!row) return;
+    row.status.textContent = text;
+    row.li.classList.remove("batch-ok", "batch-fail", "batch-skip");
+    if (tone) row.li.classList.add("batch-" + tone);
+  };
+  const onClose = () => {
+    dialog.removeEventListener("close", onClose);
+    dialog.removeEventListener("cancel", preventCancel);
+    controller.abort();
+    close.disabled = false;
+    state.busyMod = "";
+    state.batch = null;
+    selectionBarRefs = null;
+    render();
+  };
+  dialog.addEventListener("close", onClose);
+  dialog.addEventListener("cancel", preventCancel);
+  close.disabled = true;
+  show(t(batchRunningKey(kind)), element("p", t("batchWorkingHint")), list, bar.el);
+
+  const results = [];
+  let aborted = false;
+  let completed = 0;
+  for (const id of queue) {
+    if (!owns()) return;
+    setStatus(id, t("working"));
+    let outcome;
+    try {
+      outcome = await executeBatchItem(kind, id, path, pct => setStatus(id, pct), controller.signal, owns);
+    } catch (error) {
+      outcome = "fail";
+      const [key, ...detail] = String(error).split(": ");
+      if (["downloadFirst", "packageCorrupt", "downloadFailed"].includes(key)) delete state.packages[id];
+      setStatus(id, [t(key) || key, ...detail].join(" · "), "fail");
+    }
+    if (!owns()) return;
+    if (outcome === "abort") {
+      setStatus(id, t("batchItemSkipped"), "skip");
+      results.push("skip");
+      aborted = true;
+      break;
+    }
+    if (outcome === "ok") setStatus(id, t("done"), "ok");
+    else if (outcome === "skip") setStatus(id, t("batchItemSkipped"), "skip");
+    results.push(outcome);
+    completed++;
+    bar.set(Math.round(completed / queue.length * 100));
+    if (outcome !== "ok") await rescanBatch(path);
+  }
+  if (!owns()) return;
+  batch.phase = "done";
+  bar.set(100);
+  // Successful mods are no longer eligible, so drop their ticks. Failed and
+  // skipped ones stay selected to make a retry a single click.
+  const okIds = new Set(queue.filter((id, index) => results[index] === "ok"));
+  state.selectedMods = state.selectedMods.filter(id => !okIds.has(id));
+  render();
+  const summary = batchSummary(results);
+  const text = t("batchSummary")
+    .replace("{ok}", String(summary.ok))
+    .replace("{fail}", String(summary.fail))
+    .replace("{skip}", String(summary.skip));
+  dialog.removeEventListener("cancel", preventCancel);
+  close.disabled = false;
+  show(aborted ? t("batchAborted") : t("batchDone"),
+    element("p", text, "batch-summary"), list, bar.el,
+    button(t("batchConfirm"), closeDialog, "primary"));
+}
+
 export function renderModList(content) {
+  if (state.page === "catalog") renderSelectionBar(content);
   if (state.scan === "failed") content.append(button(t("retryCheck"), () => withGameCopy(undefined, true), "secondary", "refresh"));
   const cards = state.page === "installed"
     ? installedRows(state.inventory, state.mods, [...state.removalMods, ...state.pinned]).map(({repo, version, mod}, index) => {

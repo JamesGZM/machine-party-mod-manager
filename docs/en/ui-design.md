@@ -25,15 +25,23 @@ Taken from the game's wine-red overalls and brass machinery: deep wine backgroun
 ## Layout
 
 - **Sidebar**: the mark with `MACHINE PARTY` and the "Mod Manager" subtitle at the top. Primary navigation "Mod catalog" and "Installed", each with an icon and at least 44px high; the selected item has a wine fill and a brass icon. "Settings" at the bottom shows a small red `.update-dot` when a newer manager release is available.
-- **Header**: a condensed page title and subtitle on the left; on the catalog page a pill search box on the right with the placeholder "Search mod titles". The refresh button beside the catalog title spins while the list reloads.
+- **Header**: a condensed page title and subtitle on the left; on the catalog page an "Actions" menu sits immediately left of the pill search box ("Search mod titles") in a compact, right-aligned flex row. The search box is roughly twice its earlier width, shares the button's 36px height, shrinks on medium windows and wraps below the button on narrow ones. Hovering or clicking opens Install selected / Update selected / Uninstall selected, each with a live count of ticked cards matching that action. The refresh button beside the catalog title spins while the list reloads.
 - **Content**: an equal-height card grid that fills the available width, with a minimum card width of about 280px. Settings is a vertical list of panels up to 720px wide.
-- **Narrow windows (≤760px)**: the sidebar collapses to the mark and icons, the header stacks vertically and search takes the full width.
+- **Narrow windows (≤760px)**: the sidebar collapses to the mark and icons, the header stacks vertically and the tools wrap; search flexes into the remaining width without overlapping the Actions button.
 
 ## Mod card
 
 1. The 16:9 cover groups the catalog version and category at the top right. The catalog supplies the category. The interface translates Expansion, Game, Tool and Graphics. An absent or unknown category leaves the version on its own. The cover shows a skeleton while loading and falls back to the title on a wine gradient.
 2. The title opens details. The summary and supported game version appear below. Managed installations also show the local and catalog versions.
 3. The catalog offers an update when the installed version is eligible. Installed uses the uninstall action for that same mod. Scan or repair issues lead to the existing recovery actions.
+
+## Batch operations
+
+The catalog's "Actions" menu offers Install selected, Update selected and Uninstall selected. Every catalog card has a persistent checkbox at the top-left of its cover; the tick state is stored by mod id, so searching, sorting, filtering and page switches never lose it. A brass-tinted strip above the grid shows the ticked count and offers Select visible and Clear. The menu badge for each action is the intersection of the ticked cards with that action's condition (not installed / installed with an approved newer release / manager-installed), recomputed live. Ticking a card never changes the visuals of unticked cards; only a ticked card gets a brass outline.
+
+Clicking a menu entry acts only on the current ticked cards. An empty selection shows "Select the mods you want to act on first." instead of running anything; ticked cards that no longer match the action are filtered out and reported. A confirmation dialog lists the exact mods to be processed - uninstall uses a deliberately stronger wording - and only then does execution start. The button and dropdown are one interaction area: a transparent bridge covers the gap, hover and click stay in sync, and the menu closes only when the pointer leaves the whole area, the user clicks outside, presses Escape, or picks an action.
+
+Execution opens a modal progress dialog ("Installing mods…" / "Updating mods…" / "Uninstalling mods…") listing every target with a per-item status and a total progress bar. The driver reuses the single-mod commands serially, rechecks eligibility and the game's closed state before each write, rescans after failures, and never stops the queue on one failure. Navigation, search, refresh, single-card buttons, checkboxes and dialog closing are locked while running. When finished, a summary reports succeeded / failed / skipped counts; successful mods are unticked while failed and skipped ones stay selected for retry.
 
 ## Details dialog
 

@@ -1,7 +1,7 @@
 import { checkApp } from "./app-update.js";
 import { authorizeUpdates, appVersion, bundledCatalog, cachedPackages, isDesktop, setAppTitle } from "./bridge.js";
 import { sortMods } from "./catalog.js";
-import { renderModList } from "./catalog-view.js";
+import { refreshMenuCounts, renderModList, setupBatchMenu } from "./catalog-view.js";
 import { $, button, closeDialog, element, hydrateIcons, show } from "./dom.js";
 import { detectGame, pickGame, syncGameMods, syncGameModsOnFocus } from "./game-folder.js";
 import { icon } from "./icons.js";
@@ -26,6 +26,9 @@ function applyLocale() {
   refresh.title = t("refreshCatalog");
   refresh.setAttribute("aria-label", refresh.title);
   $("#close").setAttribute("aria-label", t("close"));
+  for (const el of document.querySelectorAll("[data-i18n]")) el.textContent = t(el.dataset.i18n);
+  $("#batch-menu").setAttribute("aria-label", t("batchActions"));
+  $("#batch-toggle").setAttribute("aria-label", t("batchActions"));
   for (const el of document.querySelectorAll("[data-page]")) {
     el.title = t(el.dataset.page);
     el.setAttribute("aria-label", el.title);
@@ -57,6 +60,17 @@ function render() {
   refresh.hidden = state.page !== "catalog";
   refresh.disabled = loading || Boolean(state.busyMod);
   refresh.setAttribute("aria-busy", String(loading));
+  const ops = $("#batch-ops");
+  const busyBatch = state.batch?.phase === "running";
+  ops.hidden = state.page !== "catalog";
+  const toggle = $("#batch-toggle");
+  toggle.disabled = busyBatch || loading;
+  $("#search input").disabled = busyBatch;
+  if (busyBatch) {
+    ops.classList.remove("open");
+    toggle.setAttribute("aria-expanded", "false");
+  }
+  if (!ops.hidden) refreshMenuCounts();
   const content = $("#content");
   content.replaceChildren();
   content.className = state.page === shownPage ? "" : "entering";
@@ -114,7 +128,11 @@ async function refreshCatalog() {
 }
 
 hydrateIcons();
+setupBatchMenu();
 document.querySelectorAll("[data-page]").forEach(el => el.onclick = () => {
+  if (state.batch?.phase === "running") return;
+  // Keep the id-based card selection across pages; only a finished run needs clearing.
+  if (state.batch?.phase === "done") state.batch = null;
   state.page = el.dataset.page;
   sessionStorage.setItem("page", state.page);
   render();

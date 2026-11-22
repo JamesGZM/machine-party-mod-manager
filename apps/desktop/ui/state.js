@@ -24,6 +24,12 @@ export const state = {
   checking: false,
   installing: false,
   busyMod: "",
+  // Persistent card selection, keyed by mod id. Survives search, sorting,
+  // filtering and page switches so a tick always refers to the same mod.
+  selectedMods: [],
+  // Batch run state: null, or {kind, phase: "running"|"done", ids: string[]}.
+  // It only exists while a batch is executing; selection lives in selectedMods.
+  batch: null,
   checkResult: "",
   loaderNote: null
 };

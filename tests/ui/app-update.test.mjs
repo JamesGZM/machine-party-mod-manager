@@ -17,7 +17,7 @@ function makeDom() {
     type: "",
     value: "",
     style: {setProperty() {}},
-    classList: {add() {}},
+    classList: {add() {}, remove() {}, toggle() {}, contains() { return false; }},
     children: [],
     get isConnected() { return body.children.includes(this); },
     get childElementCount() { return this.children.length; },
@@ -197,7 +197,7 @@ async function openModUpdate(releaseNotes) {
   };
   const content = document.createElement("main");
   renderModList(content);
-  const card = content.children[0].children[0];
+  const card = content.children.find(el => el.className === "grid").children[0];
   await card.children.find(el => el.className === "card-actions").children[0].onclick();
   const notes = () => body.children.find(el => el.className === "release-notes")?.textContent;
   const confirm = () => body.children.at(-1).children.at(-1).onclick();

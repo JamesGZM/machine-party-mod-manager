@@ -1,6 +1,6 @@
 {
   "name": "machine-party-mod-manager",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "private": true,
   "description": "Free community mod manager for Machine Party: browse verified mods, install and restore them from one desktop app",
   "type": "module",

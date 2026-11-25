@@ -88,12 +88,13 @@ Steam 目录自动检测 · 离线缓存与还原 · 简体中文 / 繁體中文
 | [尖刺圆环](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/spike-ring) | `v0.1.4` | 60 秒重工业环形生存赛：墙壁缺口激光、电锯、伸缩地刺、缩圈尖刺环与空投道具互推 | 原生 MPML |
 | [组队派对](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/team-party) | `v0.1.1` | 房间 2–4 队手动/洗牌/拖拽分队、原版小游戏挂接与全模组共享团队注册表 | 原生 MPML |
 | [能源抢夺战](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/core-heist) | `v0.1.0` | 纯组队 2–4 队 75 秒能源抢夺对抗：双人合抬反应炉核心共振加速、回收炉磁吸锁与过载偷家 | 原生 MPML |
+| [炸弹推车](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/bomb-cart) | `v0.1.0` | 纯双队 75 秒铁轨拔河对抗：强力撞车、南北蒸汽阀门火箭助推、震荡脉冲与 10 秒突然死亡加时 | 原生 MPML |
 
 验收清单、上游授权边界与互斥组规则详见[候选模组与收录规范](../zh-CN/catalog/mods.md)。
 
 ## 更新记录
 
-**v0.2.6** · 新增 **组队派对（`v0.1.0`）** 房间与原版组队挂接、三款自研小游戏原生小队模式、单模组启用/禁用开关、**`mpm-core`** 依赖自动管理，以及组队派对与玩家聚光灯封面图。[完整更新记录](../zh-CN/CHANGELOG.md)。
+**v0.2.7** · 在正式版目录开放 **炸弹推车（`v0.1.0`）**（限 2 队铁轨拔河）与 **能源抢夺战（`v0.1.0`）**（2–4 队能源抢夺），并由 **`mpm-core`（`v0.1.1`）** 准入门槛系统与 **`team-party`（`v0.1.1`）** 提供组队支持。[完整更新记录](../zh-CN/CHANGELOG.md)。
 
 ## 文档
 

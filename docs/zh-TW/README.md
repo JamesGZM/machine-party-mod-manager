@@ -15,6 +15,7 @@
 - [自研模組開發、測試、接入與打包規範](development/mod-development.md)
 - [協作對抗小遊戲規劃與准入門檻規範](development/coop-minigame-gating.md)
 - [能源搶奪戰（Core Heist）玩法與開發規格書](development/core-heist-design.md)
+- [重工炸彈推車（Bomb Cart）玩法與開發規格書](development/bomb-cart-design.md)
 - [發布管理器更新](development/releasing.md)
 - [現行架構](architecture/README.md)及 ADR
 

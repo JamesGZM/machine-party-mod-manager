@@ -4,6 +4,12 @@
 
 Notable changes for players and contributors. Versions follow the desktop app version.
 
+## 0.2.7 — 2026-11-25
+
+- Adds **Bomb Cart (`v0.1.0`)**, a strict 2-team (`max_teams: 2`) 75s rail tug-of-war minigame with 3-phase escalation, Power Ram, North/South Steam Boost Valves, shockwave pulses, and 10s Sudden Death overtime.
+- Adds **Core Heist (`v0.1.0`)**, a 2–4 team 75s energy heist minigame with central conveyor battery spawns, 3s vault magnetic locks, Overdrive steal bonuses, and dual-player Resonance core carrying.
+- Marks **Core Heist** and **Bomb Cart** as verified for stable Windows installs, backed by **`mpm-core` (`v0.1.1`)** minigame admission gating (`team_only`, `max_teams: 2`, lobby lock labels, and empty-playlist fallback) and **`team-party` (`v0.1.1`)**.
+
 ## 0.2.6 — 2026-11-23
 
 - Adds **Team Party (`v0.1.0`)**, a room-level 2–4 team setup & chair-swapping mod with vanilla minigame hooks, plus native squad support in **Bubble Blitz (`v0.1.5`)**, **Spike Ring (`v0.1.3`)**, and **Roller Carnival (`v0.1.11`)**.

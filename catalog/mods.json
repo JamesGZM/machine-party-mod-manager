@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "revision": "2026-11-23.5-mpml1",
+  "revision": "2026-11-25.1-mpml1",
   "repo": "JamesGZM/machine-party-mod-manager",
   "mods": [
     {
@@ -907,7 +907,7 @@
         ],
         "upstreamUninstall": false
       },
-      "verified": false,
+      "verified": true,
       "name": {
         "zh-CN": "能源抢夺战",
         "zh-TW": "能源搶奪戰",
@@ -928,6 +928,101 @@
         "能源抢夺战",
         "能源搶奪戰",
         "heist"
+      ]
+    },
+    {
+      "id": "bomb-cart",
+      "category": "game",
+      "order": 14,
+      "requires": [
+        {
+          "id": "mpm-core",
+          "minVersion": "v0.1.1"
+        },
+        {
+          "id": "team-party",
+          "minVersion": "v0.1.1"
+        }
+      ],
+      "repo": "JamesGZM/machine-party-mod-manager",
+      "inventoryById": true,
+      "cover": {
+        "filename": "bomb-cart.png",
+        "contentType": "image/png",
+        "size": 1208891,
+        "sha256": "7461368ac3d65c72a432f4ea27d2b5c1aa798f4a94f6a70a09b152f09f4eaf85"
+      },
+      "version": "v0.1.0",
+      "releaseNotes": {
+        "version": "v0.1.0",
+        "zh-CN": "首发版本：纯双队 75 秒铁轨拔河战，含 2.6 米推进光环、推搡/强力撞车/拍阀增压、南北蒸汽阀门 2.5 秒火箭助推、40 秒震荡脉冲、60 秒临界过载与 10 秒突然死亡加时。",
+        "zh-TW": "首發版本：純雙隊 75 秒鐵軌拔河戰，含 2.6 公尺推進光環、推搡／強力撞車／拍閥增壓、南北蒸汽閥門 2.5 秒火箭助推、40 秒震盪脈衝、60 秒臨界過載與 10 秒突然死亡加時。",
+        "en": "Initial release: strict 2-team 75s rail tug-of-war with 2.6m Push Aura, Shove / Power Ram / Quick Valve Slam, 2.5s Steam Valve Rocket Surge, 40s Shockwave Pulse, 60s Critical Overload, and 10s Sudden Death overtime."
+      },
+      "package": {
+        "assetId": "1039",
+        "filename": "bomb-cart-0.1.0.zip",
+        "size": 155243,
+        "sha256": "219b3308116e99f2c13eb22fc14018f3a8ae579197bc43fadbca672ec6c9b545",
+        "mirrorApproved": true
+      },
+      "supportedGameVersions": [
+        "v2.1.2"
+      ],
+      "windowsPreview": "0.2.6-1",
+      "adapter": {
+        "kind": "loader-files",
+        "platforms": [
+          "windows"
+        ],
+        "target": "pckDir",
+        "touches": [
+          "mods"
+        ],
+        "exclusive": "loader",
+        "autoLoader": true,
+        "baseline": {
+          "file": "Machine Party.pck",
+          "size": 634798100,
+          "sha256": "326cc3988d3ac554d1f288bed89b1f89d450f78ec9d4470f88558975753dfa8e"
+        },
+        "requiredFiles": [
+          "ai_controller.gd",
+          "arena_meshes.gd",
+          "bomb_cart_game.gd",
+          "config.gd",
+          "fx_pool.gd",
+          "hud_ui.gd",
+          "main.gd",
+          "mod.json",
+          "official_minigame.gd",
+          "self_test.gd",
+          "team_support.gd"
+        ],
+        "upstreamUninstall": false
+      },
+      "verified": true,
+      "name": {
+        "zh-CN": "炸弹推车",
+        "zh-TW": "炸彈推車",
+        "en": "Bomb Cart"
+      },
+      "summary": {
+        "zh-CN": "纯双队 75 秒铁轨拔河对抗：抢占蒸汽阀门火箭助推，把炸弹推车撞进敌方防爆门！",
+        "zh-TW": "純雙隊 75 秒鐵軌拔河對抗：搶占蒸汽閥門火箭助推，把炸彈推車撞進敵方防爆門！",
+        "en": "Strict 2-team 75s rail tug-of-war: capture Steam Valves for Rocket Surge and ram the Bomb Cart into the rival Blast Door!"
+      },
+      "detail": {
+        "zh-CN": "基于 mpm-core 与组队派对（team-party）的纯双队小游戏（严格限 2 队，需开启组队模式且仅限联机）：进入 2.6 米推进光环将炸弹推车压向敌方防爆门（触门即胜），空格可推搡敌人（友军免伤）、强力撞车或拍阀增压。抢占南北蒸汽阀门可触发 2.5 秒火箭助推与推车震波；第 40 秒起推车定期释放 3.2 米震荡脉冲，第 60 秒进入双阀齐开的临界过载，平局则进入 10 秒突然死亡加时。",
+        "zh-TW": "基於 mpm-core 與組隊派對（team-party）的純雙隊小遊戲（嚴格限 2 隊，需開啟組隊模式且僅限連線）：進入 2.6 公尺推進光環將炸彈推車壓向敵方防爆門（觸門即勝），空白鍵可推搡敵人（友軍免傷）、強力撞車或拍閥增壓。搶占南北蒸汽閥門可觸發 2.5 秒火箭助推與推車震波；第 40 秒起推車定期釋放 3.2 公尺震盪脈衝，第 60 秒進入雙閥齊開的臨界過載，平手則進入 10 秒突然死亡加時。",
+        "en": "Strict 2-team minigame built on mpm-core & Team Party (2 teams only, online only): step inside the 2.6m Push Aura to drive the Bomb Cart into the enemy Blast Door for an instant KO. Press Space to Shove rivals (zero friendly fire), Power Ram the cart, or Quick-Slam an active Steam Valve for a 2.5s Rocket Surge. At 40s, the cart emits periodic 3.2m Shockwave Pulses; at 60s, Critical Overload activates both flanks simultaneously, with a 10s Sudden Death overtime on ties."
+      },
+      "aliases": [
+        "bomb-cart",
+        "炸弹推车",
+        "炸彈推車",
+        "payload",
+        "cart"
       ]
     }
   ]

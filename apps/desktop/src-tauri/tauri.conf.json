@@ -1,6 +1,6 @@
 {
   "productName": "Machine Party 模组管理器",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "identifier": "community.machineparty.modmanager",
   "build": {
     "frontendDist": "../ui"

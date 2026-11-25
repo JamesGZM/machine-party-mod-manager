@@ -64,6 +64,7 @@ export const SHARED_MOD_SYNC_SPEC = [
   {
     source: "mods/_shared/team-support/team_support.gd",
     targets: [
+      "mods/bomb-cart/team_support.gd",
       "mods/bubble-blitz/team_support.gd",
       "mods/core-heist/team_support.gd",
       "mods/roller-carnival/team_support.gd",

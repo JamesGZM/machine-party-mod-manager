@@ -34,9 +34,9 @@ static func _display_name() -> String:
 
 static func _brief_content() -> String:
 	return _pick_loc(
-		"3-round close-up high-voltage push-your-luck (~55s, 2 lives)! Hold [Space] to pull your lever and farm accelerating KPI while the shared transformer climbs toward a hidden 70%-100% overload limit; release to bail & lock score.\nLive-only [S] kicks +12% voltage for a 1.8s 1.35x surge! Beware Coach's -50% slacker penalty if everyone bails safely, plus Rounds 2-3 industrial events. Supports FFA & team-party (+20% Parallel Circuit).",
-		"3 回合近景高压博弈（约 55 秒，2 条命）！按住 [空格] 拉下电闸狂刷 KPI，共享变压器冲向隐藏 70%-100% 过载阈值；松手即锁分保命。\n仅存活未撤离时按 [S] 偷踢 +12% 电压并获 1.8 秒 1.35x 爆发！全员安全撤离将触发教练 -50% 摸鱼惩罚，第 2-3 回合更有随机工业事件。支持 FFA 与组队并联（+20% 增幅）。",
-		"3 回合近景高壓博弈（約 55 秒，2 條命）！按住 [空白鍵] 拉下電閘狂刷 KPI，共享變壓器衝向隱藏 70%-100% 過載閾值；鬆手即鎖分保命。\n僅存活未撤離時按 [S] 偷踢 +12% 電壓並獲 1.8 秒 1.35x 爆發！全員安全撤離將觸發教練 -50% 摸魚懲罰，第 2-3 回合更有隨機工業事件。支援 FFA 與組隊並聯（+20% 增幅）。"
+		"3-round close-up high-voltage push-your-luck (~55s, 2 lives)! Hold [Space] to pull your lever and farm accelerating KPI while the shared transformer climbs toward a hidden 70%-100% overload limit; release to bail & lock score.\nLive-only [S] kicks +12% voltage for a 1.8s 1.35x surge! Beware the factory monitor's -50% slacker penalty if everyone bails safely, plus Rounds 2-3 industrial events. Supports FFA & team-party (+20% Parallel Circuit).",
+		"3 回合近景高压博弈（约 55 秒，2 条命）！按住 [空格] 拉下电闸狂刷 KPI，共享变压器冲向隐藏 70%-100% 过载阈值；松手即锁分保命。\n仅存活未撤离时按 [S] 偷踢 +12% 电压并获 1.8 秒 1.35x 爆发！全员安全撤离将触发工厂监控系统 -50% 摸鱼惩罚，第 2-3 回合更有随机工业事件。支持 FFA 与组队并联（+20% 增幅）。",
+		"3 回合近景高壓博弈（約 55 秒，2 條命）！按住 [空白鍵] 拉下電閘狂刷 KPI，共享變壓器衝向隱藏 70%-100% 過載閾值；鬆手即鎖分保命。\n僅存活未撤離時按 [S] 偷踢 +12% 電壓並獲 1.8 秒 1.35x 爆發！全員安全撤離將觸發工廠監控系統 -50% 摸魚懲罰，第 2-3 回合更有隨機工業事件。支援 FFA 與組隊並聯（+20% 增幅）。"
 	)
 
 

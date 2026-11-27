@@ -96,9 +96,10 @@ var _beacon_light: OmniLight3D = null
 var _beacon_mat: StandardMaterial3D = null
 var _crt_label: Label3D = null
 var _crt_sub_label: Label3D = null
-var _transformer_top: Vector3 = Vector3(0.0, 2.4, -5.2)
+var _transformer_top: Vector3 = Vector3(0.0, 4.35, -3.35)
+var _penalty_emitter_pos: Vector3 = Vector3(3.35, 3.25, -3.65)
+var _penalty_flash_timer: float = 0.0
 var _fluorescent_mats: Array = []
-var _coach_root: Node3D = null
 
 var _prev_hold_input: bool = false
 var _prev_kick_input: bool = false
@@ -519,6 +520,7 @@ func stage_screenshot_scene(team_mode: bool = false) -> void:
 		_fx_pool.tick(0.08)
 	var btxt: String = _pick_loc("DOUBLE OVERTIME x2.0!", "双倍加班 x2.0!", "雙倍加班 x2.0!") if not team_mode else _pick_loc("PARALLEL CIRCUIT +20%!", "并联电路 +20%!", "並聯電路 +20%!")
 	if _hud != null:
+		_hud.set_countdown("", false)
 		_hud.set_banner(btxt, Color(1.0, 0.78, 0.22), true)
 	_animate_visuals(1.0)
 
@@ -566,7 +568,6 @@ func _clear_scene_children() -> void:
 	_crt_label = null
 	_crt_sub_label = null
 	_fluorescent_mats.clear()
-	_coach_root = null
 
 
 func _setup_match_local(round_idx: int, seed_val: int, roster: Array, all_ai: bool = false) -> void:
@@ -603,6 +604,7 @@ func _setup_match_local(round_idx: int, seed_val: int, roster: Array, all_ai: bo
 	_last_round_event_id = int(C.EVENT_NONE)
 	_forced_event_id = -1
 	_forced_event_time = -1.0
+	_penalty_flash_timer = 0.0
 	_banner_timer = 0.0
 	_banner_text = ""
 	_final_scores.clear()
@@ -643,10 +645,12 @@ func _setup_match_local(round_idx: int, seed_val: int, roster: Array, all_ai: bo
 			var t_top = _stage_handles.get("transformer_top", null)
 			if t_top is Vector3:
 				_transformer_top = t_top as Vector3
+			var p_emit = _stage_handles.get("penalty_emitter_pos", null)
+			if p_emit is Vector3:
+				_penalty_emitter_pos = p_emit as Vector3
 			var fl_raw = _stage_handles.get("fluorescent_mats", [])
 			if fl_raw is Array:
 				_fluorescent_mats = fl_raw as Array
-			_coach_root = _stage_handles.get("coach_root", null) as Node3D
 		if _fx_pool != null and _fx_pool.has_method("setup"):
 			_fx_pool.setup(_fx_root)
 		if _hud != null and _hud.has_method("setup"):
@@ -759,8 +763,8 @@ func _ensure_environment_and_camera(player_count: int) -> void:
 		add_child(_camera)
 
 	var pose: Dictionary = C.camera_pose_for_count(player_count) as Dictionary
-	_cam_base_pos = pose.get("pos", Vector3(2.8, 4.4, 4.8)) as Vector3
-	_cam_look_at = pose.get("look_at", Vector3(-0.15, 1.35, -2.5)) as Vector3
+	_cam_base_pos = pose.get("pos", Vector3(0.0, 2.75, 4.55)) as Vector3
+	_cam_look_at = pose.get("look_at", Vector3(0.0, 1.52, -1.55)) as Vector3
 	_camera.fov = float(pose.get("fov", 44.0))
 	_camera.position = _cam_base_pos
 	_camera.look_at(_cam_look_at, Vector3.UP)
@@ -770,36 +774,18 @@ func _ensure_environment_and_camera(player_count: int) -> void:
 		env_node.name = "WorldEnv"
 		var env := Environment.new()
 		env.background_mode = Environment.BG_COLOR
-		env.background_color = Color(0.038, 0.032, 0.028)
+		env.background_color = Color(0.02, 0.022, 0.025)
 		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-		env.ambient_light_color = Color(0.45, 0.36, 0.28)
-		env.ambient_light_energy = 0.90
+		env.ambient_light_color = Color(0.70, 0.70, 0.70)
+		env.ambient_light_energy = 0.15
 		env.adjustment_enabled = true
-		env.adjustment_brightness = 1.06
-		env.adjustment_contrast = 1.15
-		env.adjustment_saturation = 0.90
+		env.adjustment_contrast = 1.12
+		env.adjustment_saturation = 0.65
 		env.glow_enabled = true
-		env.glow_intensity = 0.45
-		env.glow_bloom = 0.18
+		env.glow_intensity = 0.28
+		env.glow_bloom = 0.06
 		env_node.environment = env
 		add_child(env_node)
-
-	if get_node_or_null("SunLight") == null:
-		var sun := DirectionalLight3D.new()
-		sun.name = "SunLight"
-		sun.rotation_degrees = Vector3(-48.0, 24.0, 0.0)
-		sun.light_color = Color(1.0, 0.88, 0.72)
-		sun.light_energy = 1.25
-		sun.shadow_enabled = true
-		add_child(sun)
-
-	if get_node_or_null("FillLight") == null:
-		var fill := DirectionalLight3D.new()
-		fill.name = "FillLight"
-		fill.rotation_degrees = Vector3(-28.0, -142.0, 0.0)
-		fill.light_color = Color(0.68, 0.78, 0.95)
-		fill.light_energy = 0.36
-		add_child(fill)
 
 
 func _setup_post_fx() -> void:
@@ -837,10 +823,10 @@ func _setup_post_fx() -> void:
 		vig_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var vm := ShaderMaterial.new()
 		vm.shader = vig_shader
-		vm.set_shader_parameter("radius", 0.92)
-		vm.set_shader_parameter("softness", 0.42)
-		vm.set_shader_parameter("intensity", 1.70)
-		vm.set_shader_parameter("contrast", 1.50)
+		vm.set_shader_parameter("radius", 0.922)
+		vm.set_shader_parameter("softness", 0.367)
+		vm.set_shader_parameter("intensity", 2.0)
+		vm.set_shader_parameter("contrast", 1.572)
 		vm.set_shader_parameter("vignette_color", Color(0.0, 0.0, 0.0, 1.0))
 		vig_rect.material = vm
 		vig_holder.add_child(vig_rect)
@@ -858,10 +844,10 @@ func _setup_post_fx() -> void:
 		post_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var pm := ShaderMaterial.new()
 		pm.shader = post_shader
-		pm.set_shader_parameter("SCREEN_WIDTH", 1920.0)
-		pm.set_shader_parameter("RED_COMPONENT", 8.0)
-		pm.set_shader_parameter("GREEN_COMPONENT", 8.0)
-		pm.set_shader_parameter("BLUE_COMPONENT", 8.0)
+		pm.set_shader_parameter("SCREEN_WIDTH", 320.0)
+		pm.set_shader_parameter("RED_COMPONENT", 12.0)
+		pm.set_shader_parameter("GREEN_COMPONENT", 12.0)
+		pm.set_shader_parameter("BLUE_COMPONENT", 12.0)
 		post_rect.material = pm
 		post_holder.add_child(post_rect)
 
@@ -1282,11 +1268,16 @@ func _resolve_safe_round_end() -> void:
 		slacker["total_kpi"] = maxi(0, int(slacker["total_kpi"]) - penalty)
 		slacker["slacker_jolt_timer"] = 0.65
 		_slacker_nid = slacker_id
-		if _fx_pool != null and _fx_pool.has_method("trigger_slacker_jolt") and not _is_self_test:
-			_fx_pool.trigger_slacker_jolt((slacker["seat_pos"] as Vector3) + Vector3(0.0, 1.0, 0.0))
+		_penalty_flash_timer = 1.0
+		if _fx_pool != null and not _is_self_test:
+			var target_pos: Vector3 = (slacker["seat_pos"] as Vector3) + Vector3(0.0, 1.0, 0.0)
+			if _fx_pool.has_method("trigger_kick_arc"):
+				_fx_pool.trigger_kick_arc(_penalty_emitter_pos, target_pos, Color(1.0, 0.35, 0.14))
+			if _fx_pool.has_method("trigger_slacker_jolt"):
+				_fx_pool.trigger_slacker_jolt(target_pos)
 		_play_sfx(_sfx_warn)
 		_set_banner_local(
-			_pick_loc("SLACKER CALLOUT! %s -%d KPI", "教练抓摸鱼! %s -%d KPI", "教練抓摸魚! %s -%d KPI") % [str(slacker["nickname"]), penalty],
+			_pick_loc("SLACKER PENALTY -50%%! %s (-%d KPI)", "绩效垫底电罚 -50%%! %s (-%d KPI)", "績效墊底電罰 -50%%! %s (-%d KPI)") % [str(slacker["nickname"]), penalty],
 			Color(1.0, 0.56, 0.18),
 			float(C.INTER_ROUND_DURATION)
 		)
@@ -1612,11 +1603,16 @@ func _rpc_slacker_callout(slacker_id: int, penalty: int) -> void:
 	if _players.has(slacker_id):
 		var p: Dictionary = _players[slacker_id] as Dictionary
 		p["slacker_jolt_timer"] = 0.65
-		if _fx_pool != null and _fx_pool.has_method("trigger_slacker_jolt"):
-			_fx_pool.trigger_slacker_jolt((p["seat_pos"] as Vector3) + Vector3(0.0, 1.0, 0.0))
+		_penalty_flash_timer = 1.0
+		if _fx_pool != null:
+			var target_pos: Vector3 = (p["seat_pos"] as Vector3) + Vector3(0.0, 1.0, 0.0)
+			if _fx_pool.has_method("trigger_kick_arc"):
+				_fx_pool.trigger_kick_arc(_penalty_emitter_pos, target_pos, Color(1.0, 0.35, 0.14))
+			if _fx_pool.has_method("trigger_slacker_jolt"):
+				_fx_pool.trigger_slacker_jolt(target_pos)
 		_play_sfx(_sfx_warn)
 		_set_banner_local(
-			_pick_loc("SLACKER CALLOUT! %s -%d KPI", "教练抓摸鱼! %s -%d KPI", "教練抓摸魚! %s -%d KPI") % [str(p["nickname"]), penalty],
+			_pick_loc("SLACKER PENALTY -50%%! %s (-%d KPI)", "绩效垫底电罚 -50%%! %s (-%d KPI)", "績效墊底電罰 -50%%! %s (-%d KPI)") % [str(p["nickname"]), penalty],
 			Color(1.0, 0.56, 0.18),
 			float(C.INTER_ROUND_DURATION)
 		)
@@ -1647,14 +1643,23 @@ func _animate_visuals(dt: float) -> void:
 	if _is_self_test:
 		return
 
+	if _penalty_flash_timer > 0.0:
+		_penalty_flash_timer = maxf(0.0, _penalty_flash_timer - dt)
+
 	if _camera != null and is_instance_valid(_camera):
+		var sway_offset := Vector3.ZERO
+		var sway_rot_deg := Vector3.ZERO
+		if _screenshot_path.is_empty():
+			sway_offset = Vector3(sin(_srv_time * 0.55) * 0.025, cos(_srv_time * 0.72) * 0.018, 0.0)
+			sway_rot_deg = Vector3(sin(_srv_time * 0.48) * 0.22, cos(_srv_time * 0.37) * 0.28, 0.0)
+		var shake_offset := Vector3.ZERO
 		if _cam_shake > 0.0:
 			_cam_shake = maxf(0.0, _cam_shake - dt * 1.6)
-			var sx: float = sin(_srv_time * 53.0) * _cam_shake * 0.14
-			var sy: float = cos(_srv_time * 61.0) * _cam_shake * 0.10
-			_camera.position = _cam_base_pos + Vector3(sx, sy, 0.0)
-		else:
-			_camera.position = _cam_base_pos
+			shake_offset = Vector3(sin(_srv_time * 53.0) * _cam_shake * 0.14, cos(_srv_time * 61.0) * _cam_shake * 0.10, 0.0)
+		_camera.position = _cam_base_pos + sway_offset + shake_offset
+		_camera.look_at(_cam_look_at, Vector3.UP)
+		if sway_rot_deg != Vector3.ZERO:
+			_camera.rotation_degrees += sway_rot_deg
 
 	# Transformer needle & gauge glow
 	var v_ratio: float = clampf(_display_voltage / 100.0, 0.0, 1.15)
@@ -1677,13 +1682,13 @@ func _animate_visuals(dt: float) -> void:
 		_gauge_glow_mat.emission = gcol
 
 	if _beacon_light != null and is_instance_valid(_beacon_light):
-		var strobe: bool = (_event_id == int(C.EVENT_FALSE_ALARM)) or (_display_voltage >= 70.0 and _phase == PH_LIVE)
+		var strobe: bool = (_event_id == int(C.EVENT_FALSE_ALARM)) or (_penalty_flash_timer > 0.0) or (_display_voltage >= 70.0 and _phase == PH_LIVE)
 		if _event_id == int(C.EVENT_DOUBLE_OVERTIME):
 			_beacon_light.light_color = Color(1.0, 0.85, 0.22)
 			_beacon_light.light_energy = 2.8 + sin(_srv_time * 14.0) * 1.2
 		elif strobe:
 			_beacon_light.light_color = Color(1.0, 0.20, 0.15)
-			_beacon_light.light_energy = 3.2 if sin(_srv_time * 18.0) > 0.0 else 0.3
+			_beacon_light.light_energy = 3.6 if (_penalty_flash_timer > 0.0 or sin(_srv_time * 18.0) > 0.0) else 0.3
 		else:
 			_beacon_light.light_color = Color(1.0, 0.58, 0.20)
 			_beacon_light.light_energy = 0.4 + v_ratio * 0.8
@@ -1722,10 +1727,6 @@ func _animate_visuals(dt: float) -> void:
 			_crt_sub_label.text = _pick_loc("MATCH OVER", "比赛结束", "比賽結束")
 		else:
 			_crt_sub_label.text = "R%d/%d  %.1fs" % [_round_idx + 1, int(C.TOTAL_ROUNDS), _round_remaining]
-
-	# Coach subtle idle / excitement bob
-	if _coach_root != null and is_instance_valid(_coach_root):
-		_coach_root.position.y = sin(_srv_time * 2.6) * 0.03
 
 	# Update per-chair visuals
 	for raw_nid in _player_order:

@@ -1040,21 +1040,21 @@
       "cover": {
         "filename": "voltage-greed.png",
         "contentType": "image/png",
-        "size": 196759,
-        "sha256": "93c3dd50aa81ad7428e92a5b16626087ea5e1e15797738255bb9f9b393cf4329"
+        "size": 388610,
+        "sha256": "f972b9a8f2f5a78ccb55ab76595c8668ab1e90c2e25b38414cb93df32a88a889"
       },
       "version": "v0.1.0",
       "releaseNotes": {
         "version": "v0.1.0",
-        "zh-CN": "首发版本：3 回合 2 条命近景电椅贪心博弈，支持 2–8+ 人自适应阶梯舞台、硬撑专属 S 偷踹增压、监工防摸鱼扣分与 3 种局中工业事件，原生兼容个人混战、本地同屏与 team-party 组队并联（+20%）。",
-        "zh-TW": "首發版本：3 回合 2 條命近景電椅貪心博弈，支援 2–8+ 人自適應階梯舞台、硬撐專屬 S 偷踢增壓、監工防摸魚扣分與 3 種局中工業事件，原生相容個人混戰、本機同螢幕與 team-party 組隊並聯（+20%）。",
-        "en": "Initial release: 3-round, 2-life close-up electric-chair push-your-luck with 2-8+P adaptive riser staging, live-only S voltage kicks, Coach slacker callouts, 3 industrial events, and native FFA, local couch & team-party (+20% Parallel Circuit) support."
+        "zh-CN": "首发版本：3 回合 2 条命近景电椅贪心博弈，支持 2–8+ 人自适应阶梯舞台、硬撑专属 S 偷踹增压、工厂监控系统防摸鱼电罚与 3 种局中工业事件，原生兼容个人混战、本地同屏与 team-party 组队并联（+20%）。",
+        "zh-TW": "首發版本：3 回合 2 條命近景電椅貪心博弈，支援 2–8+ 人自適應階梯舞台、硬撐專屬 S 偷踢增壓、工廠監控系統防摸魚電罰與 3 種局中工業事件，原生相容個人混戰、本機同螢幕與 team-party 組隊並聯（+20%）。",
+        "en": "Initial release: 3-round, 2-life close-up electric-chair push-your-luck with 2-8+P adaptive riser staging, live-only S voltage kicks, Automated Factory Overseer slacker penalties, 3 industrial events, and native FFA, local couch & team-party (+20% Parallel Circuit) support."
       },
       "package": {
         "assetId": "1046",
         "filename": "voltage-greed-0.1.0.zip",
-        "size": 205633,
-        "sha256": "6d5d86900584b3ea26f357b9d59d8b5391656b88a0090361c434480e3315bbdf",
+        "size": 202871,
+        "sha256": "aaf2f2f93731de471003cca689b332011d3dc9c0a19bec78ab14e0bfd204ef77",
         "mirrorApproved": true
       },
       "supportedGameVersions": [
@@ -1104,9 +1104,9 @@
         "en": "3-round close-up electric-chair push-your-luck (2-8+P): hold to farm KPI, release to bank, or slam S (+12%) while live!"
       },
       "detail": {
-        "zh-CN": "基于 mpm-core 的双模式小游戏（原生支持个人混战、本地同屏与 team-party 2–4 队，自适应 2–4 人弧形前排与 5–8+ 人双层阶梯舞台）：全员坐在电椅上按住空格拉杆刷绩效分，将共享变压器推向 70%–100% 随机隐藏过载线；松手放下绝缘面罩锁分但不可重拉。仅限硬撑未撤离时每轮可按 1 次 S 猛踹 +12% 电压并获 1.8 秒 1.35x 爆发。每位玩家 2 条命（初炸焦黑归零 -> 再炸爆椅淘汰），全员安全撤离则由监工点名垫底者扣减 50% 本轮得分；第 2–3 轮穿插误报警铃、电表乱码与双倍加班事件，组队模式下同队多人同时硬撑触发 +20% 并联共振。",
-        "zh-TW": "基於 mpm-core 的雙模式小遊戲（原生支援個人混戰、本機同螢幕與 team-party 2–4 隊，自適應 2–4 人弧形前排與 5–8+ 人雙層階梯舞台）：全員坐在電椅上按住空白鍵拉桿刷績效分，將共享變壓器推向 70%–100% 隨機隱藏過載線；鬆手放下絕緣面罩鎖分但不可重拉。僅限硬撐未撤離時每輪可按 1 次 S 猛踢 +12% 電壓並獲 1.8 秒 1.35x 爆發。每位玩家 2 條命（初炸焦黑歸零 -> 再炸爆椅淘汰），全員安全撤離則由監工點名墊底者扣減 50% 本輪得分；第 2–3 輪穿插誤報警鈴、電錶亂碼與雙倍加班事件，組隊模式下同隊多人同時硬撐觸發 +20% 並聯共振。",
-        "en": "Dual-mode minigame built on mpm-core (native FFA, local couch, and team-party 2-4 teams with adaptive 2-4P front arc & 5-8+P two-tier riser stage): hold Space in your electric chair to farm accelerating KPI while driving the shared transformer toward a hidden 70%-100% limit; release to drop your visor and bank safely. While live only, tap S once per round for a +12% voltage kick and 1.8s 1.35x surge. 2 lives (1st fry chars and wipes unbanked KPI; 2nd fry eliminates); if everyone bails safely, Coach halves the lowest earner's round score. Rounds 2-3 add False Alarm, Glitching Meter & Double Overtime events, while >=2 live teammates gain +20% Parallel Circuit resonance."
+        "zh-CN": "基于 mpm-core 的双模式小游戏（原生支持个人混战、本地同屏与 team-party 2–4 队，自适应 2–4 人前排与 5–8+ 人双层阶梯舞台）：全员朝向正前方坐在电椅上按住空格拉杆刷绩效分，将共享变压器推向 70%–100% 随机隐藏过载线；松手放下绝缘面罩锁分但不可重拉。仅限硬撑未撤离时每轮可按 1 次 S 猛踹 +12% 电压并获 1.8 秒 1.35x 爆发。每位玩家 2 条命（初炸焦黑归零 -> 再炸爆椅淘汰），全员安全撤离则由工厂自动监控系统向垫底者发射惩罚电弧扣减 50% 本轮得分；第 2–3 轮穿插误报警铃、电表乱码与双倍加班事件，组队模式下同队多人同时硬撑触发 +20% 并联共振。",
+        "zh-TW": "基於 mpm-core 的雙模式小遊戲（原生支援個人混戰、本機同螢幕與 team-party 2–4 隊，自適應 2–4 人前排與 5–8+ 人雙層階梯舞台）：全員朝向正前方坐在電椅上按住空白鍵拉桿刷績效分，將共享變壓器推向 70%–100% 隨機隱藏過載線；鬆手放下絕緣面罩鎖分但不可重拉。僅限硬撐未撤離時每輪可按 1 次 S 猛踢 +12% 電壓並獲 1.8 秒 1.35x 爆發。每位玩家 2 條命（初炸焦黑歸零 -> 再炸爆椅淘汰），全員安全撤離則由工廠自動監控系統向墊底者發射懲罰電弧扣減 50% 本輪得分；第 2–3 輪穿插誤報警鈴、電錶亂碼與雙倍加班事件，組隊模式下同隊多人同時硬撐觸發 +20% 並聯共振。",
+        "en": "Dual-mode minigame built on mpm-core (native FFA, local couch, and team-party 2-4 teams with adaptive forward-facing 2-4P row & 5-8+P two-tier riser chamber): hold Space in your bolted-iron electric chair to farm accelerating KPI while driving the shared transformer toward a hidden 70%-100% limit; release to drop your visor and bank safely. While live only, tap S once per round for a +12% voltage kick and 1.8s 1.35x surge. 2 lives (1st fry chars and wipes unbanked KPI; 2nd fry eliminates); if everyone bails safely, the Automated Factory Overseer zaps the lowest earner's round score in half. Rounds 2-3 add False Alarm, Glitching Meter & Double Overtime events, while >=2 live teammates gain +20% Parallel Circuit resonance."
       },
       "aliases": [
         "voltage-greed",

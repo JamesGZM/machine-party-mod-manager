@@ -89,7 +89,7 @@ Steam 目录自动检测 · 离线缓存与还原 · 简体中文 / 繁體中文
 | [组队派对](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/team-party) | `v0.1.1` | 房间 2–4 队手动/洗牌/拖拽分队、原版小游戏挂接与全模组共享团队注册表 | 原生 MPML |
 | [能源抢夺战](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/core-heist) | `v0.1.1` | 纯组队 2–4 队 75 秒能源抢夺对抗：双人合抬反应炉核心共振加速、回收炉磁吸锁与过载偷家 | 原生 MPML |
 | [炸弹推车](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/bomb-cart) | `v0.1.1` | 2–4 队 75 秒自适应轨道攻防（直轨／Y 型／十字转盘）：强力撞车、蒸汽阀门火箭助推、震荡脉冲与突然死亡加时 | 原生 MPML |
-| [高压绩效](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/voltage-greed) | `v0.1.0` | 3 轮近景电椅贪心博弈（2–8+ 人，支持混战与组队）：按住刷 KPI、松手锁分、硬撑专属 S +12% 偷踹、监工抓摸鱼与工业事件 | 原生 MPML（待 Windows 实机验证） |
+| [高压绩效](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/voltage-greed) | `v0.1.0` | 3 轮近景电椅贪心博弈（2–8+ 人，支持混战与组队）：按住刷 KPI、松手锁分、硬撑专属 S +12% 偷踹、工厂监控电罚与工业事件 | 原生 MPML（待 Windows 实机验证） |
 
 验收清单、上游授权边界与互斥组规则详见[候选模组与收录规范](../zh-CN/catalog/mods.md)。
 

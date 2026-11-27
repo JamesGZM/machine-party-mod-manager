@@ -32,7 +32,7 @@ const EVENT_DOUBLE_OVERTIME := 3
 
 const SNAPSHOT_INTERVAL := 0.05
 const BASE_KPI_RATE := 18.0
-const STAGE_FOCUS := Vector3(0.0, 0.0, -5.2)
+const STAGE_FOCUS := Vector3(0.0, 0.0, 7.0)
 
 const TEAM_COLORS := {
 	1: Color(1.0, 0.30, 0.28, 1.0),
@@ -67,42 +67,50 @@ static func compute_seat_layout(player_count: int) -> Array:
 	var count: int = maxi(1, player_count)
 	var seats: Array = []
 	if count <= 4:
-		var radius: float = 5.4
-		var span: float = 0.0
-		if count == 2:
-			span = 0.42
+		var x_list: Array = []
+		if count == 1:
+			x_list = [0.0]
+		elif count == 2:
+			x_list = [-1.10, 1.10]
 		elif count == 3:
-			span = 0.72
-		elif count == 4:
-			span = 0.96
-		for i in range(count):
-			var t: float = 0.0 if count == 1 else (float(i) / float(count - 1) - 0.5)
-			var ang: float = t * span
-			var pos := Vector3(sin(ang) * radius, 0.0, STAGE_FOCUS.z + cos(ang) * radius)
-			seats.append(_make_seat(pos, 0))
+			x_list = [-1.75, 0.0, 1.75]
+		else:
+			x_list = [-2.55, -0.85, 0.85, 2.55]
+		var max_x: float = 2.55
+		for raw_x in x_list:
+			var px: float = float(raw_x)
+			var norm_x: float = absf(px) / max_x
+			var pz: float = -0.45 + 0.20 * (norm_x * norm_x)
+			seats.append(_make_seat(Vector3(px, 0.0, pz), 0))
 		return seats
 
-	# 5-8+P: staggered two-tier semi-circular lab riser with back row elevated y=0.85
+	# 5-8+P: staggered two-tier interrogation bench, BOTH rows facing +Z toward camera
 	var front_count: int = ceili(float(count) * 0.5)
 	var back_count: int = count - front_count
-	var r_front: float = 5.6
-	var r_back: float = 7.6
-	var span_front: float = minf(1.22, 0.32 * float(maxi(1, front_count - 1)))
-	var span_back: float = minf(1.38, span_front + 0.28)
 
 	for i in range(front_count):
-		var tf: float = 0.0 if front_count == 1 else (float(i) / float(front_count - 1) - 0.5)
-		var ang_f: float = tf * span_front
-		var pos_f := Vector3(sin(ang_f) * r_front, 0.0, STAGE_FOCUS.z + cos(ang_f) * r_front)
-		seats.append(_make_seat(pos_f, 0))
+		var tf: float = 0.0 if front_count == 1 else (float(i) / float(front_count - 1) * 2.0 - 1.0)
+		var fx: float = tf * 2.85
+		var fz: float = 0.45 + 0.20 * (tf * tf)
+		seats.append(_make_seat(Vector3(fx, 0.0, fz), 0))
 
-	for j in range(back_count):
-		var tb: float = 0.0 if back_count == 1 else (float(j) / float(back_count - 1) - 0.5)
-		var ang_b: float = tb * span_back
-		if back_count == front_count and back_count % 2 == 1 and absf(ang_b) < 0.001:
-			ang_b += 0.14
-		var pos_b := Vector3(sin(ang_b) * r_back, 0.85, STAGE_FOCUS.z + cos(ang_b) * r_back)
-		seats.append(_make_seat(pos_b, 1))
+	var back_xs: Array = []
+	if back_count == 2:
+		back_xs = [-1.55, 1.55]
+	elif back_count == 3:
+		back_xs = [-2.05, 0.0, 2.05]
+	elif back_count == 4:
+		back_xs = [-3.15, -1.50, 1.50, 3.15]
+	else:
+		for j in range(back_count):
+			var tb: float = 0.0 if back_count == 1 else (float(j) / float(back_count - 1) * 2.0 - 1.0)
+			back_xs.append(tb * 3.15)
+
+	for raw_bx in back_xs:
+		var bx: float = float(raw_bx)
+		var norm_bx: float = clampf(absf(bx) / 3.15, 0.0, 1.0)
+		var bz: float = -1.24 + 0.16 * (norm_bx * norm_bx)
+		seats.append(_make_seat(Vector3(bx, 0.92, bz), 1))
 
 	return seats
 
@@ -110,14 +118,14 @@ static func compute_seat_layout(player_count: int) -> Array:
 static func camera_pose_for_count(player_count: int) -> Dictionary:
 	if player_count <= 4:
 		return {
-			"pos": Vector3(2.8, 4.4, 4.8),
-			"look_at": Vector3(-0.15, 1.35, -2.5),
+			"pos": Vector3(0.0, 2.75, 4.55),
+			"look_at": Vector3(0.0, 1.52, -1.55),
 			"fov": 44.0,
 		}
 	return {
-		"pos": Vector3(3.6, 5.8, 7.2),
-		"look_at": Vector3(-0.2, 1.35, -1.8),
-		"fov": 48.0,
+		"pos": Vector3(0.0, 3.65, 5.95),
+		"look_at": Vector3(0.0, 1.72, -1.45),
+		"fov": 46.5,
 	}
 
 

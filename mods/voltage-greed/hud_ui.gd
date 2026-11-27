@@ -4,7 +4,7 @@ extends RefCounted
 ## - Top-right kept 100% clear for team-party's HUD
 ## - Opening YOU corner bracket marker tracking the local player's electric chair
 ## - Large bold outlined 3-2-1-GO! countdown (Terminal F4 + CJK FontVariation fallback)
-## - Centered bold Coach industrial event / slacker callout banner
+## - Centered bold Factory Monitor event / slacker callout banner
 ## - Compact 0px charcoal-steel & amber bottom-center control legend
 ## - Standalone-only end-of-match CRT summary overlay
 
@@ -172,9 +172,9 @@ func setup(parent: Node) -> void:
 	_countdown_label.visible = false
 	root_ctrl.add_child(_countdown_label)
 
-	# 3. Centered bold Coach event / slacker callout banner (upper-middle, clear of top-right team-party HUD)
+	# 3. Centered bold Factory Monitor event / slacker callout banner (upper-middle, clear of top-right team-party HUD)
 	_banner_label = Label.new()
-	_banner_label.name = "CoachBannerLabel"
+	_banner_label.name = "MonitorBannerLabel"
 	_banner_label.anchor_left = 0.10
 	_banner_label.anchor_right = 0.90
 	_banner_label.anchor_top = 0.12

@@ -6,21 +6,21 @@ Close-up theatrical 2–8+ player push-your-luck industrial minigame (`both` mod
 
 - **Admission (`both`, 2–8+ Players)**:
   - `mode_support = "both"`, `min_teams = 2`, `max_teams = 4`, `min_total_players = 2`, `min_players_per_team = 1`, `allow_local_couch = true`.
-  - Runs natively in FFA, local couch, and `team-party` (2–4 teams), adapting seating and camera framing across 2–4P single-row and 5–8+P two-tier riser stages.
+  - Runs natively in FFA, local couch, and `team-party` (2–4 teams), seating all players facing forward (`+Z`) toward a dead-center symmetrical camera across a 2–4P front row and 5–8+P two-tier (`y = 0.92`) riser inside an enclosed industrial chamber.
 - **3 Escalating Rounds (`~55s`)**:
   - **Prep (3.0s)**: Opening `YOU` corner bracket tracks the local player alongside a `3-2-1-GO!` countdown while pre-allocated FX pools warm up in-frustum.
-  - **Round 1 (`1.0×` KPI)**: Clean baseline rules with no random Coach event.
-  - **Round 2 (`1.25×` KPI)**: Faster voltage climb + 1 mid-round Coach Industrial Event.
-  - **Round 3 (`1.5×–2.0×` KPI)**: High-stakes comeback multiplier + 1 mid-round Coach Industrial Event.
+  - **Round 1 (`1.0×` KPI)**: Clean baseline rules with no random Factory Monitor event.
+  - **Round 2 (`1.25×` KPI)**: Faster voltage climb + 1 mid-round Factory Monitor Industrial Event.
+  - **Round 3 (`1.5×–2.0×` KPI)**: High-stakes comeback multiplier + 1 mid-round Factory Monitor Industrial Event.
 - **Controls & Live-Only Sabotage**:
   - **Hold `Space` / `W` / `↑`**: Pull chair lever to farm unbanked KPI on an accelerating curve while pushing the shared transformer toward a hidden `[70%, 100%]` threshold.
   - **Release `Space`**: Bail out, drop the insulated visor, lock current round KPI, and isolate from detonation (cannot re-engage until the next round).
   - **Tap `S` / `↓` (1 charge/round, LIVE-ONLY)**: Usable **only while holding `Space`** (locked out once bailed). Instantly spikes transformer voltage by `+12%` and grants a `1.8s` `1.35×` personal KPI surge.
-- **2-Life Execution & Coach Slacker Penalty**:
+- **2-Life Execution & Automated Factory Overseer Slacker Penalty**:
   - **1st Overload Fry (1 life left)**: Chars the player, blows 1 armrest fuse bulb, and wipes unbanked current-round KPI to `0`.
   - **2nd Overload Fry (0 lives left)**: Blows out the chair permanently (keeps previously banked total KPI). If `<= 1` survivor (FFA) or `<= 1` alive team (`team-party`) remains after Round 1 or 2, the match finishes early.
-  - **Anti-Slacker Callout**: If all living players bail out before explosion, the Coach reprimands the lowest-KPI earner of the round (tie-broken by earliest bail), halving (`-50%`) their round score.
-- **Coach Industrial Events (Rounds 2 & 3)**:
+  - **Anti-Slacker Callout**: If all living players bail out before explosion, the Automated Factory Overseer System (back-wall Penalty Arc Emitter + Red Strobe Beacon) zaps the lowest-KPI earner of the round (tie-broken by earliest bail), halving (`-50%`) their round score.
+- **Factory Monitor Industrial Events (Rounds 2 & 3)**:
   - **False Alarm (`1.2s`)**: Strobe & klaxon bait while voltage rise briefly pauses.
   - **Glitching Meter (`1.5s`)**: Needle jitters and CRT scrambles to `ERR // ???` while true voltage keeps rising.
   - **Double Overtime (`2.5s`)**: Gold factory bell doubles KPI tick rate (`2.0×`).
@@ -39,9 +39,9 @@ Close-up theatrical 2–8+ player push-your-luck industrial minigame (`both` mod
 | `official_minigame.gd` | Official `Minigame` signal/RPC lifecycle adapter |
 | `config.gd` | Balance constants, 2–8P seating/camera geometry, team & player palette |
 | `voltage_greed_game.gd` | Host-authoritative 3-round simulation, 2-life execution, events, post-FX & 20 Hz snapshots |
-| `arena_meshes.gd` | Electric chair arc/riser, analog transformer & overhead CRT, Coach podium & procedural icon |
+| `arena_meshes.gd` | Enclosed *Green Pea*-style chamber, forward-facing electric chairs & `y=0.92` riser, rear-center transformer dial, CRT, Penalty Arc Emitter & icon |
 | `fx_pool.gd` | Pre-allocated spark/arc/char/blood FX pools with frustum warmup |
-| `hud_ui.gd` | Opening `YOU` bracket, `3-2-1-GO!`, Coach banner, bottom-center 0px key legend & summary |
+| `hud_ui.gd` | Opening `YOU` bracket, `3-2-1-GO!`, Factory Monitor banner, bottom-center 0px key legend & summary |
 | `ai_controller.gd` | Archetype-driven AI (`Cautious Clerk`, `Greedy Gambler`, `Chaos Saboteur`) |
 | `team_support.gd` | Synced from `mods/_shared/team-support/team_support.gd` |
 | `self_test.gd` | Deterministic headless `--self-test`, `--smoke-test`, and `--capture-screenshot` staging |

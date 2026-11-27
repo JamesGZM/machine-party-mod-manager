@@ -37,13 +37,16 @@ func run_self_tests(stage: Node3D) -> void:
 			var si: Dictionary = seats[i] as Dictionary
 			var pi: Vector3 = si["pos"] as Vector3
 			var row_i: int = int(si["row"])
+			var yaw_i: float = float(si["yaw"])
+			if not _expect(stage, absf(yaw_i) < 0.45, "%dP seat %d must face forward (+Z toward camera)" % [count, i]):
+				return
 			if count <= 4:
 				if not _expect(stage, row_i == 0 and is_zero_approx(pi.y), "%dP must use single front row at y=0" % count):
 					return
 			else:
 				if row_i == 1:
 					has_back_row = true
-					if not _expect(stage, is_equal_approx(pi.y, 0.85), "%dP back row must be elevated at y=0.85" % count):
+					if not _expect(stage, is_equal_approx(pi.y, 0.92), "%dP back row must be elevated at y=0.92" % count):
 						return
 			for j in range(i + 1, count):
 				var sj: Dictionary = seats[j] as Dictionary
@@ -55,6 +58,8 @@ func run_self_tests(stage: Node3D) -> void:
 
 	var cam4: Dictionary = cfg.camera_pose_for_count(4) as Dictionary
 	var cam8: Dictionary = cfg.camera_pose_for_count(8) as Dictionary
+	if not _expect(stage, is_zero_approx((cam4["pos"] as Vector3).x) and is_zero_approx((cam8["pos"] as Vector3).x), "4P and 8P cameras must be dead-center symmetrical (x=0)"):
+		return
 	if not _expect(stage, (cam8["pos"] as Vector3).z > (cam4["pos"] as Vector3).z and float(cam8["fov"]) >= float(cam4["fov"]), "8P camera must pull back/widen vs 4P close-up"):
 		return
 
@@ -161,7 +166,7 @@ func run_self_tests(stage: Node3D) -> void:
 		return
 
 	# ------------------------------------------------------------------
-	# 4. Coach Anti-Slacker Callout (-50% on lowest earner / earliest bail tie-break)
+	# 4. Factory Monitor Anti-Slacker Penalty (-50% on lowest earner / earliest bail tie-break)
 	# ------------------------------------------------------------------
 	stage.setup_headless_match(roster2, false, 20261127, false)
 	stage.begin_round_for_test(0, 95.0, int(cfg.EVENT_NONE), 999.0)
@@ -196,7 +201,7 @@ func run_self_tests(stage: Node3D) -> void:
 		return
 
 	# ------------------------------------------------------------------
-	# 5. Three Round Multipliers (1.0x / 1.25x / 1.5x) & 3 Coach Industrial Events
+	# 5. Three Round Multipliers (1.0x / 1.25x / 1.5x) & 3 Factory Monitor Industrial Events
 	# ------------------------------------------------------------------
 	var round_kpis: Array = []
 	for r_idx in range(3):

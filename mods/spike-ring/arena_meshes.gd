@@ -102,15 +102,12 @@ const SUIT_COLOR_VALUES := {
 	"purple": Color(0.70, 0.34, 0.98),
 }
 
-const TEX_THREADPLATE := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_threadplate albedo.png"
-const TEX_THREADPLATE_NORMAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_threadplate normal 1024.png"
 const TEX_SHREDDER := "res://minigames/escalator_pit/models/escalator pit art11/escalator pit art11_shredder6.png"
 const TEX_HEAVY_RUST := "res://minigames/junk_platform/models/junk platform visuals2/junk platform visuals2_heavy rust2.png"
 const TEX_RUST_PAINTED := "res://minigames/junk_platform/models/junk platform visuals2/junk platform visuals2_heavy rust painted2.png"
 const TEX_DARK_METAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_shotgun device metal darkened3.png"
 const TEX_METAL_PLATE := "res://minigames/dvd_roomba/models/dvd roomba visuals1_metal plate1.png"
 const TEX_FLOOR := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba floor5.png"
-const TEX_GRATE := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba grate.png"
 const TEX_PIPES := "res://minigames/forklift_certified/models/forklift certified visuals1/forklift certified visuals1_fc pipes2.png"
 const TEX_WALL := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba walls1.png"
 const TEX_SIDING := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba siding.png"
@@ -175,7 +172,8 @@ static func make_std_mat(
 	uv_scale: Vector3 = Vector3.ONE,
 	normal_path: String = "",
 	normal_scale: float = 0.72,
-	world_triplanar: bool = false
+	world_triplanar: bool = false,
+	linear_filter: bool = true
 ) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = albedo
@@ -185,7 +183,7 @@ static func make_std_mat(
 		var tex = load_optional(tex_path)
 		if tex is Texture2D:
 			mat.albedo_texture = tex as Texture2D
-			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC if linear_filter else BaseMaterial3D.TEXTURE_FILTER_NEAREST
 			mat.uv1_triplanar = true
 			mat.uv1_world_triplanar = world_triplanar
 			mat.uv1_scale = uv_scale
@@ -573,32 +571,32 @@ static func build_arena(radius: float, _accent_rgb: Array) -> Dictionary:
 	root.name = "SpikeRingArena"
 
 	var treadplate := make_std_mat(
-		Color(0.56, 0.52, 0.48), 0.65, 0.42,
-		Color.BLACK, 0.0, false, TEX_THREADPLATE, Vector3(0.55, 0.55, 0.55), TEX_THREADPLATE_NORMAL, 0.88, true
+		Color(0.48, 0.45, 0.43), 0.62, 0.44,
+		Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(0.22, 0.22, 0.22), "", 0.72, true
 	)
 	var floor_mat := make_std_mat(
-		Color(0.58, 0.55, 0.52), 0.10, 0.86,
-		Color.BLACK, 0.0, false, TEX_FLOOR, Vector3(0.28, 0.28, 0.28), "", 0.72, true
+		Color(0.58, 0.55, 0.52), 0.08, 0.88,
+		Color.BLACK, 0.0, false, TEX_FLOOR, Vector3(0.16, 0.16, 0.16), "", 0.72, true
 	)
 	var dark_iron := make_std_mat(
 		Color(0.42, 0.40, 0.39), 0.62, 0.46,
-		Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(0.42, 0.42, 0.42), "", 0.72, false
+		Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(0.28, 0.28, 0.28), "", 0.72, false
 	)
 	var rust := make_std_mat(
 		Color(0.54, 0.42, 0.36), 0.50, 0.58,
-		Color.BLACK, 0.0, false, TEX_RUST_PAINTED, Vector3(0.40, 0.40, 0.40), "", 0.72, false
+		Color.BLACK, 0.0, false, TEX_RUST_PAINTED, Vector3(0.32, 0.32, 0.32), "", 0.72, false
 	)
 	var brass_dull := make_std_mat(
-		Color(0.62, 0.48, 0.28), 0.76, 0.34,
-		Color.BLACK, 0.0, false, TEX_THREADPLATE, Vector3(0.55, 0.55, 0.55), TEX_THREADPLATE_NORMAL, 0.82, false
+		Color(0.64, 0.50, 0.28), 0.76, 0.36,
+		Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(0.32, 0.32, 0.32), "", 0.72, false
 	)
 	var spike_mat := make_std_mat(
 		Color(0.82, 0.82, 0.84), 0.88, 0.22,
-		Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(0.75, 0.75, 0.75)
+		Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(0.45, 0.45, 0.45)
 	)
 	var hazard_paint := make_std_mat(
-		Color(0.88, 0.60, 0.18), 0.32, 0.52,
-		Color(0.55, 0.34, 0.08), 0.14, false, TEX_THREADPLATE, Vector3(0.65, 0.65, 0.65), TEX_THREADPLATE_NORMAL, 0.80, true
+		Color(0.88, 0.60, 0.18), 0.14, 0.64,
+		Color(0.55, 0.34, 0.08), 0.14, false, TEX_FLOOR, Vector3(0.20, 0.20, 0.20), "", 0.72, true
 	)
 	var lamp_mat := make_std_mat(Color(0.95, 0.22, 0.10), 0.10, 0.30, Color(0.96, 0.20, 0.08), 1.8)
 	var tube_mat := make_std_mat(Color(0.96, 0.94, 0.86), 0.0, 0.2, Color(0.98, 0.88, 0.70), 2.4)
@@ -907,24 +905,24 @@ static func build_surroundings(radius: float, _accent_rgb: Array) -> Node3D:
 	var deck_y: float = -0.37
 
 	var pit_floor := make_std_mat(
-		Color(0.46, 0.38, 0.32), 0.38, 0.72,
-		Color.BLACK, 0.0, false, TEX_RUST_PAINTED, Vector3(0.24, 0.24, 0.24), "", 0.72, true
+		Color(0.42, 0.35, 0.30), 0.32, 0.78,
+		Color.BLACK, 0.0, false, TEX_RUST_PAINTED, Vector3(0.18, 0.18, 0.18), "", 0.72, true
 	)
 	var grate := make_std_mat(
-		Color(0.54, 0.50, 0.47), 0.48, 0.64,
-		Color.BLACK, 0.0, false, TEX_GRATE, Vector3(0.55, 0.55, 0.55), "", 0.72, true
+		Color(0.38, 0.36, 0.35), 0.52, 0.58,
+		Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(0.20, 0.20, 0.20), "", 0.72, true
 	)
 	var dark_brass := make_std_mat(
-		Color(0.54, 0.42, 0.26), 0.68, 0.46,
-		Color.BLACK, 0.0, false, TEX_THREADPLATE, Vector3(0.50, 0.50, 0.50), TEX_THREADPLATE_NORMAL, 0.85, false
+		Color(0.54, 0.42, 0.26), 0.66, 0.44,
+		Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(0.26, 0.26, 0.26), "", 0.72, false
 	)
 	var pipe := make_std_mat(
 		Color(0.46, 0.42, 0.39), 0.62, 0.46,
-		Color.BLACK, 0.0, false, TEX_PIPES, Vector3(0.45, 0.45, 0.45)
+		Color.BLACK, 0.0, false, TEX_PIPES, Vector3(0.32, 0.32, 0.32)
 	)
 	var dark_iron := make_std_mat(
 		Color(0.40, 0.38, 0.37), 0.62, 0.46,
-		Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(0.42, 0.42, 0.42)
+		Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(0.28, 0.28, 0.28)
 	)
 
 	var ground := _disc(outer_r, 0.60, pit_floor)
@@ -1100,17 +1098,17 @@ static func _get_hazard_assets() -> Dictionary:
 		"warn_mat": make_std_mat(Color(0.95, 0.20, 0.08, 0.52), 0.0, 0.9, Color(1.0, 0.24, 0.06), 1.9, true),
 		"rail_mat": make_std_mat(Color(1.0, 0.68, 0.14, 0.80), 0.0, 0.7, Color(1.0, 0.50, 0.08), 1.6, true),
 		"saw_line_mat": make_std_mat(Color(1.0, 0.86, 0.30, 0.90), 0.0, 0.6, Color(1.0, 0.80, 0.20), 2.2, true),
-		"spike_slot_mat": make_std_mat(Color(0.14, 0.13, 0.13), 0.78, 0.48, Color(0.55, 0.10, 0.05), 0.45, false, TEX_GRATE, Vector3(0.85, 0.85, 0.85)),
+		"spike_slot_mat": make_std_mat(Color(0.14, 0.13, 0.13), 0.64, 0.56, Color(0.55, 0.10, 0.05), 0.45, false, TEX_DARK_METAL, Vector3(0.35, 0.35, 0.35)),
 		"spike_steel_mat": make_std_mat(Color(0.84, 0.85, 0.88), 0.88, 0.22, Color(0.28, 0.10, 0.06), 0.28),
 		"laser_glow_mat": make_std_mat(Color(0.75, 0.12, 0.06, 0.28), 0.0, 0.90, Color(0.85, 0.10, 0.04), 1.0, true, TEX_SCORCH, Vector3(1.0, 1.0, 1.0)),
 		"laser_sight_mat": make_std_mat(Color(1.0, 0.18, 0.10, 0.65), 0.0, 0.30, Color(1.0, 0.14, 0.06), 2.4, true),
 		"laser_sheath_mat": make_std_mat(Color(0.95, 0.14, 0.08, 0.72), 0.0, 0.50, Color(1.0, 0.12, 0.05), 3.0, true),
 		"laser_core_mat": make_std_mat(Color(1.0, 0.88, 0.78, 1.0), 0.0, 0.25, Color(1.0, 0.48, 0.26), 4.6, true),
-		"pylon_iron_mat": make_std_mat(Color(0.82, 0.82, 0.85), 0.88, 0.22, Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(0.8, 0.8, 0.8)),
-		"pylon_brass_mat": make_std_mat(Color(0.76, 0.64, 0.44), 0.88, 0.22, Color.BLACK, 0.0, false, TEX_THREADPLATE, Vector3(0.6, 0.6, 0.6)),
+		"pylon_iron_mat": make_std_mat(Color(0.82, 0.82, 0.85), 0.86, 0.26, Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(0.45, 0.45, 0.45)),
+		"pylon_brass_mat": make_std_mat(Color(0.76, 0.64, 0.44), 0.82, 0.34, Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(0.35, 0.35, 0.35)),
 		"pylon_lens_mat": make_std_mat(Color(0.95, 0.18, 0.08), 0.1, 0.2, Color(1.0, 0.16, 0.06), 3.4),
-		"track_mat": make_std_mat(Color(0.26, 0.25, 0.26), 0.80, 0.36, Color.BLACK, 0.0, false, TEX_GRATE, Vector3(0.8, 0.8, 0.8)),
-		"bearing_mat": make_std_mat(Color(0.52, 0.42, 0.26), 0.82, 0.32, Color.BLACK, 0.0, false, TEX_THREADPLATE, Vector3(0.7, 0.7, 0.7)),
+		"track_mat": make_std_mat(Color(0.26, 0.25, 0.26), 0.70, 0.44, Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(0.35, 0.35, 0.35)),
+		"bearing_mat": make_std_mat(Color(0.52, 0.42, 0.26), 0.78, 0.34, Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(0.35, 0.35, 0.35)),
 		"push_wave_mat": make_std_mat(Color(1.0, 0.78, 0.28, 0.72), 0.0, 0.4, Color(1.0, 0.68, 0.18), 2.8, true),
 	}
 	return _hazard_assets

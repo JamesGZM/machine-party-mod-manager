@@ -3,8 +3,6 @@ extends RefCounted
 ## 3D foundry-railyard arena, adaptive 2-4 team steel rails & turntable hub,
 ## 3D diegetic CRT monitor, bomb cart, player rig, and icon builders for Bomb Cart (炸彈推車).
 
-const TEX_THREADPLATE := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_threadplate albedo.png"
-const TEX_THREADPLATE_NORMAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_threadplate normal 1024.png"
 const TEX_CONTROL_PANEL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_chisel gauntlet control panel1.png"
 const TEX_METAL_PLATE := "res://minigames/dvd_roomba/models/dvd roomba visuals1_metal plate1.png"
 const TEX_WALL := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba walls1.png"
@@ -12,7 +10,6 @@ const TEX_SIDING := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd r
 const TEX_PIPES := "res://minigames/forklift_certified/models/forklift certified visuals1/forklift certified visuals1_fc pipes2.png"
 const TEX_HEAVY_RUST := "res://minigames/junk_platform/models/junk platform visuals2/junk platform visuals2_heavy rust2.png"
 const TEX_FLOOR_CONCRETE := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba floor5.png"
-const TEX_GRATE := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba grate.png"
 const TEX_BRICK_WALL := "res://minigames/burn_recycle/models/burn recycle visuals6/burn recycle visuals6_burn and recycle brick wall bake.png"
 const TEX_PLASTER_NORMAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_plaster damaged normal.png"
 const TEX_DARK_METAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_shotgun device metal darkened3.png"
@@ -120,7 +117,8 @@ static func _make_mat(
 	uv_scale: Vector3 = Vector3.ONE,
 	normal_path: String = "",
 	triplanar: bool = false,
-	normal_scale: float = 0.72
+	normal_scale: float = 0.72,
+	linear_filter: bool = true
 ) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = albedo
@@ -138,7 +136,7 @@ static func _make_mat(
 		var tex = load_optional(tex_path)
 		if tex is Texture2D:
 			mat.albedo_texture = tex as Texture2D
-			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC if linear_filter else BaseMaterial3D.TEXTURE_FILTER_NEAREST
 			mat.uv1_scale = uv_scale
 	if not normal_path.is_empty():
 		var ntex = load_optional(normal_path)
@@ -308,8 +306,8 @@ static func _build_foundry_backdrop(
 	sub_deck.mesh = _box_mesh(Vector3(wall_w, 0.8, half_z * 2.0 + 3.8))
 	sub_deck.position = Vector3(0.0, -0.66, 0.0)
 	sub_deck.material_override = _make_mat(
-		Color(0.46, 0.42, 0.39), 0.50, 0.60,
-		Color.BLACK, 0.0, false, false, TEX_THREADPLATE, Vector3(0.45, 0.45, 0.45), TEX_THREADPLATE_NORMAL, true, 0.85
+		Color(0.36, 0.34, 0.33), 0.50, 0.62,
+		Color.BLACK, 0.0, false, false, TEX_DARK_METAL, Vector3(0.22, 0.22, 0.22), "", true
 	)
 	root.add_child(sub_deck)
 
@@ -607,8 +605,8 @@ static func build_arena(parent: Node3D, cfg, active_team_ids: Array = [1, 2]) ->
 
 	# Warm heavy-foundry / steel-railyard PBR materials with clear surface contrast separation
 	var floor_mat := _make_mat(
-		Color(0.64, 0.60, 0.56), 0.10, 0.88,
-		Color.BLACK, 0.0, false, false, TEX_FLOOR_CONCRETE, Vector3(0.28, 0.28, 0.28), "", true
+		Color(0.62, 0.58, 0.54), 0.08, 0.88,
+		Color.BLACK, 0.0, false, false, TEX_FLOOR_CONCRETE, Vector3(0.16, 0.16, 0.16), "", true
 	)
 	var wall_mat := _make_mat(
 		Color(0.74, 0.65, 0.59), 0.12, 0.86,
@@ -616,20 +614,20 @@ static func build_arena(parent: Node3D, cfg, active_team_ids: Array = [1, 2]) ->
 	)
 	var guard_mat := _make_mat(Color(0.52, 0.45, 0.40), 0.48, 0.56, Color.BLACK, 0.0, false, false, TEX_WALL, Vector3(8.0, 1.0, 1.0))
 	var trim_mat := _make_mat(
-		Color(0.56, 0.52, 0.48), 0.68, 0.42,
-		Color.BLACK, 0.0, false, false, TEX_THREADPLATE, Vector3(2.0, 2.0, 1.0), TEX_THREADPLATE_NORMAL, false, 0.90
+		Color(0.52, 0.48, 0.45), 0.66, 0.42,
+		Color.BLACK, 0.0, false, false, TEX_METAL_PLATE, Vector3(0.35, 0.35, 0.35), "", true
 	)
 	var apron_mat := _make_mat(
-		Color(0.54, 0.50, 0.46), 0.68, 0.42,
-		Color.BLACK, 0.0, false, false, TEX_THREADPLATE, Vector3(0.55, 0.55, 0.55), TEX_THREADPLATE_NORMAL, true, 0.90
+		Color(0.48, 0.45, 0.43), 0.60, 0.48,
+		Color.BLACK, 0.0, false, false, TEX_METAL_PLATE, Vector3(0.20, 0.20, 0.20), "", true
 	)
 	var panel_mat := _make_mat(Color(0.76, 0.68, 0.60), 0.45, 0.44, Color.BLACK, 0.0, false, false, TEX_CONTROL_PANEL, Vector3(1.0, 1.0, 1.0))
 	var hazard_mat := _make_mat(Color(0.92, 0.62, 0.16), 0.22, 0.48, Color(0.86, 0.54, 0.12), 0.25, false, false, TEX_SIDING, Vector3(6.0, 1.0, 1.0))
 	var pipes_mat := _make_mat(Color(0.58, 0.50, 0.44), 0.58, 0.42, Color.BLACK, 0.0, false, false, TEX_PIPES, Vector3(2.0, 2.0, 1.0))
 	var rust_mat := _make_mat(Color(0.58, 0.46, 0.38), 0.50, 0.54, Color.BLACK, 0.0, false, false, TEX_RUST_PAINTED, Vector3(2.0, 2.0, 1.0))
-	var dark_metal_mat := _make_mat(Color(0.46, 0.42, 0.40), 0.62, 0.46, Color.BLACK, 0.0, false, false, TEX_DARK_METAL, Vector3(1.5, 1.5, 1.0))
+	var dark_metal_mat := _make_mat(Color(0.46, 0.42, 0.40), 0.62, 0.46, Color.BLACK, 0.0, false, false, TEX_DARK_METAL, Vector3(0.30, 0.30, 0.30), "", true)
 	var rail_steel_mat := _make_mat(Color(0.78, 0.74, 0.69), 0.90, 0.20)
-	var rail_bed_mat := _make_mat(Color(0.24, 0.22, 0.21), 0.65, 0.50, Color.BLACK, 0.0, false, false, TEX_GRATE, Vector3(0.75, 0.75, 0.75), "", true)
+	var rail_bed_mat := _make_mat(Color(0.20, 0.19, 0.19), 0.45, 0.68, Color.BLACK, 0.0, false, false, TEX_DARK_METAL, Vector3(0.28, 0.28, 0.28), "", true)
 	var amber_mat := _make_mat(Color(1.0, 0.68, 0.18), 0.2, 0.22, Color(1.0, 0.64, 0.14), 1.8)
 
 	var stain_tex := load_optional(TEX_DECAL_STAIN) as Texture2D

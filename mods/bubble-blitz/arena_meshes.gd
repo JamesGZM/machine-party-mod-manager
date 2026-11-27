@@ -102,15 +102,12 @@ const SUIT_COLOR_VALUES := {
 	"purple": Color(0.70, 0.34, 0.98),
 }
 
-const TEX_THREADPLATE := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_threadplate albedo.png"
-const TEX_THREADPLATE_NORMAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_threadplate normal 1024.png"
 const TEX_SHREDDER := "res://minigames/escalator_pit/models/escalator pit art11/escalator pit art11_shredder6.png"
 const TEX_HEAVY_RUST := "res://minigames/junk_platform/models/junk platform visuals2/junk platform visuals2_heavy rust2.png"
 const TEX_RUST_PAINTED := "res://minigames/junk_platform/models/junk platform visuals2/junk platform visuals2_heavy rust painted2.png"
 const TEX_DARK_METAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_shotgun device metal darkened3.png"
 const TEX_METAL_PLATE := "res://minigames/dvd_roomba/models/dvd roomba visuals1_metal plate1.png"
 const TEX_FLOOR := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba floor5.png"
-const TEX_GRATE := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba grate.png"
 const TEX_PIPES := "res://minigames/forklift_certified/models/forklift certified visuals1/forklift certified visuals1_fc pipes2.png"
 const TEX_WALL := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba walls1.png"
 const TEX_BRICK_WALL := "res://minigames/burn_recycle/models/burn recycle visuals6/burn recycle visuals6_burn and recycle brick wall bake.png"
@@ -178,7 +175,8 @@ static func make_std_mat(
 	uv_scale: Vector3 = Vector3.ONE,
 	normal_path: String = "",
 	world_triplanar: bool = true,
-	normal_scale: float = 0.72
+	normal_scale: float = 0.72,
+	linear_filter: bool = true
 ) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = albedo
@@ -188,7 +186,7 @@ static func make_std_mat(
 		var tex = load_optional(tex_path)
 		if tex is Texture2D:
 			mat.albedo_texture = tex
-			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC if linear_filter else BaseMaterial3D.TEXTURE_FILTER_NEAREST
 			mat.uv1_triplanar = true
 			mat.uv1_world_triplanar = world_triplanar
 			mat.uv1_scale = uv_scale
@@ -275,10 +273,10 @@ static func build_floor_and_backdrop(width: int, height: int, tile_size: float, 
 	# Matte factory concrete checkerboard so blasts, crates, bombs, pickups, and 4 players stay vividly distinct.
 	var tint_a := Color(0.59, 0.56, 0.53).lerp(col_a, 0.10)
 	var tint_b := Color(0.49, 0.47, 0.45).lerp(col_b, 0.10)
-	var mat_a := make_std_mat(tint_a, 0.10, 0.86, Color.BLACK, 0.0, false, TEX_FLOOR, Vector3(0.28, 0.28, 0.28))
-	var mat_b := make_std_mat(tint_b, 0.12, 0.86, Color.BLACK, 0.0, false, TEX_FLOOR, Vector3(0.28, 0.28, 0.28))
-	var mat_frame := make_std_mat(Color(0.56, 0.52, 0.48), 0.36, 0.66, Color.BLACK, 0.0, false, TEX_THREADPLATE, Vector3(0.42, 0.42, 0.42), TEX_THREADPLATE_NORMAL, true, 0.85)
-	var mat_border := make_std_mat(Color(0.60, 0.56, 0.52), 0.66, 0.42, Color.BLACK, 0.0, false, TEX_THREADPLATE, Vector3(0.48, 0.48, 0.48), TEX_THREADPLATE_NORMAL, true, 0.85)
+	var mat_a := make_std_mat(tint_a, 0.08, 0.88, Color.BLACK, 0.0, false, TEX_FLOOR, Vector3(0.18, 0.18, 0.18))
+	var mat_b := make_std_mat(tint_b, 0.10, 0.88, Color.BLACK, 0.0, false, TEX_FLOOR, Vector3(0.18, 0.18, 0.18))
+	var mat_frame := make_std_mat(Color(0.40, 0.38, 0.37), 0.44, 0.64, Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(0.20, 0.20, 0.20))
+	var mat_border := make_std_mat(Color(0.54, 0.51, 0.48), 0.64, 0.44, Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(0.24, 0.24, 0.24))
 	var mat_wall := make_std_mat(Color(0.72, 0.68, 0.64), 0.12, 0.86, Color.BLACK, 0.0, false, TEX_BRICK_WALL, Vector3(0.22, 0.22, 0.22), TEX_PLASTER_NORMAL, true, 0.85)
 	var mat_dark_metal := make_std_mat(Color(0.56, 0.52, 0.50), 0.60, 0.46, Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(0.38, 0.38, 0.38))
 	var mat_rust := make_std_mat(Color(0.58, 0.46, 0.38), 0.50, 0.54, Color.BLACK, 0.0, false, TEX_RUST_PAINTED, Vector3(0.35, 0.35, 0.35))
@@ -689,16 +687,13 @@ static func build_steel_pillar(tile_size: float, accent: Color) -> Node3D:
 	cap.mesh = cm
 	cap.material_override = make_std_mat(
 		Color(0.70, 0.68, 0.65),
-		0.86,
-		0.26,
+		0.72,
+		0.36,
 		accent * 0.14,
 		0.18,
 		false,
-		TEX_THREADPLATE,
-		Vector3(0.7, 0.7, 0.7),
-		TEX_THREADPLATE_NORMAL,
-		true,
-		0.82
+		TEX_METAL_PLATE,
+		Vector3(0.32, 0.32, 0.32)
 	)
 	cap.position = Vector3(0.0, tile_size * 0.91, 0.0)
 	n.add_child(cap)
@@ -827,17 +822,14 @@ static func build_crusher_block(tile_size: float) -> Node3D:
 	bm.size = Vector3(tile_size * 0.95, tile_size * 1.12, tile_size * 0.95)
 	body.mesh = bm
 	body.material_override = make_std_mat(
-		Color(0.50, 0.46, 0.44),
-		0.68,
-		0.40,
+		Color(0.44, 0.42, 0.41),
+		0.60,
+		0.46,
 		Color.BLACK,
 		0.0,
 		false,
-		TEX_THREADPLATE,
-		Vector3(0.7, 0.7, 0.7),
-		TEX_THREADPLATE_NORMAL,
-		true,
-		0.88
+		TEX_DARK_METAL,
+		Vector3(0.28, 0.28, 0.28)
 	)
 	body.position = Vector3(0.0, tile_size * 0.56, 0.0)
 	n.add_child(body)
@@ -942,7 +934,7 @@ static func _get_bomb_assets(tile_size: float) -> Dictionary:
 		"band_mesh": bnd_m,
 		"band_mat": make_std_mat(Color(0.66, 0.46, 0.14), 0.55, 0.46, Color(0.45, 0.26, 0.05), 0.25, false, TEX_METAL_PLATE),
 		"cap_mesh": cap_m,
-		"cap_mat": make_std_mat(Color(0.22, 0.22, 0.24), 0.85, 0.36, Color.BLACK, 0.0, false, TEX_THREADPLATE),
+		"cap_mat": make_std_mat(Color(0.22, 0.22, 0.24), 0.78, 0.34, Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(0.5, 0.5, 0.5)),
 		"beacon_mesh": sm,
 		"beacon_mat": make_std_mat(Color(0.95, 0.20, 0.10), 0.1, 0.2, Color(1.0, 0.18, 0.08), 2.2),
 	}

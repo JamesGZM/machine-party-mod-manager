@@ -5,16 +5,13 @@ extends RefCounted
 ## Terminal F4 font, and animations when Machine Party.pck is available,
 ## with clean procedural fallbacks for headless tests.
 
-const TEX_THREADPLATE := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_threadplate albedo.png"
-const TEX_THREADPLATE_NORMAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_threadplate normal 1024.png"
-const TEX_FLOOR_CONCRETE := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_chisel gauntlet floor6.png"
+const TEX_FLOOR := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba floor5.png"
 const TEX_BRICK_WALL := "res://minigames/burn_recycle/models/burn recycle visuals6/burn recycle visuals6_burn and recycle brick wall bake.png"
 const TEX_PLASTER_NORMAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_plaster damaged normal.png"
 const TEX_DARK_METAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_shotgun device metal darkened3.png"
 const TEX_RUST_PAINTED := "res://minigames/junk_platform/models/junk platform visuals2/junk platform visuals2_heavy rust painted2.png"
 const TEX_CONTROL_PANEL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_chisel gauntlet control panel1.png"
 const TEX_METAL_PLATE := "res://minigames/dvd_roomba/models/dvd roomba visuals1_metal plate1.png"
-const TEX_GRATE := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba grate.png"
 const TEX_WALL := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba walls1.png"
 const TEX_SIDING := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba siding.png"
 const TEX_PIPES := "res://minigames/forklift_certified/models/forklift certified visuals1/forklift certified visuals1_fc pipes2.png"
@@ -133,7 +130,7 @@ func _get_mat(
 	normal_path: String = "",
 	triplanar: bool = false,
 	normal_scale: float = 0.72,
-	linear_filter: bool = false
+	linear_filter: bool = true
 ) -> StandardMaterial3D:
 	if _mat_cache.has(key):
 		return _mat_cache[key] as StandardMaterial3D
@@ -151,7 +148,7 @@ func _get_mat(
 		var tex = load_optional(tex_path)
 		if tex is Texture2D:
 			mat.albedo_texture = tex as Texture2D
-			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS if linear_filter else BaseMaterial3D.TEXTURE_FILTER_NEAREST
+			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC if linear_filter else BaseMaterial3D.TEXTURE_FILTER_NEAREST
 			mat.uv1_scale = uv_scale
 	if not normal_path.is_empty():
 		var ntex = load_optional(normal_path)
@@ -240,9 +237,9 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 	var stain_tex := load_optional(TEX_DECAL_STAIN) as Texture2D
 	var scorch_tex := load_optional(TEX_DECAL_SCORCH) as Texture2D
 
-	var floor_mat := _get_mat("floor", Color(0.60, 0.56, 0.52), 0.10, 0.86, Color.BLACK, 0.0, false, TEX_FLOOR_CONCRETE, Vector3(0.22, 0.22, 0.22), "", true, 0.72, true)
-	var apron_mat := _get_mat("apron", Color(0.50, 0.46, 0.43), 0.68, 0.42, Color.BLACK, 0.0, false, TEX_THREADPLATE, Vector3(0.50, 0.50, 0.50), TEX_THREADPLATE_NORMAL, true, 0.88, true)
-	var subdeck_mat := _get_mat("subdeck", Color(0.48, 0.44, 0.41), 0.46, 0.60, Color.BLACK, 0.0, false, TEX_THREADPLATE, Vector3(0.42, 0.42, 0.42), TEX_THREADPLATE_NORMAL, true, 0.82, true)
+	var floor_mat := _get_mat("floor", Color(0.58, 0.54, 0.50), 0.08, 0.88, Color.BLACK, 0.0, false, TEX_FLOOR, Vector3(0.16, 0.16, 0.16), "", true, 0.72, true)
+	var apron_mat := _get_mat("apron", Color(0.46, 0.44, 0.42), 0.60, 0.46, Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(0.20, 0.20, 0.20), "", true, 0.72, true)
+	var subdeck_mat := _get_mat("subdeck", Color(0.36, 0.34, 0.33), 0.48, 0.62, Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(0.22, 0.22, 0.22), "", true, 0.72, true)
 	var dark_metal_mat := _get_mat("dark_metal", Color(0.46, 0.42, 0.40), 0.62, 0.46, Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(1.5, 1.5, 1.0))
 	var rim_mat := _get_mat("floor_rim", Color(0.32, 0.30, 0.29), 0.62, 0.46, Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(4.0, 4.0, 1.0))
 	var wall_mat := _get_mat("wall_tex", Color(0.56, 0.50, 0.45), 0.42, 0.58, Color.BLACK, 0.0, false, TEX_WALL, Vector3(8.0, 1.0, 1.0))
@@ -747,7 +744,7 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 
 	# Team Recycling Furnace Vaults with overhead gantry & CRT scoreboard (tamed team emissives for ACES)
 	var vault_nodes: Dictionary = {}
-	var grate_mat := _get_mat("vault_grate", Color(0.20, 0.19, 0.19), 0.35, 0.78, Color.BLACK, 0.0, false, TEX_GRATE, Vector3(0.75, 0.75, 0.75), "", true)
+	var grate_mat := _get_mat("vault_grate", Color(0.22, 0.21, 0.21), 0.48, 0.60, Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(0.28, 0.28, 0.28), "", true)
 	for raw_tid in team_ids:
 		var tid: int = int(raw_tid)
 		var bp: Vector2 = vault_by_team.get(tid, Vector2.ZERO) as Vector2

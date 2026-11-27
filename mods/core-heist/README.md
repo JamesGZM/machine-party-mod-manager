@@ -20,7 +20,7 @@ Team-only 75-second industrial energy heist minigame built on [`mpm-core`](../mp
 | `main.gd` | MPML v2 entry, registers scripts & `team_only` admission into `mpm-core` |
 | `official_minigame.gd` | Official `Minigame` signal/RPC lifecycle wrapper |
 | `config.gd` | Phase timings, 2–4 team arena geometry, 32-cell pool scaling & combat constants |
-| `arena_meshes.gd` | Warm industrial 2–4 team arena (concrete/treadplate/grate/brick PBR contrast), vanilla PCK props & grime decals, 3D CRT monitor, vaults, player rigs & icon |
+| `arena_meshes.gd` | Warm industrial 2–4 team arena (concrete/brushed-steel/cast-iron/brick PBR contrast), vanilla PCK props & grime decals, 3D CRT monitor, vaults, player rigs & icon |
 | `fx_pool.gd` | Pre-allocated FX pools via `mpm-core.create_fx_pool()`, scorch Decal, flash light & ambient dust mote pools with warmup |
 | `hud_ui.gd` | Diegetic-first HUD: frameless top-left scores, opening YOU marker, 3-2-1-GO countdown & standalone CRT summary |
 | `ai_controller.gd` | 4-state co-op AI (Escort, Carrier, Defender, Collector/Raider) |

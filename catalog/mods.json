@@ -176,21 +176,21 @@
       "cover": {
         "filename": "roller-carnival.png",
         "contentType": "image/png",
-        "size": 514528,
-        "sha256": "2d2e16fe05a6da32b7630e0662684a765876da72f8904466156042dcbd3c0550"
+        "size": 302400,
+        "sha256": "5742f2e2290797a99ee4e2514bf36933b23b66201d9c852dbf157925da717632"
       },
       "version": "v0.1.13",
       "releaseNotes": {
         "version": "v0.1.13",
-        "zh-CN": "官风工厂舞台视觉质感重构：启用 ACES、SSAO 接触阴影与深度雾，改用多点聚光灯池与增强左侧熔岩反光；重构哑光混凝土赛道、花纹钢板、铁网格与高光滚筒反差，融入原版北墙排风扇、吊灯、机柜、栈板、废料堆与油污/焦痕贴花，并新增熔岩火星微粒与工业底噪；零玩法与数值改动。",
-        "zh-TW": "官風工廠舞台視覺質感重構：啟用 ACES、SSAO 接觸陰影與深度霧，改用多點聚光燈池與增強左側熔岩反光；重構霧面混凝土賽道、花紋鋼板、鐵網格與高光滾筒反差，融入原版北牆排風扇、吊燈、機櫃、棧板、廢料堆與油污／焦痕貼花，並新增熔岩火星微粒與工業底噪；零玩法與數值改動。",
-        "en": "Industrial stage visual craft overhaul: enables ACES, SSAO contact shadows, and depth fog with overhead SpotLight pools and richer left-pit lava bounce; adds matte-concrete/treadplate/grate/specular-roller PBR contrast, vanilla PCK wall fans, bay fixtures, racks, pallets, scrap, grounded grime & scorch decals, rising lava embers, and factory ambience. Zero gameplay changes."
+        "zh-CN": "官风工厂舞台视觉质感重构：启用 ACES、SSAO 接触阴影与深度雾，改用多点聚光灯池与增强左侧熔岩反光；跑道、滚筒与护裙改为哑光现浇混凝土与实心拉丝钢板并开启各向异性过滤去网纹，融入原版北墙排风扇、吊灯、机柜、栈板、废料堆与油污/焦痕贴花，并新增熔岩火星微粒与工业底噪；零玩法与数值改动。",
+        "zh-TW": "官風工廠舞台視覺質感重構：啟用 ACES、SSAO 接觸陰影與深度霧，改用多點聚光燈池與增強左側熔岩反光；跑道、滾筒與護裙改為霧面現澆混凝土與實心拉絲鋼板並開啟各向異性過濾去網紋，融入原版北牆排風扇、吊燈、機櫃、棧板、廢料堆與油污／焦痕貼花，並新增熔岩火星微粒與工業底噪；零玩法與數值改動。",
+        "en": "Industrial stage visual craft overhaul: enables ACES, SSAO contact shadows, and depth fog with overhead SpotLight pools and richer left-pit lava bounce; upgrades runway, roller drums, and aprons to matte poured concrete & solid brushed steel with anisotropic filtering to remove mesh moire, adds vanilla PCK wall fans, bay fixtures, racks, pallets, scrap, grounded grime & scorch decals, rising lava embers, and factory ambience. Zero gameplay changes."
       },
       "package": {
         "assetId": "1051",
         "filename": "roller-carnival-0.1.13.zip",
-        "size": 202490,
-        "sha256": "7a15af2d0150ad4b43e4b6298c8e44a90e88d4e93847ed10b6c02f149764d993",
+        "size": 202100,
+        "sha256": "1e9432585a8df8f0738cfe0f1d18a6cb36b7c4ccdfbb85f9630be3ed5abb8001",
         "mirrorApproved": true
       },
       "supportedGameVersions": [
@@ -496,21 +496,21 @@
       "cover": {
         "filename": "bubble-blitz.png",
         "contentType": "image/png",
-        "size": 596423,
-        "sha256": "72645b4a454861806a1da9a54de11bfcdd90d372ba1a1d87a25776ff9751c87e"
+        "size": 322282,
+        "sha256": "5a4e0ada1ab36c217025e07677bbb0502a8aa9c0f30b85aae9c503de3cc37fe7"
       },
       "version": "v0.1.7",
       "releaseNotes": {
         "version": "v0.1.7",
-        "zh-CN": "官风仓库视觉质感重构与自检泄漏修复：改用多点聚光灯池、ACES、SSAO 与深度雾；升级哑光混凝土地板、花纹钢板压板、高光滚轴与北面砖墙材质，融入原版排风扇、机柜、栈板、废料堆与油污/焦痕贴花，新增飘浮尘埃与工厂底噪，并修复无头自检退出资源泄漏；零玩法与数值改动。",
-        "zh-TW": "官風倉庫視覺質感重構與自檢洩漏修正：改用多點聚光燈池、ACES、SSAO 與深度霧；升級霧面混凝土地板、花紋鋼板壓板、高光滾軸與北面磚牆材質，融入原版排風扇、機櫃、棧板、廢料堆與油污／焦痕貼花，新增飄浮塵埃與工廠底噪，並修正無頭自檢退出資源洩漏；零玩法與數值改動。",
-        "en": "Warehouse visual craft overhaul & self-test leak fix: adopts overhead SpotLight pools, ACES, SSAO, and depth fog; adds matte-concrete/treadplate/specular-roller/brick-wall PBR contrast, vanilla PCK exhaust fans, racks, pallets, scrap, grounded grime & scorch decals, drifting dust motes, factory ambience, and zero-leak headless cleanup. Zero gameplay changes."
+        "zh-CN": "官风仓库视觉质感重构与自检泄漏修复：改用多点聚光灯池、ACES、SSAO 与深度雾；升级哑光混凝土地板、拉丝重钢护框、压板、高光滚轴与北面砖墙材质并开启各向异性过滤去网纹，融入原版排风扇、机柜、栈板、废料堆与油污/焦痕贴花，新增飘浮尘埃与工厂底噪，并修复无头自检退出资源泄漏；零玩法与数值改动。",
+        "zh-TW": "官風倉庫視覺質感重構與自檢洩漏修正：改用多點聚光燈池、ACES、SSAO 與深度霧；升級霧面混凝土地板、拉絲重鋼護框、壓板、高光滾軸與北面磚牆材質並開啟各向異性過濾去網紋，融入原版排風扇、機櫃、棧板、廢料堆與油污／焦痕貼花，新增飄浮塵埃與工廠底噪，並修正無頭自檢退出資源洩漏；零玩法與數值改動。",
+        "en": "Warehouse visual craft overhaul & self-test leak fix: adopts overhead SpotLight pools, ACES, SSAO, and depth fog; upgrades matte concrete floor, brushed heavy-steel curbs, crusher blocks, specular rollers, and brick walls with anisotropic filtering to eliminate moire, adds vanilla PCK exhaust fans, racks, pallets, scrap, grounded decals, drifting dust motes, factory ambience, and zero-leak headless cleanup. Zero gameplay changes."
       },
       "package": {
         "assetId": "1050",
         "filename": "bubble-blitz-0.1.7.zip",
-        "size": 226393,
-        "sha256": "51bb481b5657c32dff4685b7cdf0529ab4970552ae38fdc8afa4b1cc8689d032",
+        "size": 225984,
+        "sha256": "dc4b62de6d61e83a541bbe5e763cd71d06664c33a1fb8be5d47f00a27dbee116",
         "mirrorApproved": true
       },
       "supportedGameVersions": [
@@ -592,21 +592,21 @@
       "cover": {
         "filename": "spike-ring.png",
         "contentType": "image/png",
-        "size": 346760,
-        "sha256": "c5af6cd8e477a261cb0513984076d0a08cd650f3f2be19a02cae1e29d43b3e30"
+        "size": 206823,
+        "sha256": "216b4843b76f6a40bb287748628af4d745634be140f87c1a5bdd1014bbb80832"
       },
       "version": "v0.1.5",
       "releaseNotes": {
         "version": "v0.1.5",
-        "zh-CN": "官风环形地坑视觉质感重构：修复重复平行光 Bug，改用顶灯聚光光池、ACES、SSAO 与深度雾配双通道暗角/1920px 色调分离；重做哑光混凝土中心、花纹钢板外环与高光钢刺材质，融入原版北墙砖墙、排风扇、机柜与接地油污/焦痕贴花，并新增战斗焦痕池、火花微粒与工厂底噪；零玩法与数值改动。",
-        "zh-TW": "官風環形地坑視覺質感重構：修正重複平行光 Bug，改用頂燈聚光光池、ACES、SSAO 與深度霧配雙通道暗角／1920px 色調分離；重做霧面混凝土中心、花紋鋼板外環與高光鋼刺材質，融入原版北牆磚牆、排風扇、機櫃與接地油污／焦痕貼花，並新增戰鬥焦痕池、火花微粒與工廠底噪；零玩法與數值改動。",
-        "en": "Circular pit visual craft overhaul: fixes duplicate DirectionalLight3D, adds overhead SpotLight pools, ACES, SSAO, depth fog, and two-pass vignette + 1920px posterization; upgrades matte-concrete/treadplate/specular-steel PBR separation, vanilla PCK brick back wall, wall fans, racks, grounded decals, pooled battle scorch marks, pit motes, and factory ambience. Zero gameplay changes."
+        "zh-CN": "官风环形地坑视觉质感重构：修复重复平行光 Bug，改用顶灯聚光光池、ACES、SSAO 与深度雾配双通道暗角/1920px 色调分离；重做哑光混凝土中心、拉丝钢外环、铸铁坑底与高光钢刺材质并开启各向异性过滤去网纹，融入原版北墙砖墙、排风扇、机柜与接地油污/焦痕贴花，并新增战斗焦痕池、火花微粒与工厂底噪；零玩法与数值改动。",
+        "zh-TW": "官風環形地坑視覺質感重構：修正重複平行光 Bug，改用頂燈聚光光池、ACES、SSAO 與深度霧配雙通道暗角／1920px 色調分離；重做霧面混凝土中心、拉絲鋼外環、鑄鐵坑底與高光鋼刺材質並開啟各向異性過濾去網紋，融入原版北牆磚牆、排風扇、機櫃與接地油污／焦痕貼花，並新增戰鬥焦痕池、火花微粒與工廠底噪；零玩法與數值改動。",
+        "en": "Circular pit visual craft overhaul: fixes duplicate DirectionalLight3D, adds overhead SpotLight pools, ACES, SSAO, depth fog, and two-pass vignette + 1920px posterization; upgrades matte-concrete/brushed-steel/cast-iron/specular-steel PBR separation with anisotropic filtering, vanilla PCK brick back wall, wall fans, racks, grounded decals, pooled battle scorch marks, pit motes, and factory ambience. Zero gameplay changes."
       },
       "package": {
         "assetId": "1047",
         "filename": "spike-ring-0.1.5.zip",
-        "size": 273793,
-        "sha256": "933d40209fc7ad3dd2f9878b5c8c8987fb5a15c24362d2ec5b42a7ec00dd339b",
+        "size": 273453,
+        "sha256": "85ab52e3ffb83aabb8b85a2fcebd7fa0bde9d12ee8b0f3ad030cb0b9f0a0b7b9",
         "mirrorApproved": true
       },
       "supportedGameVersions": [
@@ -855,21 +855,21 @@
       "cover": {
         "filename": "core-heist.png",
         "contentType": "image/png",
-        "size": 140093,
-        "sha256": "62da08cbb376b3cadbe2e02bd60921609949e503741b970b7c5cb8c9605d4525"
+        "size": 189133,
+        "sha256": "fa184e06902875322426d1c9c6f2f0fca5f23dafe5bb4949553c47ec72ae2dde"
       },
       "version": "v0.1.2",
       "releaseNotes": {
         "version": "v0.1.2",
-        "zh-CN": "官风能源车间视觉质感重构：移除对向平光补光，改用自适应聚光灯池、ACES、SSAO 与深度雾；重做哑光混凝土地板、花纹钢板传送带台面、炉坑铁网格、高光钢轨与北面砖墙材质，融入原版排风扇、吊灯、靠墙机柜与油污/焦痕贴花，并新增核心掉落焦痕池、飘浮尘埃与工厂底噪；零玩法与数值改动。",
-        "zh-TW": "官風能源車間視覺質感重構：移除對向平光補光，改用自適應聚光燈池、ACES、SSAO 與深度霧；重做霧面混凝土地板、花紋鋼板輸送帶台面、爐坑鐵網格、高光鋼軌與北面磚牆材質，融入原版排風扇、吊燈、靠牆機櫃與油污／焦痕貼花，並新增核心掉落焦痕池、飄浮塵埃與工廠底噪；零玩法與數值改動。",
-        "en": "Workshop visual craft overhaul: replaces opposing directional fill with adaptive SpotLight pools, ACES, SSAO, and depth fog; adds matte-concrete/treadplate/grate/oiled-steel/brick-wall PBR contrast, vanilla PCK wall fans, bay fixtures, wall-mounted racks, grounded decals, core-drop scorch pool, dust motes, and factory ambience. Zero gameplay changes."
+        "zh-CN": "官风能源车间视觉质感重构：移除对向平光补光，改用自适应聚光灯池、ACES、SSAO 与深度雾；重做哑光现浇混凝土地板、拉丝钢板传送带台面、铸铁炉坑框、高光钢轨与北面砖墙材质并开启各向异性过滤去网纹，融入原版排风扇、吊灯、靠墙机柜与油污/焦痕贴花，并新增核心掉落焦痕池、飘浮尘埃与工厂底噪；零玩法与数值改动。",
+        "zh-TW": "官風能源車間視覺質感重構：移除對向平光補光，改用自適應聚光燈池、ACES、SSAO 與深度霧；重做霧面現澆混凝土地板、拉絲鋼板輸送帶台面、鑄鐵爐坑框、高光鋼軌與北面磚牆材質並開啟各向異性過濾去網紋，融入原版排風扇、吊燈、靠牆機櫃與油污／焦痕貼花，並新增核心掉落焦痕池、飄浮塵埃與工廠底噪；零玩法與數值改動。",
+        "en": "Workshop visual craft overhaul: replaces opposing directional fill with adaptive SpotLight pools, ACES, SSAO, and depth fog; upgrades matte-concrete/brushed-steel/cast-iron/oiled-steel/brick-wall PBR contrast with anisotropic filtering, vanilla PCK wall fans, bay fixtures, wall-mounted racks, grounded decals, core-drop scorch pool, dust motes, and factory ambience. Zero gameplay changes."
       },
       "package": {
         "assetId": "1048",
         "filename": "core-heist-0.1.2.zip",
-        "size": 214839,
-        "sha256": "395c0efd15bf90c33822acc628bd695bc9a8fdc98653011c73483f0f660eb1a1",
+        "size": 214358,
+        "sha256": "c4844e18a12ea3cde4c6621504fe8c4455b289e6a473365c565681a2ef63594e",
         "mirrorApproved": true
       },
       "supportedGameVersions": [
@@ -949,21 +949,21 @@
       "cover": {
         "filename": "bomb-cart.png",
         "contentType": "image/png",
-        "size": 297659,
-        "sha256": "ad5378f49c292f3b13f1717e30fcdc570a4c1436d6bd202f13ee0426493655d4"
+        "size": 197630,
+        "sha256": "7bfdc285ef29b02e932005ad128ba37a6b65fb2eb8927900bc99e471fd4dfac0"
       },
       "version": "v0.1.2",
       "releaseNotes": {
         "version": "v0.1.2",
-        "zh-CN": "官风铸造厂视觉质感重构：改用室内多点聚光灯池、SSAO 接触阴影、深度雾与 ACES 色调映射；重构哑光混凝土、花纹钢板、铁网格与高光油润钢轨的材质反差，融入原版工业排风扇、吊灯、靠墙机柜与地面油污/焦痕贴花，升级炸弹推车与防爆门轮廓并新增动态尘埃、轮轨火花、风扇旋转与工厂推车音效；零玩法与数值改动。",
-        "zh-TW": "官風鑄造廠視覺質感重構：改用室內多點聚光燈池、SSAO 接觸陰影、深度霧與 ACES 色調映射；重構霧面混凝土、花紋鋼板、鐵網格與高光油潤鋼軌的材質反差，融入原版工業排風扇、吊燈、靠牆機櫃與地面油污／焦痕貼花，升級炸彈推車與防爆門輪廓並新增動態塵埃、輪軌火花、風扇旋轉與工廠推車音效；零玩法與數值改動。",
-        "en": "Foundry visual craft overhaul: replaces flat directional fill with indoor SpotLight pools, SSAO contact shadows, depth fog, and ACES tonemapping; adds matte-concrete/treadplate/grate/oiled-rail PBR separation, vanilla PCK industrial props (exhaust fans, bay fixtures, wall-mounted racks), grounded grime & battle scorch decals, upgraded cart & blast door silhouettes, ambient dust motes, rail sparks, and foundry cart audio. Zero gameplay changes."
+        "zh-CN": "官风铸造厂视觉质感重构：改用室内多点聚光灯池、SSAO 接触阴影、深度雾与 ACES 色调映射；重构哑光混凝土、拉丝重钢板、铸铁轨床与高光油润钢轨的材质反差并开启各向异性过滤去网纹，融入原版工业排风扇、吊灯、靠墙机柜与地面油污/焦痕贴花，升级炸弹推车与防爆门轮廓并新增动态尘埃、轮轨火花、风扇旋转与工厂推车音效；零玩法与数值改动。",
+        "zh-TW": "官風鑄造廠視覺質感重構：改用室內多點聚光燈池、SSAO 接觸陰影、深度霧與 ACES 色調映射；重構霧面混凝土、拉絲重鋼板、鑄鐵軌床與高光油潤鋼軌的材質反差並開啟各向異性過濾去網紋，融入原版工業排風扇、吊燈、靠牆機櫃與地面油污／焦痕貼花，升級炸彈推車與防爆門輪廓並新增動態塵埃、輪軌火花、風扇旋轉與工廠推車音效；零玩法與數值改動。",
+        "en": "Foundry visual craft overhaul: replaces flat directional fill with indoor SpotLight pools, SSAO contact shadows, depth fog, and ACES tonemapping; adds matte-concrete/brushed-steel/cast-iron-bed/oiled-rail PBR separation with anisotropic filtering, vanilla PCK industrial props (exhaust fans, bay fixtures, wall-mounted racks), grounded grime & battle scorch decals, upgraded cart & blast door silhouettes, ambient dust motes, rail sparks, and foundry cart audio. Zero gameplay changes."
       },
       "package": {
         "assetId": "1049",
         "filename": "bomb-cart-0.1.2.zip",
-        "size": 274993,
-        "sha256": "7eb2718d37d9f4b4468e5d0098246376a4dec8dac76dcec5fb81b1ae35a46ce5",
+        "size": 274653,
+        "sha256": "029d63b372135401a19ec1f06045d3799fa74f8894d4dcb0725d88c1f5ce8468",
         "mirrorApproved": true
       },
       "supportedGameVersions": [

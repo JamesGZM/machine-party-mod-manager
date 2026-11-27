@@ -122,15 +122,12 @@ const SUIT_COLOR_VALUES := {
 	"purple": Color(0.70, 0.34, 0.98),
 }
 
-const TEX_THREADPLATE := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_threadplate albedo.png"
-const TEX_THREADPLATE_NORMAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_threadplate normal 1024.png"
 const TEX_SHREDDER := "res://minigames/escalator_pit/models/escalator pit art11/escalator pit art11_shredder6.png"
 const TEX_HEAVY_RUST := "res://minigames/junk_platform/models/junk platform visuals2/junk platform visuals2_heavy rust2.png"
 const TEX_RUST_PAINTED := "res://minigames/junk_platform/models/junk platform visuals2/junk platform visuals2_heavy rust painted2.png"
 const TEX_METAL_PLATE := "res://minigames/dvd_roomba/models/dvd roomba visuals1_metal plate1.png"
 const TEX_DARK_METAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_shotgun device metal darkened3.png"
 const TEX_FLOOR := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba floor5.png"
-const TEX_FLOOR_CONCRETE := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_chisel gauntlet floor6.png"
 const TEX_GRATE := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba grate.png"
 const TEX_PIPES := "res://minigames/forklift_certified/models/forklift certified visuals1/forklift certified visuals1_fc pipes2.png"
 const TEX_WALL := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba walls1.png"
@@ -178,7 +175,7 @@ static func load_terminal_font() -> Font:
 	return load_optional("res://fonts/Terminal F4.ttf")
 
 
-static func make_toon_mat(color: Color, roughness: float = 0.48, metallic: float = 0.08, emission: Color = Color.BLACK, emission_energy: float = 0.0, tex_path: String = "", uv_scale: Vector3 = Vector3.ONE, triplanar: bool = true, normal_path: String = "", normal_scale: float = 0.72) -> StandardMaterial3D:
+static func make_toon_mat(color: Color, roughness: float = 0.48, metallic: float = 0.08, emission: Color = Color.BLACK, emission_energy: float = 0.0, tex_path: String = "", uv_scale: Vector3 = Vector3.ONE, triplanar: bool = true, normal_path: String = "", normal_scale: float = 0.72, linear_filter: bool = true) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = color
 	mat.roughness = roughness
@@ -187,7 +184,7 @@ static func make_toon_mat(color: Color, roughness: float = 0.48, metallic: float
 		var tex = load_optional(tex_path)
 		if tex is Texture2D:
 			mat.albedo_texture = tex
-			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC if linear_filter else BaseMaterial3D.TEXTURE_FILTER_NEAREST
 			mat.uv1_triplanar = triplanar
 			mat.uv1_world_triplanar = triplanar
 			mat.uv1_scale = uv_scale
@@ -355,24 +352,24 @@ static func build_stage_and_environment(root: Node3D, cfg) -> Dictionary:
 	deck_box.size = Vector3(stage_width, 0.9, stage_depth)
 	deck.mesh = deck_box
 	deck.material_override = make_toon_mat(
-		Color(0.58, 0.54, 0.50), 0.84, 0.14, Color.BLACK, 0.0,
-		TEX_FLOOR_CONCRETE, Vector3(0.26, 0.26, 0.26), true
+		Color(0.56, 0.52, 0.49), 0.88, 0.06, Color.BLACK, 0.0,
+		TEX_FLOOR, Vector3(0.16, 0.16, 0.16), true, "", 0.72, true
 	)
 	deck.position = Vector3(stage_center_x, -0.45, 0.0)
 	root.add_child(deck)
 
-	# Brushed treadplate launch apron (dispenser entry) & landing apron (pit border)
-	var treadplate_mat := make_toon_mat(
-		Color(0.54, 0.50, 0.46), 0.42, 0.66, Color.BLACK, 0.0,
-		TEX_THREADPLATE, Vector3(0.55, 0.55, 0.55), true, TEX_THREADPLATE_NORMAL, 0.90
+	# Heavy brushed steel launch apron (dispenser entry) & landing apron (pit border) — clean matte steel, zero mesh moire
+	var apron_steel_mat := make_toon_mat(
+		Color(0.46, 0.44, 0.42), 0.48, 0.62, Color.BLACK, 0.0,
+		TEX_METAL_PLATE, Vector3(0.18, 0.18, 0.18), true, "", 0.72, true
 	)
 	var launch_apron := MeshInstance3D.new()
 	launch_apron.name = "LaunchApron"
 	var la_box := BoxMesh.new()
-	la_box.size = Vector3(4.8, 0.016, stage_depth - 0.16)
+	la_box.size = Vector3(3.6, 0.016, stage_depth - 0.16)
 	launch_apron.mesh = la_box
-	launch_apron.material_override = treadplate_mat
-	launch_apron.position = Vector3(right_x - 2.4, 0.003, 0.0)
+	launch_apron.material_override = apron_steel_mat
+	launch_apron.position = Vector3(right_x - 1.8, 0.003, 0.0)
 	root.add_child(launch_apron)
 
 	var landing_apron := MeshInstance3D.new()
@@ -380,18 +377,9 @@ static func build_stage_and_environment(root: Node3D, cfg) -> Dictionary:
 	var lnd_box := BoxMesh.new()
 	lnd_box.size = Vector3(1.55, 0.016, stage_depth - 0.16)
 	landing_apron.mesh = lnd_box
-	landing_apron.material_override = treadplate_mat
+	landing_apron.material_override = apron_steel_mat
 	landing_apron.position = Vector3(left_x + 1.52, 0.003, 0.0)
 	root.add_child(landing_apron)
-
-	var start_apron := MeshInstance3D.new()
-	start_apron.name = "StartingApron"
-	var sta_box := BoxMesh.new()
-	sta_box.size = Vector3(1.35, 0.014, stage_depth - 0.24)
-	start_apron.mesh = sta_box
-	start_apron.material_override = treadplate_mat
-	start_apron.position = Vector3(cfg.player_spawn_x, 0.002, 0.0)
-	root.add_child(start_apron)
 
 	# Grounded oil/grime & scorch decals along stage deck, dispenser mouth & shredder lip
 	var stain_tex := load_optional(TEX_DECAL_STAIN) as Texture2D
@@ -413,25 +401,25 @@ static func build_stage_and_environment(root: Node3D, cfg) -> Dictionary:
 		var carr: Array = sc_spec as Array
 		_add_floor_decal(root, scorch_tex, carr[0] as Vector3, carr[1] as Vector3, Color(0.14, 0.11, 0.09, 0.48), float(carr[2]))
 
-	# Mechanical seam lines & floor cracks
-	var seam_mat := make_toon_mat(Color(0.24, 0.22, 0.22), 0.72, 0.45, Color.BLACK, 0.0, TEX_DARK_METAL, Vector3(0.3, 0.3, 0.3))
-	for i in range(9):
-		var sx: float = left_x + 1.1 + float(i) * (stage_width - 1.5) / 8.0
+	# Structural steel expansion plates spaced cleanly across the poured concrete runway
+	var seam_mat := make_toon_mat(Color(0.28, 0.26, 0.26), 0.62, 0.55, Color.BLACK, 0.0, TEX_DARK_METAL, Vector3(0.24, 0.24, 0.24), true, "", 0.72, true)
+	for i in range(1, 5):
+		var sx: float = lerpf(left_x + 2.4, right_x - 3.6, float(i) / 5.0)
 		var seam := MeshInstance3D.new()
 		var seam_mesh := BoxMesh.new()
-		seam_mesh.size = Vector3(0.10, 0.02, stage_depth - 0.5)
+		seam_mesh.size = Vector3(0.14, 0.014, stage_depth - 0.4)
 		seam.mesh = seam_mesh
 		seam.material_override = seam_mat
-		seam.position = Vector3(sx, 0.01, 0.0)
+		seam.position = Vector3(sx, 0.008, 0.0)
 		root.add_child(seam)
 
-	# Starting Line
+	# Starting Line (clean painted industrial safety yellow strip on concrete)
 	var start_line := MeshInstance3D.new()
 	start_line.name = "StartingLine"
 	var sl_mesh := BoxMesh.new()
 	sl_mesh.size = Vector3(0.22, 0.024, stage_depth - 0.6)
 	start_line.mesh = sl_mesh
-	start_line.material_override = make_toon_mat(Color(0.95, 0.74, 0.20), 0.42, 0.35, Color(0.92, 0.66, 0.14), 0.24, TEX_GRATE, Vector3(0.5, 0.5, 0.5))
+	start_line.material_override = make_toon_mat(Color(0.94, 0.72, 0.18), 0.68, 0.08, Color(0.88, 0.62, 0.12), 0.16, TEX_FLOOR, Vector3(0.22, 0.22, 0.22), true, "", 0.72, true)
 	start_line.position = Vector3(cfg.player_spawn_x, 0.016, 0.0)
 	root.add_child(start_line)
 	result["starting_line"] = start_line
@@ -462,18 +450,18 @@ static func build_stage_and_environment(root: Node3D, cfg) -> Dictionary:
 		crack.rotation_degrees.y = (c.x * 23.0)
 		root.add_child(crack)
 
-	# Left Hazard Warning Stripes + Pit Lip Grate bordering the shredder pit
+	# Left Hazard Warning Stripes + Cast-Iron Curb bordering the shredder pit
 	var pit_lip_grate := MeshInstance3D.new()
 	pit_lip_grate.name = "PitLipGrate"
 	var plg_m := BoxMesh.new()
 	plg_m.size = Vector3(0.84, 0.022, stage_depth - 0.12)
 	pit_lip_grate.mesh = plg_m
-	pit_lip_grate.material_override = make_toon_mat(Color(0.32, 0.30, 0.30), 0.50, 0.65, Color.BLACK, 0.0, TEX_GRATE, Vector3(0.65, 0.65, 0.65))
+	pit_lip_grate.material_override = make_toon_mat(Color(0.26, 0.24, 0.24), 0.56, 0.62, Color.BLACK, 0.0, TEX_DARK_METAL, Vector3(0.22, 0.22, 0.22), true, "", 0.72, true)
 	pit_lip_grate.position = Vector3(left_x + 0.38, 0.008, 0.0)
 	root.add_child(pit_lip_grate)
 
-	var stripe_yellow := make_toon_mat(Color(0.88, 0.66, 0.12), 0.52, 0.25, Color(0.88, 0.56, 0.08), 0.12, TEX_GRATE, Vector3(0.5, 0.5, 0.5))
-	var stripe_dark := make_toon_mat(Color(0.18, 0.16, 0.19), 0.60, 0.35, Color.BLACK, 0.0, TEX_GRATE, Vector3(0.5, 0.5, 0.5))
+	var stripe_yellow := make_toon_mat(Color(0.88, 0.66, 0.12), 0.64, 0.12, Color(0.88, 0.56, 0.08), 0.10, TEX_METAL_PLATE, Vector3(0.22, 0.22, 0.22), true, "", 0.72, true)
+	var stripe_dark := make_toon_mat(Color(0.18, 0.16, 0.19), 0.66, 0.28, Color.BLACK, 0.0, TEX_METAL_PLATE, Vector3(0.22, 0.22, 0.22), true, "", 0.72, true)
 	for idx in range(14):
 		var sz: float = -stage_depth * 0.5 + 0.3 + float(idx) * (stage_depth / 14.0)
 		var stripe := MeshInstance3D.new()
@@ -495,9 +483,9 @@ static func build_stage_and_environment(root: Node3D, cfg) -> Dictionary:
 
 
 static func _build_guide_rails(root: Node3D, cfg, left_x: float, right_x: float, stage_width: float, stage_center_x: float, stage_depth: float) -> void:
-	var curb_mat := make_toon_mat(Color(0.68, 0.54, 0.34), 0.48, 0.52, Color.BLACK, 0.0, TEX_HEAVY_RUST, Vector3(0.4, 0.4, 0.4))
-	var rail_mat := make_toon_mat(Color(0.62, 0.59, 0.58), 0.42, 0.65, Color.BLACK, 0.0, TEX_METAL_PLATE, Vector3(0.4, 0.4, 0.4))
-	var post_mat := make_toon_mat(Color(0.44, 0.40, 0.39), 0.52, 0.58, Color.BLACK, 0.0, TEX_DARK_METAL, Vector3(0.5, 0.5, 0.5))
+	var curb_mat := make_toon_mat(Color(0.68, 0.54, 0.34), 0.52, 0.48, Color.BLACK, 0.0, TEX_HEAVY_RUST, Vector3(0.28, 0.28, 0.28))
+	var rail_mat := make_toon_mat(Color(0.62, 0.59, 0.58), 0.40, 0.68, Color.BLACK, 0.0, TEX_METAL_PLATE, Vector3(0.28, 0.28, 0.28))
+	var post_mat := make_toon_mat(Color(0.44, 0.40, 0.39), 0.54, 0.56, Color.BLACK, 0.0, TEX_DARK_METAL, Vector3(0.28, 0.28, 0.28))
 
 	for side in [-1.0, 1.0]:
 		var curb := MeshInstance3D.new()
@@ -537,26 +525,26 @@ static func _build_shredder_pit(root: Node3D, result: Dictionary, left_x: float,
 	var slag := MeshInstance3D.new()
 	slag.name = "LavaPool"
 	var slag_box := BoxMesh.new()
-	slag_box.size = Vector3(pit_width, 0.4, stage_depth + 0.8)
+	slag_box.size = Vector3(pit_width - 0.6, 0.28, stage_depth - 0.55)
 	slag.mesh = slag_box
 	slag.material_override = make_toon_mat(
 		Color(0.42, 0.24, 0.12), 0.62, 0.15,
 		Color(0.78, 0.28, 0.05), 0.34,
-		TEX_HEAVY_RUST, Vector3(0.55, 0.55, 0.55)
+		TEX_HEAVY_RUST, Vector3(0.40, 0.40, 0.40)
 	)
-	slag.position = Vector3(pit_center_x, -0.82, 0.0)
+	slag.position = Vector3(pit_center_x, -0.88, 0.0)
 	root.add_child(slag)
 	result["lava_mesh"] = slag
 
 	# Dark rusted retaining walls framing the sunken shredder trench
-	var wall_mat := make_toon_mat(Color(0.20, 0.18, 0.20), 0.68, 0.55, Color.BLACK, 0.0, TEX_HEAVY_RUST, Vector3(0.35, 0.35, 0.35))
+	var wall_mat := make_toon_mat(Color(0.20, 0.18, 0.20), 0.68, 0.55, Color.BLACK, 0.0, TEX_HEAVY_RUST, Vector3(0.30, 0.30, 0.30))
 	for side in [-1.0, 1.0]:
 		var side_wall := MeshInstance3D.new()
 		var swm := BoxMesh.new()
-		swm.size = Vector3(pit_width, 1.25, 0.45)
+		swm.size = Vector3(pit_width + 0.6, 1.60, 0.50)
 		side_wall.mesh = swm
 		side_wall.material_override = wall_mat
-		side_wall.position = Vector3(pit_center_x, -0.35, side * (stage_depth * 0.5 + 0.38))
+		side_wall.position = Vector3(pit_center_x + 0.2, -0.52, side * (stage_depth * 0.5 + 0.38))
 		root.add_child(side_wall)
 
 	var far_wall := MeshInstance3D.new()
@@ -573,7 +561,7 @@ static func _build_shredder_pit(root: Node3D, result: Dictionary, left_x: float,
 	pgf_m.size = Vector3(1.15, 0.12, stage_depth + 0.3)
 	pit_grate_floor.mesh = pgf_m
 	pit_grate_floor.material_override = make_toon_mat(
-		Color(0.38, 0.35, 0.34), 0.50, 0.65, Color.BLACK, 0.0, TEX_GRATE, Vector3(0.75, 0.75, 0.75)
+		Color(0.26, 0.24, 0.24), 0.56, 0.62, Color.BLACK, 0.0, TEX_GRATE, Vector3(0.35, 0.35, 0.35), true, "", 0.72, true
 	)
 	pit_grate_floor.position = Vector3(left_x - 2.65, -0.56, 0.0)
 	root.add_child(pit_grate_floor)
@@ -647,7 +635,7 @@ static func _build_back_wall_and_monitor(root: Node3D, result: Dictionary, _left
 	var back_z: float = -stage_depth * 0.5 - 1.05
 	var wall_mat := make_toon_mat(
 		Color(0.70, 0.66, 0.62), 0.84, 0.10, Color.BLACK, 0.0,
-		TEX_BRICK_WALL, Vector3(0.20, 0.20, 0.20), true, TEX_PLASTER_NORMAL, 0.80
+		TEX_BRICK_WALL, Vector3(0.20, 0.20, 0.20), true, TEX_PLASTER_NORMAL, 0.80, true
 	)
 	var pipe_mat := make_toon_mat(Color(0.56, 0.50, 0.48), 0.46, 0.65, Color.BLACK, 0.0, TEX_PIPES, Vector3(0.4, 0.4, 0.4))
 	var dark_metal_mat := make_toon_mat(Color(0.42, 0.39, 0.38), 0.46, 0.62, Color.BLACK, 0.0, TEX_DARK_METAL, Vector3(0.4, 0.4, 0.4))
@@ -918,8 +906,8 @@ static func _build_back_wall_and_monitor(root: Node3D, result: Dictionary, _left
 
 static func _build_dispenser_gantry(root: Node3D, result: Dictionary, cfg, stage_depth: float) -> void:
 	var gantry_x: float = cfg.roller_spawn_x + 0.2
-	var gantry_mat := make_toon_mat(Color(0.50, 0.46, 0.48), 0.44, 0.7, Color.BLACK, 0.0, TEX_SIDING, Vector3(0.4, 0.4, 0.4))
-	var beam_mat := make_toon_mat(Color(0.58, 0.44, 0.24), 0.42, 0.68, Color.BLACK, 0.0, TEX_HEAVY_RUST, Vector3(0.4, 0.4, 0.4))
+	var gantry_mat := make_toon_mat(Color(0.50, 0.46, 0.48), 0.48, 0.68, Color.BLACK, 0.0, TEX_SIDING, Vector3(0.26, 0.26, 0.26))
+	var beam_mat := make_toon_mat(Color(0.58, 0.44, 0.24), 0.50, 0.64, Color.BLACK, 0.0, TEX_HEAVY_RUST, Vector3(0.26, 0.26, 0.26))
 	for gz in [-stage_depth * 0.5 - 0.15, stage_depth * 0.5 + 0.15]:
 		var pillar := MeshInstance3D.new()
 		var pil_m := BoxMesh.new()
@@ -967,7 +955,7 @@ static func _build_flank_props(root: Node3D, left_x: float, right_x: float, stag
 	var dark_metal_mat := make_toon_mat(Color(0.28, 0.26, 0.26), 0.52, 0.58, Color.BLACK, 0.0, TEX_DARK_METAL, Vector3(0.5, 0.5, 0.5))
 	var screen_mat := make_toon_mat(Color(0.06, 0.14, 0.09), 0.30, 0.10, Color(0.22, 0.48, 0.28), 0.45)
 	var rust_mat := make_toon_mat(Color(0.40, 0.31, 0.24), 0.62, 0.42, Color.BLACK, 0.0, TEX_RUST_PAINTED, Vector3(0.5, 0.5, 0.5))
-	var tread_mat := make_toon_mat(Color(0.46, 0.42, 0.39), 0.46, 0.62, Color.BLACK, 0.0, TEX_THREADPLATE, Vector3(0.5, 0.5, 0.5), true, TEX_THREADPLATE_NORMAL, 0.85)
+	var pier_steel_mat := make_toon_mat(Color(0.36, 0.34, 0.33), 0.58, 0.52, Color.BLACK, 0.0, TEX_DARK_METAL, Vector3(0.22, 0.22, 0.22), true, "", 0.72, true)
 	var pallet_mat := make_toon_mat(Color(0.36, 0.30, 0.25), 0.85, 0.15, Color.BLACK, 0.0, TEX_HEAVY_RUST, Vector3(1.0, 1.0, 1.0))
 
 	# Grounded service aprons on outer left pit flank and outer right dispenser flank
@@ -976,7 +964,7 @@ static func _build_flank_props(root: Node3D, left_x: float, right_x: float, stag
 	var lpm := BoxMesh.new()
 	lpm.size = Vector3(3.2, 0.9, 2.0)
 	left_pier.mesh = lpm
-	left_pier.material_override = tread_mat
+	left_pier.material_override = pier_steel_mat
 	left_pier.position = Vector3(left_x - 3.5, -0.45, -3.75)
 	root.add_child(left_pier)
 
@@ -985,7 +973,7 @@ static func _build_flank_props(root: Node3D, left_x: float, right_x: float, stag
 	var ram := BoxMesh.new()
 	ram.size = Vector3(2.4, 0.9, stage_depth + 0.6)
 	right_apron.mesh = ram
-	right_apron.material_override = tread_mat
+	right_apron.material_override = pier_steel_mat
 	right_apron.position = Vector3(right_x + 0.9, -0.45, 0.0)
 	root.add_child(right_apron)
 
@@ -1409,12 +1397,11 @@ static func _get_roller_assets(roller_type: String, radius: float, length: float
 	var glow_color: Color = Color(1.0, 0.68, 0.10) if is_gold else Color(0.50, 0.82, 1.0)
 	var trim_color: Color = Color(0.32, 0.24, 0.20) if is_gold else Color(0.24, 0.28, 0.34)
 
-	var body_tex := _first_existing_path([TEX_THREADPLATE, TEX_METAL_PLATE] if is_gold else [TEX_SHREDDER, TEX_METAL_PLATE])
-	var body_norm := TEX_THREADPLATE_NORMAL if (is_gold and ResourceLoader.exists(TEX_THREADPLATE_NORMAL)) else ""
+	var body_tex := _first_existing_path([TEX_METAL_PLATE] if is_gold else [TEX_SHREDDER, TEX_METAL_PLATE])
 	var rust_tex := _first_existing_path([TEX_HEAVY_RUST, TEX_METAL_PLATE])
 
 	var cyl := CylinderMesh.new()
-	cyl.radial_segments = 12
+	cyl.radial_segments = 18
 	cyl.rings = 1
 	cyl.top_radius = radius * 0.90
 	cyl.bottom_radius = radius * 0.90
@@ -1428,14 +1415,14 @@ static func _get_roller_assets(roller_type: String, radius: float, length: float
 	am.height = length + 0.75
 
 	var fm := CylinderMesh.new()
-	fm.radial_segments = 12
+	fm.radial_segments = 18
 	fm.rings = 1
 	fm.top_radius = radius + (0.045 if is_gold else 0.035)
 	fm.bottom_radius = fm.top_radius
 	fm.height = 0.24 if is_gold else 0.20
 
 	var rm := CylinderMesh.new()
-	rm.radial_segments = 12
+	rm.radial_segments = 18
 	rm.rings = 1
 	rm.top_radius = radius * 0.94
 	rm.bottom_radius = radius * 0.94
@@ -1453,16 +1440,18 @@ static func _get_roller_assets(roller_type: String, radius: float, length: float
 	var assets := {
 		"trim_color": trim_color,
 		"body_mat": make_toon_mat(
-			Color(1.0, 0.74, 0.22) if is_gold else Color(0.84, 0.90, 0.96),
-			0.22,
-			0.88,
-			Color(0.30, 0.18, 0.02) if is_gold else Color(0.10, 0.18, 0.26), 0.12,
+			Color(0.96, 0.70, 0.22) if is_gold else Color(0.84, 0.90, 0.96),
+			0.36 if is_gold else 0.34,
+			0.78 if is_gold else 0.82,
+			Color(0.28, 0.16, 0.02) if is_gold else Color(0.10, 0.18, 0.26), 0.10,
 			body_tex,
-			Vector3(3.0, 2.0, 1.0),
+			Vector3(1.8, 1.0, 1.0),
 			false,
-			body_norm
+			"",
+			0.72,
+			true
 		),
-		"flange_mat": make_toon_mat(trim_color, 0.52, 0.68, Color.BLACK, 0.0, rust_tex, Vector3(0.6, 0.6, 0.6)),
+		"flange_mat": make_toon_mat(trim_color, 0.54, 0.64, Color.BLACK, 0.0, rust_tex, Vector3(0.35, 0.35, 0.35)),
 		"lug_mat": make_toon_mat(Color(0.24, 0.20, 0.18) if is_gold else Color(0.36, 0.42, 0.48), 0.45, 0.78),
 		"beacon_mat": make_toon_mat(glow_color, 0.25, 0.15, glow_color, 1.05),
 		"drum_mesh": cyl,

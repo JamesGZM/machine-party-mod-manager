@@ -11,7 +11,7 @@ const local = p => fileURLToPath(new URL(p, import.meta.url));
 const bundled = local("../../.agent/mod-dev/tools/Godot.app/Contents/MacOS/Godot");
 const godot = process.env.GODOT_BIN || (existsSync(bundled) ? bundled : "godot");
 
-test("bomb-cart integrates with mpm-core strict 2-team admission gating and team-party scoring/HUD", {
+test("bomb-cart integrates with mpm-core 2-4 team admission gating and team-party scoring/HUD", {
   skip: !!spawnSync(godot, ["--version"]).error && "Godot unavailable"
 }, async t => {
   const project = await mkdtemp(path.join(os.tmpdir(), "bomb-cart-team-"));
@@ -75,7 +75,7 @@ test("bomb-cart integrates with mpm-core strict 2-team admission gating and team
     ].join("\n"),
     "players.gd": [
       "extends Node",
-      "var player_presences: Dictionary = {1: {}, 2: {}, 3: {}, 4: {}}",
+      "var player_presences: Dictionary = {1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {}, 7: {}, 8: {}}",
       ""
     ].join("\n"),
     "decal_manager.gd": "extends Node\n@rpc func clear_rpc(): pass\n",
@@ -83,7 +83,7 @@ test("bomb-cart integrates with mpm-core strict 2-team admission gating and team
     "network.gd": [
       "extends Node",
       "signal on_peer_connected(id)",
-      "var active_backend: Dictionary = {\"self_data\": {}, \"connected_players\": {1: {\"name\": \"A1\"}, 2: {\"name\": \"A2\"}, 3: {\"name\": \"B1\"}, 4: {\"name\": \"B2\"}}}",
+      "var active_backend: Dictionary = {\"self_data\": {}, \"connected_players\": {1: {\"name\": \"A1\"}, 2: {\"name\": \"A2\"}, 3: {\"name\": \"B1\"}, 4: {\"name\": \"B2\"}, 5: {\"name\": \"G1\"}, 6: {\"name\": \"G2\"}, 7: {\"name\": \"Y1\"}, 8: {\"name\": \"Y2\"}}}",
       ""
     ].join("\n"),
     "minigame_stub.gd": [

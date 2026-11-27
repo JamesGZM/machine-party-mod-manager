@@ -37,9 +37,29 @@ func _make_fx_mat() -> StandardMaterial3D:
 	return mat
 
 
+func clear() -> void:
+	_initialized = false
+	_shove_pool.clear()
+	_ram_pool.clear()
+	_steam_pool.clear()
+	_shockwave_pool.clear()
+	_explosion_pool.clear()
+	_all_pools.clear()
+	_shove_cursor = 0
+	_ram_cursor = 0
+	_steam_cursor = 0
+	_shockwave_cursor = 0
+	_explosion_cursor = 0
+
+
 func setup(parent: Node3D) -> void:
-	if _initialized or parent == null:
+	if parent == null:
 		return
+	if _initialized:
+		var still_valid: bool = not _shove_pool.is_empty() and is_instance_valid((_shove_pool[0] as Dictionary).get("node", null))
+		if still_valid:
+			return
+		clear()
 
 	var ring_mesh := TorusMesh.new()
 	ring_mesh.inner_radius = 0.55
@@ -56,11 +76,17 @@ func setup(parent: Node3D) -> void:
 	var spark_mesh := BoxMesh.new()
 	spark_mesh.size = Vector3(0.12, 0.12, 0.48)
 
-	var beam_mesh := CylinderMesh.new()
-	beam_mesh.top_radius = 0.18
-	beam_mesh.bottom_radius = 0.18
-	beam_mesh.height = 1.0
-	beam_mesh.radial_segments = 12
+	var puff_mesh := SphereMesh.new()
+	puff_mesh.radius = 0.42
+	puff_mesh.height = 0.78
+	puff_mesh.radial_segments = 12
+	puff_mesh.rings = 8
+
+	var steam_ring_mesh := TorusMesh.new()
+	steam_ring_mesh.inner_radius = 0.34
+	steam_ring_mesh.outer_radius = 0.56
+	steam_ring_mesh.rings = 20
+	steam_ring_mesh.ring_segments = 6
 
 	var sphere_mesh := SphereMesh.new()
 	sphere_mesh.radius = 0.75
@@ -103,20 +129,71 @@ func setup(parent: Node3D) -> void:
 			"start_scale": 0.7, "end_scale": 2.4, "col": Color.WHITE, "stretch_z": false,
 		})
 
+	var puff_specs: Array = [
+		{"frac": 0.05, "ox": -0.10, "oy": 0.04, "sc": 0.72},
+		{"frac": 0.14, "ox": 0.16, "oy": 0.08, "sc": 0.88},
+		{"frac": 0.23, "ox": -0.18, "oy": 0.12, "sc": 0.98},
+		{"frac": 0.32, "ox": 0.14, "oy": 0.07, "sc": 1.06},
+		{"frac": 0.41, "ox": -0.20, "oy": 0.14, "sc": 1.14},
+		{"frac": 0.50, "ox": 0.18, "oy": 0.10, "sc": 1.18},
+		{"frac": 0.60, "ox": -0.16, "oy": 0.15, "sc": 1.24},
+		{"frac": 0.70, "ox": 0.17, "oy": 0.11, "sc": 1.28},
+		{"frac": 0.80, "ox": -0.14, "oy": 0.14, "sc": 1.34},
+		{"frac": 0.89, "ox": 0.10, "oy": 0.16, "sc": 1.40},
+		{"frac": 0.96, "ox": -0.04, "oy": 0.18, "sc": 1.48},
+	]
+	var ring_fracs: Array = [0.12, 0.34, 0.56, 0.78, 0.92]
 	for _i in range(STEAM_POOL_SIZE):
-		var mat: StandardMaterial3D = _make_fx_mat()
+		var puff_mat: StandardMaterial3D = _make_fx_mat()
+		puff_mat.emission_energy_multiplier = 1.30
+		var ring_mat: StandardMaterial3D = _make_fx_mat()
+		ring_mat.emission_energy_multiplier = 1.95
 		var n := Node3D.new()
 		n.visible = false
-		var mi := MeshInstance3D.new()
-		mi.mesh = beam_mesh
-		mi.rotation.x = PI * 0.5
-		mi.material_override = mat
-		mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		n.add_child(mi)
+		var puffs: Array = []
+		for spec_raw in puff_specs:
+			var spec: Dictionary = spec_raw as Dictionary
+			var pm := MeshInstance3D.new()
+			pm.mesh = puff_mesh
+			pm.material_override = puff_mat
+			pm.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			n.add_child(pm)
+			puffs.append({
+				"mi": pm,
+				"frac": float(spec["frac"]),
+				"ox": float(spec["ox"]),
+				"oy": float(spec["oy"]),
+				"sc": float(spec["sc"]),
+			})
+		var rings: Array = []
+		for r_frac_raw in ring_fracs:
+			var rm := MeshInstance3D.new()
+			rm.mesh = steam_ring_mesh
+			rm.rotation.x = PI * 0.5
+			rm.material_override = ring_mat
+			rm.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			n.add_child(rm)
+			rings.append({"mi": rm, "frac": float(r_frac_raw)})
+		var burst_ring := MeshInstance3D.new()
+		burst_ring.mesh = wide_ring_mesh
+		burst_ring.scale = Vector3(1.0, 0.26, 1.0)
+		burst_ring.material_override = ring_mat
+		burst_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		n.add_child(burst_ring)
+		var burst_cloud := MeshInstance3D.new()
+		burst_cloud.mesh = puff_mesh
+		burst_cloud.material_override = puff_mat
+		burst_cloud.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		n.add_child(burst_cloud)
 		parent.add_child(n)
 		_steam_pool.append({
-			"node": n, "mat": mat, "timer": 0.0, "duration": 0.55,
-			"start_scale": 1.0, "end_scale": 1.0, "col": Color.WHITE, "stretch_z": true,
+			"node": n, "mat": puff_mat, "ring_mat": ring_mat,
+			"puffs": puffs, "rings": rings,
+			"burst_ring": burst_ring, "burst_cloud": burst_cloud,
+			"timer": 0.0, "duration": 0.62, "dist": 6.0,
+			"start_scale": 1.0, "end_scale": 1.0,
+			"col": Color.WHITE, "puff_col": Color(0.95, 0.92, 0.86), "ring_col": Color(1.0, 0.84, 0.50),
+			"stretch_z": false, "is_steam": true,
 		})
 
 	for _i in range(SHOCKWAVE_POOL_SIZE):
@@ -172,6 +249,8 @@ func warmup_in_frustum(cam: Camera3D) -> void:
 			continue
 		var slot: Dictionary = pool[0] as Dictionary
 		var n := slot["node"] as Node3D
+		if n == null or not is_instance_valid(n):
+			continue
 		var mat := slot["mat"] as StandardMaterial3D
 		n.position = warm_pos
 		n.scale = Vector3(0.01, 0.01, 0.01)
@@ -186,6 +265,8 @@ func _activate_slot(pool: Array, cursor: int, pos: Vector3, col: Color, dur: flo
 		return cursor
 	var slot: Dictionary = pool[cursor] as Dictionary
 	var n := slot["node"] as Node3D
+	if n == null or not is_instance_valid(n):
+		return (cursor + 1) % pool.size()
 	var mat := slot["mat"] as StandardMaterial3D
 	n.position = pos
 	n.rotation = Vector3.ZERO
@@ -209,26 +290,83 @@ func spawn_ram_sparks(pos: Vector3, col: Color) -> void:
 	_ram_cursor = _activate_slot(_ram_pool, _ram_cursor, pos + Vector3(0.0, 0.45, 0.0), col, 0.32, 0.65, 2.3)
 
 
+func _update_steam_layout(slot: Dictionary, progress: float) -> void:
+	var dist: float = float(slot.get("dist", 6.0))
+	var fade: float = clampf(1.0 - progress, 0.0, 1.0)
+	var puff_col: Color = slot.get("puff_col", Color(0.95, 0.92, 0.86)) as Color
+	var ring_col: Color = slot.get("ring_col", Color(1.0, 0.84, 0.50)) as Color
+	var puff_mat := slot["mat"] as StandardMaterial3D
+	var ring_mat := slot.get("ring_mat", null) as StandardMaterial3D
+	if puff_mat != null:
+		puff_mat.albedo_color = Color(puff_col.r, puff_col.g, puff_col.b, fade * 0.72)
+		puff_mat.emission = puff_col
+	if ring_mat != null:
+		ring_mat.albedo_color = Color(ring_col.r, ring_col.g, ring_col.b, fade * 0.88)
+		ring_mat.emission = ring_col
+
+	var dist_scale: float = clampf(dist / 7.5, 0.90, 1.48)
+	var puffs: Array = slot.get("puffs", []) as Array
+	for p_raw in puffs:
+		var pd: Dictionary = p_raw as Dictionary
+		var pm := pd["mi"] as MeshInstance3D
+		if pm == null or not is_instance_valid(pm):
+			continue
+		var frac: float = clampf(float(pd["frac"]) + progress * 0.12, 0.03, 1.03)
+		var spread: float = (1.0 + progress * 1.45) * dist_scale
+		pm.position = Vector3(float(pd["ox"]) * spread, float(pd["oy"]) + progress * 0.55, -frac * dist)
+		var s: float = float(pd["sc"]) * lerpf(0.62, 1.48, progress) * dist_scale
+		pm.scale = Vector3(s * 1.14, s * 0.88, s * 1.28)
+
+	var rings: Array = slot.get("rings", []) as Array
+	for r_raw in rings:
+		var rd: Dictionary = r_raw as Dictionary
+		var rm := rd["mi"] as MeshInstance3D
+		if rm == null or not is_instance_valid(rm):
+			continue
+		var r_frac: float = clampf(float(rd["frac"]) + progress * 0.24, 0.08, 1.0)
+		rm.position = Vector3(0.0, progress * 0.18, -r_frac * dist)
+		var rs: float = lerpf(0.52, 1.48, clampf(progress + r_frac * 0.25, 0.0, 1.0))
+		rm.scale = Vector3(rs, rs, rs)
+
+	var burst_ring := slot.get("burst_ring", null) as MeshInstance3D
+	if burst_ring != null and is_instance_valid(burst_ring):
+		burst_ring.position = Vector3(0.0, 0.08, -dist)
+		var brs: float = lerpf(0.75, 2.25, progress)
+		burst_ring.scale = Vector3(brs, 0.28, brs)
+	var burst_cloud := slot.get("burst_cloud", null) as MeshInstance3D
+	if burst_cloud != null and is_instance_valid(burst_cloud):
+		burst_cloud.position = Vector3(0.0, 0.24 + progress * 0.55, -dist)
+		var bcs: float = lerpf(1.15, 2.55, progress)
+		burst_cloud.scale = Vector3(bcs, bcs * 0.78, bcs)
+
+
 func spawn_steam_surge(valve_pos: Vector3, cart_pos: Vector3, col: Color) -> void:
 	if not _initialized or _steam_pool.is_empty():
 		return
 	var slot: Dictionary = _steam_pool[_steam_cursor] as Dictionary
 	_steam_cursor = (_steam_cursor + 1) % _steam_pool.size()
 	var n := slot["node"] as Node3D
-	var mat := slot["mat"] as StandardMaterial3D
-	var a: Vector3 = valve_pos + Vector3(0.0, 0.35, 0.0)
-	var b: Vector3 = cart_pos + Vector3(0.0, 0.35, 0.0)
-	var dist: float = maxf(0.2, a.distance_to(b))
-	n.look_at_from_position((a + b) * 0.5, b, Vector3.UP)
-	n.scale = Vector3(1.2, 1.2, dist)
+	if n == null or not is_instance_valid(n):
+		return
+	var a: Vector3 = valve_pos + Vector3(0.0, 0.52, 0.0)
+	var b: Vector3 = cart_pos + Vector3(0.0, 0.62, 0.0)
+	var dist: float = maxf(0.4, a.distance_to(b))
+	if a.distance_squared_to(b) > 0.001:
+		n.look_at_from_position(a, b, Vector3.UP)
+	else:
+		n.position = a
+		n.rotation = Vector3.ZERO
+	n.scale = Vector3.ONE
 	n.visible = true
-	mat.albedo_color = Color(col.r, col.g, col.b, 0.90)
-	mat.emission = Color(col.r, col.g, col.b, 1.0)
-	slot["timer"] = 0.55
-	slot["duration"] = 0.55
-	slot["start_scale"] = dist
-	slot["end_scale"] = dist
-	slot["col"] = col
+	var puff_col: Color = Color(0.96, 0.94, 0.89, 1.0).lerp(col, 0.10)
+	var ring_col: Color = Color(1.0, 0.84, 0.46, 1.0).lerp(col, 0.24)
+	slot["timer"] = 0.62
+	slot["duration"] = 0.62
+	slot["dist"] = dist
+	slot["col"] = puff_col
+	slot["puff_col"] = puff_col
+	slot["ring_col"] = ring_col
+	_update_steam_layout(slot, 0.08)
 
 
 func spawn_shockwave(cart_pos: Vector3) -> void:
@@ -260,11 +398,17 @@ func tick(delta: float) -> void:
 			t = maxf(0.0, t - delta)
 			slot["timer"] = t
 			var n := slot["node"] as Node3D
+			if n == null or not is_instance_valid(n):
+				slot["timer"] = 0.0
+				continue
 			if t <= 0.0:
 				n.visible = false
 				continue
 			var dur: float = maxf(0.001, float(slot["duration"]))
 			var progress: float = 1.0 - (t / dur)
+			if bool(slot.get("is_steam", false)):
+				_update_steam_layout(slot, progress)
+				continue
 			var col: Color = slot["col"] as Color
 			var mat := slot["mat"] as StandardMaterial3D
 			mat.albedo_color = Color(col.r, col.g, col.b, clampf(1.0 - progress, 0.0, 1.0) * 0.92)

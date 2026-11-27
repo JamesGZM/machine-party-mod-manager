@@ -1,7 +1,7 @@
 extends Node
 
 ## MPML API v2 Entry Point for Bomb Cart (炸彈推車).
-## Uses mpm-core Hub v2 dynamic slot allocation (>= 1000) with strict 2-team team_only admission.
+## Uses mpm-core Hub v2 dynamic slot allocation (>= 1000) with 2-4 team team_only admission.
 
 const MOD_ID := "bomb-cart"
 const REG_RES_DIR := "res://mods_bomb_cart/"
@@ -34,9 +34,9 @@ static func _display_name() -> String:
 
 static func _brief_content() -> String:
 	return _pick_loc(
-		"2-Team 75s rail tug-of-war! Step inside the 2.6m Push Aura to drive the Bomb Cart into the rival Blast Door.\nFlank North/South Steam Valves for a 2.5s Rocket Surge. Beware the 40s Shockwave Pulse & 60s Critical Overload!\n[WASD / Arrows] Move & Push  |  [Space] Shove rivals (no friendly fire) / Power Ram cart / Quick Valve Slam.",
-		"双队 75 秒铁轨拔河战！进入 2.6 米推进光环即可将炸弹推车压向敌方防爆门。\n抢占南北蒸汽阀门触发 2.5 秒火箭助推！注意 40 秒震荡脉冲与 60 秒临界过载！\n[WASD / 方向键] 移动推进  |  [空格] 推搡敌人（友军免伤）/ 强力撞车 / 拍阀增压。",
-		"雙隊 75 秒鐵軌拔河戰！進入 2.6 米推進光環即可將炸彈推車壓向敵方防爆門。\n搶占南北蒸汽閥門觸發 2.5 秒火箭助推！注意 40 秒震盪脈衝與 60 秒臨界過載！\n[WASD / 方向鍵] 移動推進  |  [空白鍵] 推搡敵人（友軍免傷）/ 強力撞車 / 拍閥增壓。"
+		"2-4 Team 75s adaptive rail assault! Step inside the 2.6m Push Aura to drive the Bomb Cart into a rival Blast Door (Straight rail for 2 teams, Y-turntable for 3, Cross-turntable for 4).\nFlank Steam Valves for a 2.5s Rocket Surge. Beware the 40s Shockwave Pulse & 60s Critical Overload!\n[WASD / Arrows] Move & Push  |  [Space] Shove rivals (no friendly fire) / Power Ram cart / Quick Valve Slam.",
+		"2–4 队 75 秒自适应轨道攻防！进入 2.6 米推进光环即可将炸弹推车压向敌方防爆门（2 队直轨拔河、3 队 Y 型转盘、4 队十字转盘）。\n抢占侧翼蒸汽阀门触发 2.5 秒火箭助推！注意 40 秒震荡脉冲与 60 秒临界过载！\n[WASD / 方向键] 移动推进  |  [空格] 推搡敌人（友军免伤）/ 强力撞车 / 拍阀增压。",
+		"2–4 隊 75 秒自適應軌道攻防！進入 2.6 公尺推進光環即可將炸彈推車壓向敵方防爆門（2 隊直軌拔河、3 隊 Y 型轉盤、4 隊十字轉盤）。\n搶佔側翼蒸氣閥門觸發 2.5 秒火箭助推！注意 40 秒震盪脈衝與 60 秒臨界過載！\n[WASD / 方向鍵] 移動推進  |  [空白鍵] 推搡敵人（友軍免傷）/ 強力撞車 / 拍閥增壓。"
 	)
 
 
@@ -97,7 +97,7 @@ func _try_register(loader) -> void:
 		if reg is Dictionary:
 			(reg as Dictionary)[MOD_ID] = REG_RES_DIR + "bomb_cart_game.gd"
 
-	loader.note("%s: initialized via mpm-core Hub v2 (slot=%d, mode=team_only, max_teams=2)" % [MOD_ID, _slot_id])
+	loader.note("%s: initialized via mpm-core Hub v2 (slot=%d, mode=team_only, teams=2..4)" % [MOD_ID, _slot_id])
 
 
 func _register_mod_scripts(loader) -> void:
@@ -164,7 +164,7 @@ func _register_into_hub(loader) -> void:
 		"admission": {
 			"mode_support": "team_only",
 			"min_teams": 2,
-			"max_teams": 2,
+			"max_teams": 4,
 			"min_total_players": 2,
 			"min_players_per_team": 1,
 			"allow_local_couch": false,

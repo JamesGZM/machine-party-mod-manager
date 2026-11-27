@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "revision": "2026-11-25.1-mpml1",
+  "revision": "2026-11-27.1-mpml1",
   "repo": "JamesGZM/machine-party-mod-manager",
   "mods": [
     {
@@ -855,21 +855,21 @@
       "cover": {
         "filename": "core-heist.png",
         "contentType": "image/png",
-        "size": 1443286,
-        "sha256": "1b26a772e5cc62f935fd7a099356b2cd7e197c94d673fe72b4474ad51295c400"
+        "size": 229210,
+        "sha256": "33f5c42e920183e785de76a2994f2d3dca250173b8fb22fe5d9495121880994d"
       },
-      "version": "v0.1.0",
+      "version": "v0.1.1",
       "releaseNotes": {
-        "version": "v0.1.0",
-        "zh-CN": "首发版本：纯组队 2–4 队 75 秒能源抢夺战，含双人电磁共振（1.15x 移速）、回收炉 3 秒磁吸锁与永久锁核、60 秒过载偷家红利与 4 状态协作 AI。",
-        "zh-TW": "首發版本：純組隊 2–4 隊 75 秒能源搶奪戰，含雙人電磁共振（1.15x 移速）、回收爐 3 秒磁吸鎖與永久鎖核、60 秒過載偷家紅利與 4 狀態協作 AI。",
-        "en": "Initial release: team-only 2-4 squad 75s energy heist with 1.15x dual-team Core resonance, 3s vault magnetic locks & permanent Core lock, 60s Overdrive steal bonus, and 4-state co-op AI."
+        "version": "v0.1.1",
+        "zh-CN": "官风重工视觉与 8 人多队升级：新增暖色低饱和重工光照与暗角/色调分离后处理、北墙 3D 荧光绿 CRT 监视器与面向镜头的回收炉记分牌；重做无边框左上角得分与开场 YOU 框标、底部零圆角共振条，并优化 4v4 / 2v2v2v2 能源池与出生点间距。",
+        "zh-TW": "官風重工視覺與 8 人多隊升級：新增暖色低飽和重工光照與暗角／色調分離後處理、北牆 3D 螢光綠 CRT 監視器與面向鏡頭的回收爐記分牌；重做無邊框左上角得分與開場 YOU 框標、底部零圓角共振條，並最佳化 4v4 / 2v2v2v2 能源池與出生點間距。",
+        "en": "Official industrial overhaul & 8-player polish: warm low-saturation lighting with vignette/posterization post-FX, north factory wall 3D phosphor-green CRT monitor & camera-facing vault scoreboards, frameless top-left HUD + opening YOU bracket + 0px CRT resonance bar, and scaled 4v4 / 2v2v2v2 battery pools and spawns."
       },
       "package": {
-        "assetId": "1038",
-        "filename": "core-heist-0.1.0.zip",
-        "size": 153955,
-        "sha256": "86e237bccfe5d829348fde7b2d01fa4f04692518760171f3c9829bd5ff0273a9",
+        "assetId": "1044",
+        "filename": "core-heist-0.1.1.zip",
+        "size": 193181,
+        "sha256": "afb44e56fe676627a33b6acb0ed06e3c70b4dd6213f2cb5c65986725147e6d54",
         "mirrorApproved": true
       },
       "supportedGameVersions": [
@@ -949,21 +949,21 @@
       "cover": {
         "filename": "bomb-cart.png",
         "contentType": "image/png",
-        "size": 1208891,
-        "sha256": "7461368ac3d65c72a432f4ea27d2b5c1aa798f4a94f6a70a09b152f09f4eaf85"
+        "size": 177091,
+        "sha256": "15d32c2d45473e7f7fbe9678dedbf1e52e1a30eeeb1bd135e1aa5a72f3b06030"
       },
-      "version": "v0.1.0",
+      "version": "v0.1.1",
       "releaseNotes": {
-        "version": "v0.1.0",
-        "zh-CN": "首发版本：纯双队 75 秒铁轨拔河战，含 2.6 米推进光环、推搡/强力撞车/拍阀增压、南北蒸汽阀门 2.5 秒火箭助推、40 秒震荡脉冲、60 秒临界过载与 10 秒突然死亡加时。",
-        "zh-TW": "首發版本：純雙隊 75 秒鐵軌拔河戰，含 2.6 公尺推進光環、推搡／強力撞車／拍閥增壓、南北蒸汽閥門 2.5 秒火箭助推、40 秒震盪脈衝、60 秒臨界過載與 10 秒突然死亡加時。",
-        "en": "Initial release: strict 2-team 75s rail tug-of-war with 2.6m Push Aura, Shove / Power Ram / Quick Valve Slam, 2.5s Steam Valve Rocket Surge, 40s Shockwave Pulse, 60s Critical Overload, and 10s Sudden Death overtime."
+        "version": "v0.1.1",
+        "zh-CN": "2–4 队自适应轨道与官风铸造视觉升级：原生解锁 2 队（直轨拔河）、3 队（Y 型中央转盘）与 4 队（十字中央转盘）破门淘汰赛；新增暖色铸造厂光照、后处理着色器、北墙 3D 琥珀 CRT 监视器、底部零圆角工业仪表盘（2 队钢轨条 / 3–4 队防爆门状态条）与开场 YOU 框标。",
+        "zh-TW": "2–4 隊自適應軌道與官風鑄造視覺升級：原生解鎖 2 隊（直軌拔河）、3 隊（Y 型中央轉盤）與 4 隊（十字中央轉盤）破門淘汰賽；新增暖色鑄造廠光照、後處理著色器、北牆 3D 琥珀 CRT 監視器、底部零圓角工業儀表盤（2 隊鋼軌條／3–4 隊防爆門狀態條）與開場 YOU 框標。",
+        "en": "2-4 team adaptive rails & foundry overhaul: unlocks 2-team straight rail, 3-team Y-turntable, and 4-team Cross-turntable Blast Door elimination; adds warm foundry lighting with vignette/posterization post-FX, north-wall 3D amber CRT monitor, bottom-center 0px industrial gauge HUD (rail bar / door status strip), and opening YOU bracket."
       },
       "package": {
-        "assetId": "1039",
-        "filename": "bomb-cart-0.1.0.zip",
-        "size": 155243,
-        "sha256": "219b3308116e99f2c13eb22fc14018f3a8ae579197bc43fadbca672ec6c9b545",
+        "assetId": "1045",
+        "filename": "bomb-cart-0.1.1.zip",
+        "size": 244120,
+        "sha256": "584c2ceb772f4f63215a6e38ca79f0138a4b2dd4bbfefdc1ea02949acc63c994",
         "mirrorApproved": true
       },
       "supportedGameVersions": [
@@ -1008,14 +1008,14 @@
         "en": "Bomb Cart"
       },
       "summary": {
-        "zh-CN": "纯双队 75 秒铁轨拔河对抗：抢占蒸汽阀门火箭助推，把炸弹推车撞进敌方防爆门！",
-        "zh-TW": "純雙隊 75 秒鐵軌拔河對抗：搶占蒸汽閥門火箭助推，把炸彈推車撞進敵方防爆門！",
-        "en": "Strict 2-team 75s rail tug-of-war: capture Steam Valves for Rocket Surge and ram the Bomb Cart into the rival Blast Door!"
+        "zh-CN": "2–4 队 75 秒自适应轨道攻防：直轨拔河或转盘分轨破门淘汰，抢占蒸汽阀火箭助推！",
+        "zh-TW": "2–4 隊 75 秒自適應軌道攻防：直軌拔河或轉盤分軌破門淘汰，搶佔蒸氣閥火箭助推！",
+        "en": "2-4 team 75s adaptive rail assault: straight rail tug-of-war or Y/Cross turntable door-breach elimination with Steam Valve Rocket Surge!"
       },
       "detail": {
-        "zh-CN": "基于 mpm-core 与组队派对（team-party）的纯双队小游戏（严格限 2 队，需开启组队模式且仅限联机）：进入 2.6 米推进光环将炸弹推车压向敌方防爆门（触门即胜），空格可推搡敌人（友军免伤）、强力撞车或拍阀增压。抢占南北蒸汽阀门可触发 2.5 秒火箭助推与推车震波；第 40 秒起推车定期释放 3.2 米震荡脉冲，第 60 秒进入双阀齐开的临界过载，平局则进入 10 秒突然死亡加时。",
-        "zh-TW": "基於 mpm-core 與組隊派對（team-party）的純雙隊小遊戲（嚴格限 2 隊，需開啟組隊模式且僅限連線）：進入 2.6 公尺推進光環將炸彈推車壓向敵方防爆門（觸門即勝），空白鍵可推搡敵人（友軍免傷）、強力撞車或拍閥增壓。搶占南北蒸汽閥門可觸發 2.5 秒火箭助推與推車震波；第 40 秒起推車定期釋放 3.2 公尺震盪脈衝，第 60 秒進入雙閥齊開的臨界過載，平手則進入 10 秒突然死亡加時。",
-        "en": "Strict 2-team minigame built on mpm-core & Team Party (2 teams only, online only): step inside the 2.6m Push Aura to drive the Bomb Cart into the enemy Blast Door for an instant KO. Press Space to Shove rivals (zero friendly fire), Power Ram the cart, or Quick-Slam an active Steam Valve for a 2.5s Rocket Surge. At 40s, the cart emits periodic 3.2m Shockwave Pulses; at 60s, Critical Overload activates both flanks simultaneously, with a 10s Sudden Death overtime on ties."
+        "zh-CN": "基于 mpm-core 与组队派对（team-party）的纯组队小游戏（2–4 队，需开启组队模式且仅限联机）：自动按队伍数切换 2 队东西直轨、3 队 Y 型中央转盘或 4 队十字中央转盘场地。进入 2.6 米推进光环可将炸弹推车压向敌方防爆门（2 队触门即胜，3–4 队破门淘汰对手并重置回转盘直至最后幸存队胜出），空格可推搡敌人（友军免伤）、强力撞车或拍阀触发 2.5 秒火箭助推；第 40 秒起定期释放 3.2 米震荡脉冲，第 60 秒进入全阀齐开的临界过载，平局则进入 10 秒突然死亡加时。",
+        "zh-TW": "基於 mpm-core 與組隊派對（team-party）的純組隊小遊戲（2–4 隊，需開啟組隊模式且僅限連線）：自動依隊伍數切換 2 隊東西直軌、3 隊 Y 型中央轉盤或 4 隊十字中央轉盤場地。進入 2.6 公尺推進光環可將炸彈推車壓向敵方防爆門（2 隊觸門即勝，3–4 隊破門淘汰對手並重置回轉盤直至最後倖存隊勝出），空白鍵可推搡敵人（友軍免傷）、強力撞車或拍閥觸發 2.5 秒火箭助推；第 40 秒起定期釋放 3.2 公尺震盪脈衝，第 60 秒進入全閥齊開的臨界過載，平手則進入 10 秒突然死亡加時。",
+        "en": "Team-only minigame built on mpm-core & Team Party (2-4 teams, online only): adapts automatically to a 2-team straight steel rail, 3-team Y-turntable, or 4-team Cross-turntable arena. Step inside the 2.6m Push Aura to drive the Bomb Cart into a rival Blast Door (instant KO in 2-team, door-breach elimination & turntable reset in 3-4 team until the last intact squad wins). Press Space to Shove rivals (zero friendly fire), Power Ram the cart, or Quick-Slam active Steam Valves for a 2.5s Rocket Surge. At 40s, periodic 3.2m Shockwave Pulses begin; at 60s, Critical Overload activates all valves simultaneously, with 10s Sudden Death overtime on ties."
       },
       "aliases": [
         "bomb-cart",

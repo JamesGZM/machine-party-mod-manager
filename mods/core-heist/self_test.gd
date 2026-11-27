@@ -21,39 +21,120 @@ func stage_screenshot_action(stage: Node3D) -> void:
 	stage._prep_remaining = 0.0
 	stage._elapsed_time = 48.0
 	stage._time_remaining = 27.0
-	stage._team_scores = {1: 4, 2: 3, 3: 1, 4: 2}
+	if stage._hud != null:
+		stage._hud.set_standalone_hint(false)
 
-	# Place players around center and vaults for an action-packed 4-team cover shot
-	var demo_pos: Array = [
-		Vector3(-1.4, 0.0, 2.2),   # T1 Core carrier
-		Vector3(0.4, 0.0, 2.6),    # T1 Escort (resonance!)
-		Vector3(2.8, 0.0, 1.8),    # T2 Challenger
-		Vector3(4.2, 0.0, -2.5),   # T2 Collector
-		Vector3(-4.8, 0.0, -3.2),  # T3 Raider
-		Vector3(-2.8, 0.0, -1.2),  # T3 Defender
-		Vector3(5.2, 0.0, 4.6),    # T4 Carrier
-		Vector3(3.2, 0.0, 5.2),    # T4 Escort
-	]
+	var is_two_team: bool = stage._team_count <= 2
 	var ids: Array = stage._players.keys()
 	ids.sort()
-	for i in range(ids.size()):
-		var p: Dictionary = stage._players[ids[i]] as Dictionary
-		p["pos"] = demo_pos[i % demo_pos.size()]
-		p["render_pos"] = p["pos"]
-		p["facing"] = Vector2(0.0, 1.0)
-		players_set(stage, ids[i], p)
 
-	var core_idx: int = stage._spawn_battery(int(cfg.CELL_CORE), Vector3(-1.4, 1.92, 2.2))
-	if core_idx >= 0:
-		(stage._batteries[core_idx] as Dictionary)["state"] = int(cfg.BAT_CARRIED)
-		(stage._batteries[core_idx] as Dictionary)["carrier_id"] = int(ids[0])
-		(stage._players[ids[0]] as Dictionary)["carried_battery"] = core_idx
-		(stage._players[ids[0]] as Dictionary)["has_resonance"] = true
-		stage._resonance_pairs = [[int(ids[0]), int(ids[1])]]
+	# Group player IDs by team so resonance always links genuine teammates.
+	var by_team: Dictionary = {}
+	for raw_id in ids:
+		var nid: int = int(raw_id)
+		var tid: int = int((stage._players[nid] as Dictionary).get("team_id", 1))
+		if not by_team.has(tid):
+			by_team[tid] = []
+		(by_team[tid] as Array).append(nid)
 
-	stage._spawn_battery(int(cfg.CELL_GOLD), Vector3(3.4, 0.0, 0.0))
-	stage._spawn_battery(int(cfg.CELL_STANDARD), Vector3(-3.6, 0.0, 0.0))
-	stage._spawn_battery(int(cfg.CELL_STANDARD), Vector3(1.8, 0.0, -2.8))
+	var spots_by_team: Dictionary = {}
+	if is_two_team:
+		# 4v4 mid-action choreography in 24m arena (clear of pylons at +/-5.04, dispenser, conveyors, and vault scoreboards)
+		spots_by_team = {
+			1: [
+				[Vector3(-2.2, 0.0, 4.9), Vector2(-0.7, 0.7)],    # T1 Core carrier (off-center SW of reactor)
+				[Vector3(0.2, 0.0, 4.5), Vector2(-0.9, 0.4)],     # T1 Core escort (resonance beam!)
+				[Vector3(-3.0, 0.0, -2.5), Vector2(0.3, 0.95)],   # T1 West conveyor runner (clear of NW pylon)
+				[Vector3(-8.4, 0.0, 2.2), Vector2(0.4, 0.9)],     # T1 West flank runner heading to Red vault
+			],
+			2: [
+				[Vector3(2.9, 0.0, 3.1), Vector2(-0.9, 0.4)],     # T2 Midfield interceptor (clear of east conveyor)
+				[Vector3(3.1, 0.0, -2.8), Vector2(-0.3, 0.95)],   # T2 East conveyor runner (clear of NE pylon)
+				[Vector3(-0.6, 0.0, -5.6), Vector2(0.7, 0.7)],    # T2 North midfield flanker
+				[Vector3(8.6, 0.0, -1.0), Vector2(-0.2, -0.98)],  # T2 East flank guard well clear of Blue vault
+			],
+		}
+	else:
+		# 2v2v2v2 mid-action choreography in 28m arena (clear of pylons at +/-5.88, dispenser, conveyors, and vault scoreboards)
+		spots_by_team = {
+			1: [
+				[Vector3(-2.9, 0.0, 5.4), Vector2(-0.7, 0.7)],    # T1 Core carrier (cleanly off to SW of reactor)
+				[Vector3(-0.5, 0.0, 4.9), Vector2(-0.85, 0.52)],  # T1 Core escort (resonance beam!)
+			],
+			2: [
+				[Vector3(5.6, 0.0, 2.0), Vector2(-0.7, -0.7)],    # T2 Grabbing east conveyor Gold cell (clear of battery)
+				[Vector3(2.6, 0.0, -5.4), Vector2(0.7, -0.7)],    # T2 North-east runner toward Blue vault
+			],
+			3: [
+				[Vector3(-3.2, 0.0, -2.7), Vector2(0.25, 0.96)],  # T3 Grabbing west conveyor Standard cell (clear of NW pylon)
+				[Vector3(-9.2, 0.0, -2.4), Vector2(0.4, -0.9)],   # T3 West flank guard well clear of Green vault
+			],
+			4: [
+				[Vector3(2.8, 0.0, 6.4), Vector2(-0.85, -0.35)],  # T4 South midfield challenger
+				[Vector3(9.4, 0.0, 4.0), Vector2(0.1, 0.99)],     # T4 East flank runner scoring toward Yellow vault
+			],
+		}
+
+	for raw_tid in stage._active_team_ids:
+		var tid: int = int(raw_tid)
+		var members: Array = by_team.get(tid, []) as Array
+		var spots: Array = spots_by_team.get(tid, []) as Array
+		for m_i in range(members.size()):
+			var nid: int = int(members[m_i])
+			var p: Dictionary = stage._players[nid] as Dictionary
+			if m_i < spots.size():
+				var sp: Array = spots[m_i] as Array
+				var pos3: Vector3 = sp[0] as Vector3
+				p["pos"] = pos3
+				p["render_pos"] = pos3
+				p["facing"] = (sp[1] as Vector2).normalized()
+			players_set(stage, nid, p)
+
+	# Stage Heavy Core + live Teammate Resonance on Team 1
+	var t1_members: Array = by_team.get(int(stage._active_team_ids[0]), []) as Array
+	if t1_members.size() >= 2:
+		var carrier_id: int = int(t1_members[0])
+		var escort_id: int = int(t1_members[1])
+		var cpos: Vector3 = (stage._players[carrier_id] as Dictionary)["pos"] as Vector3
+		var core_idx: int = stage._spawn_battery(int(cfg.CELL_CORE), cpos + Vector3(0.0, 1.92, 0.0))
+		if core_idx >= 0:
+			(stage._batteries[core_idx] as Dictionary)["state"] = int(cfg.BAT_CARRIED)
+			(stage._batteries[core_idx] as Dictionary)["carrier_id"] = carrier_id
+			(stage._players[carrier_id] as Dictionary)["carried_battery"] = core_idx
+			(stage._players[carrier_id] as Dictionary)["has_resonance"] = true
+			stage._resonance_pairs = [[carrier_id, escort_id]]
+
+	# Deposit realistic batteries into each active vault so vaults and 3D scoreboards look alive
+	var deposit_patterns: Dictionary = {
+		1: [int(cfg.CELL_GOLD), int(cfg.CELL_STANDARD), int(cfg.CELL_STANDARD)],
+		2: [int(cfg.CELL_GOLD), int(cfg.CELL_STANDARD)],
+		3: [int(cfg.CELL_STANDARD), int(cfg.CELL_STANDARD)],
+		4: [int(cfg.CELL_GOLD)],
+	}
+	for raw_tid in stage._active_team_ids:
+		var tid: int = int(raw_tid)
+		var pat: Array = deposit_patterns.get(tid, [int(cfg.CELL_STANDARD)]) as Array
+		for raw_ct in pat:
+			var b_dep: int = stage._spawn_battery(int(raw_ct), Vector3.ZERO)
+			if b_dep >= 0:
+				stage._deposit_battery(b_dep, tid)
+				if tid != int(stage._active_team_ids[0]):
+					(stage._batteries[b_dep] as Dictionary)["lock_timer"] = 0.0
+	# Clear transient deposit popups/bursts from staging so vault scoreboards read crisply
+	if stage._fx_pool != null:
+		for raw_pop in stage._fx_pool._popup_pool:
+			var pop: Dictionary = raw_pop as Dictionary
+			pop["timer"] = 0.0
+			var plbl := pop.get("label", null) as Label3D
+			if plbl != null and is_instance_valid(plbl):
+				plbl.visible = false
+	stage._recompute_team_scores()
+
+	# Populate conveyor belts and midfield lanes with active loose batteries
+	stage._spawn_battery(int(cfg.CELL_GOLD), Vector3(3.8, 0.0, 0.0))
+	stage._spawn_battery(int(cfg.CELL_STANDARD), Vector3(-3.8, 0.0, 0.0))
+	stage._spawn_battery(int(cfg.CELL_STANDARD), Vector3(2.4, 0.0, -2.9))
+	stage._spawn_battery(int(cfg.CELL_GOLD), Vector3(-2.5, 0.0, -3.4))
 	stage._animate_visuals(0.016)
 
 
@@ -265,41 +346,106 @@ func run_self_tests(stage: Node3D) -> void:
 		return
 	stage._local_net_id = 1
 
-	# 8. AI 4-state verification & full 75s 4-team (8-player) stress simulation
-	var roster4x2: Array = stage._build_standalone_roster(4, 2)
-	stage._setup_match_local(0, 3003, roster4x2, true)
-	var dt: float = 1.0 / 60.0
-	var saw_core1: bool = false
-	var saw_core2: bool = false
-	var saw_overdrive: bool = false
-	var saw_resonance: bool = false
-	for _frame in range(4800):
-		stage._srv_time += dt
-		if int(stage._phase) == stage.PH_PREP:
-			stage._step_prep(dt)
-		elif int(stage._phase) == stage.PH_LIVE:
-			stage._step_simulation(dt)
-			if stage._core1_dropped:
-				saw_core1 = true
-			if stage._core2_dropped:
-				saw_core2 = true
-			if stage._overdrive_announced:
-				saw_overdrive = true
-			if not stage._resonance_pairs.is_empty():
-				saw_resonance = true
-		else:
-			break
-	if not _expect(stage, stage._phase == stage.PH_ENDED, "4-team 75s stress sim must reach PH_ENDED"):
+	# 8. Battery pool scaling (32 pool + scaled loose caps) & spawn non-overlap checks (2v2, 2v2v2, 2v2v2v2, 4v4)
+	if not _expect(stage, int(cfg.BATTERY_POOL_SIZE) == 32, "BATTERY_POOL_SIZE must be 32"):
 		return
-	if not _expect(stage, saw_core1 and saw_core2 and saw_overdrive, "phase transitions (45s Core1, 60s Overdrive, 62s Core2) must all trigger"):
+	if not _expect(stage, int(cfg.max_loose_standard(4, 8)) > int(cfg.max_loose_standard(2, 4)), "4-team 8p standard loose cap must scale above 2v2"):
 		return
-	if not _expect(stage, stage._batteries.size() == int(cfg.BATTERY_POOL_SIZE), "battery pool size must remain fixed at 24"):
+	if not _expect(stage, int(cfg.max_loose_gold(4, 8)) > int(cfg.max_loose_gold(2, 4)), "4-team 8p gold loose cap must scale above 2v2"):
 		return
-	var total_pts: int = 0
-	for sc in stage._team_scores.values():
-		total_pts += int(sc)
-	if not _expect(stage, total_pts > 0, "4-team AI match must score points"):
+	if not _expect(stage, int(cfg.max_loose_standard(2, 8)) > int(cfg.max_loose_standard(2, 4)), "4v4 8p standard loose cap must scale above 2v2"):
 		return
 
-	print("SELF_TEST_PASSED (4-team stress total_pts=%d, ai_resonance=%s)" % [total_pts, str(saw_resonance)])
+	for layout in [[2, 2], [3, 2], [4, 2], [2, 4]]:
+		var tc: int = int(layout[0])
+		var pt: int = int(layout[1])
+		var r_check: Array = stage._build_standalone_roster(tc, pt)
+		stage._setup_match_local(0, 4000 + tc * 10 + pt, r_check, true)
+		var spawn_pts: Array = []
+		for raw_p in stage._players.values():
+			var sp3: Vector3 = (raw_p as Dictionary)["pos"] as Vector3
+			var sp2 := Vector2(sp3.x, sp3.z)
+			if not _expect(stage, absf(sp2.x) <= stage._arena_half - float(cfg.PLAYER_RADIUS) and absf(sp2.y) <= stage._arena_half - float(cfg.PLAYER_RADIUS), "spawn out of arena bounds for %dx%d" % [tc, pt]):
+				return
+			if not _expect(stage, sp2.length() >= float(cfg.DISPENSER_RADIUS) + float(cfg.PLAYER_RADIUS) - 0.01, "spawn overlaps dispenser for %dx%d" % [tc, pt]):
+				return
+			for raw_pil in stage._pillars:
+				var pil: Vector2 = raw_pil as Vector2
+				if not _expect(stage, sp2.distance_to(pil) >= float(cfg.PILLAR_RADIUS) + float(cfg.PLAYER_RADIUS) - 0.01, "spawn overlaps pillar for %dx%d" % [tc, pt]):
+					return
+			for raw_v in stage._vault_by_team.values():
+				var v2_chk: Vector2 = raw_v as Vector2
+				if not _expect(stage, sp2.distance_to(v2_chk) >= float(cfg.VAULT_RADIUS) + 0.1, "spawn overlaps vault for %dx%d" % [tc, pt]):
+					return
+			for prev_raw in spawn_pts:
+				var prev2: Vector2 = prev_raw as Vector2
+				if not _expect(stage, sp2.distance_to(prev2) >= float(cfg.PLAYER_RADIUS) * 1.9, "spawn overlaps teammate for %dx%d" % [tc, pt]):
+					return
+			spawn_pts.append(sp2)
+
+	# 8b. Non-standalone HUD results panel suppression vs standalone CRT results display
+	var hud_cls = stage._load_script_res(stage.HUD_RES, "hud_ui.gd")
+	if not _expect(stage, hud_cls != null, "hud_ui.gd must load"):
+		return
+	var hosted_hud = hud_cls.new()
+	hosted_hud.build_hud(stage, stage._team, false)
+	hosted_hud.show_results([1, 2], {1: 5, 2: 3}, [1], false)
+	var hosted_visible: bool = hosted_hud._results_panel != null and is_instance_valid(hosted_hud._results_panel) and bool(hosted_hud._results_panel.visible)
+	if not _expect(stage, not hosted_visible, "hosted non-standalone match must NOT show custom results panel"):
+		return
+	if hosted_hud._layer != null and is_instance_valid(hosted_hud._layer):
+		hosted_hud._layer.queue_free()
+
+	var solo_hud = hud_cls.new()
+	solo_hud.build_hud(stage, stage._team, true)
+	solo_hud.show_results([1, 2], {1: 5, 2: 3}, [1], true)
+	var solo_visible: bool = solo_hud._results_panel != null and is_instance_valid(solo_hud._results_panel) and bool(solo_hud._results_panel.visible)
+	if not _expect(stage, solo_visible, "standalone match must show CRT results panel"):
+		return
+	if solo_hud._layer != null and is_instance_valid(solo_hud._layer):
+		solo_hud._layer.queue_free()
+
+	# 9. Full 75s stress simulations for BOTH 4v4 (2x4) and 2v2v2v2 (4x2)
+	var dt: float = 1.0 / 60.0
+	var last_total_pts: int = 0
+	var last_saw_resonance: bool = false
+	for sim_case in [{"label": "4v4", "teams": 2, "per": 4, "seed": 3001}, {"label": "2v2v2v2", "teams": 4, "per": 2, "seed": 3003}]:
+		var lbl: String = str(sim_case["label"])
+		var roster_sim: Array = stage._build_standalone_roster(int(sim_case["teams"]), int(sim_case["per"]))
+		stage._setup_match_local(0, int(sim_case["seed"]), roster_sim, true)
+		var saw_core1: bool = false
+		var saw_core2: bool = false
+		var saw_overdrive: bool = false
+		var saw_resonance: bool = false
+		for _frame in range(4800):
+			stage._srv_time += dt
+			if int(stage._phase) == stage.PH_PREP:
+				stage._step_prep(dt)
+			elif int(stage._phase) == stage.PH_LIVE:
+				stage._step_simulation(dt)
+				if stage._core1_dropped:
+					saw_core1 = true
+				if stage._core2_dropped:
+					saw_core2 = true
+				if stage._overdrive_announced:
+					saw_overdrive = true
+				if not stage._resonance_pairs.is_empty():
+					saw_resonance = true
+			else:
+				break
+		if not _expect(stage, stage._phase == stage.PH_ENDED, "%s 75s stress sim must reach PH_ENDED" % lbl):
+			return
+		if not _expect(stage, saw_core1 and saw_core2 and saw_overdrive, "%s phase transitions (45s Core1, 60s Overdrive, 62s Core2) must all trigger" % lbl):
+			return
+		if not _expect(stage, stage._batteries.size() == int(cfg.BATTERY_POOL_SIZE), "%s battery pool size must remain fixed at 32" % lbl):
+			return
+		var total_pts: int = 0
+		for sc in stage._team_scores.values():
+			total_pts += int(sc)
+		if not _expect(stage, total_pts > 0, "%s AI match must score points" % lbl):
+			return
+		last_total_pts = total_pts
+		last_saw_resonance = last_saw_resonance or saw_resonance
+
+	print("SELF_TEST_PASSED (4v4 + 2v2v2v2 stress total_pts=%d, ai_resonance=%s)" % [last_total_pts, str(last_saw_resonance)])
 	stage.get_tree().quit(0)

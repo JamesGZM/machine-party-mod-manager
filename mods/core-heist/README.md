@@ -19,12 +19,12 @@ Team-only 75-second industrial energy heist minigame built on [`mpm-core`](../mp
 | `mod.json` | Manifest (`id: "core-heist"`, `requires: ["mpm-core", "team-party"]`) |
 | `main.gd` | MPML v2 entry, registers scripts & `team_only` admission into `mpm-core` |
 | `official_minigame.gd` | Official `Minigame` signal/RPC lifecycle wrapper |
-| `config.gd` | Phase timings, 2–4 team arena geometry, battery & combat constants |
-| `arena_meshes.gd` | Procedural 2–4 team arena, vaults, cached battery meshes, player rigs & icon |
+| `config.gd` | Phase timings, 2–4 team arena geometry, 32-cell pool scaling & combat constants |
+| `arena_meshes.gd` | Warm industrial 2–4 team arena, factory back wall + 3D CRT monitor, vaults, player rigs & icon |
 | `fx_pool.gd` | Pre-allocated FX pools via `mpm-core.create_fx_pool()` with warmup |
-| `hud_ui.gd` | Team score bar, timer, phase banners, resonance indicator (EN/zh-CN/zh-TW) |
+| `hud_ui.gd` | Diegetic-first HUD: frameless top-left scores, opening YOU marker, 3-2-1-GO countdown & standalone CRT summary |
 | `ai_controller.gd` | 4-state co-op AI (Escort, Carrier, Defender, Collector/Raider) |
-| `core_heist_game.gd` | Server-authoritative simulation, 20 Hz snapshots & `team_support` scoring |
+| `core_heist_game.gd` | Server-authoritative simulation, Post-FX, 20 Hz snapshots & `team_support` scoring |
 | `team_support.gd` | Synced from `mods/_shared/team-support/team_support.gd` |
 | `self_test.gd` | Tier-0 `--self-test`, `--smoke-test`, and `--capture-screenshot` staging |
 
@@ -33,5 +33,9 @@ Team-only 75-second industrial energy heist minigame built on [`mpm-core`](../mp
 ```bash
 ./mods/core-heist/run_mac.sh --self-test
 ./mods/core-heist/run_mac.sh --smoke-test
+./mods/core-heist/run_mac.sh --screenshot preview_2v2v2v2.png --teams=4 --per-team=2
+./mods/core-heist/run_mac.sh --screenshot preview_4v4.png --teams=2 --per-team=4
 node --test tests/mods/core-heist-team.test.mjs
 ```
+
+Standalone hotkeys: `[F2]` 2v2, `[F3]` 2v2v2, `[F4]` 2v2v2v2, `[F5]` 4v4, `[R]` Restart.

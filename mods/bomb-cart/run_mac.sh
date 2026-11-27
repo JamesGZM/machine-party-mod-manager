@@ -18,22 +18,26 @@ if [ ! -r "${MP_PCK_PATH:-}" ]; then
 fi
 
 MODE="${1:-play}"
+shift || true
 case "$MODE" in
   --self-test)
-    exec "$GODOT" --headless --path "$MOD_DIR" -- --self-test
+    exec "$GODOT" --headless --path "$MOD_DIR" -- --self-test "$@"
     ;;
   --smoke-test)
-    exec "$GODOT" --headless --path "$MOD_DIR" -- --smoke-test
+    exec "$GODOT" --headless --path "$MOD_DIR" -- --smoke-test "$@"
     ;;
   --screenshot)
-    OUT="${2:-$REPO_ROOT/.agent/mod-dev/dist/bomb_cart_preview.png}"
-    exec "$GODOT" --path "$MOD_DIR" --windowed --resolution 1280x720 -- "--capture-screenshot=$OUT"
+    OUT="${1:-$REPO_ROOT/.agent/mod-dev/dist/bomb_cart_preview.png}"
+    if [ $# -gt 0 ]; then
+      shift
+    fi
+    exec "$GODOT" --path "$MOD_DIR" --windowed --resolution 1280x720 -- "--capture-screenshot=$OUT" "$@"
     ;;
   play|"")
-    exec "$GODOT" --path "$MOD_DIR"
+    exec "$GODOT" --path "$MOD_DIR" -- "$@"
     ;;
   *)
-    echo "Usage: $0 [play | --self-test | --smoke-test | --screenshot <output.png>]" >&2
+    echo "Usage: $0 [play | --self-test | --smoke-test | --screenshot <output.png>] [--teams=2..4] [--per-team=1..4]" >&2
     exit 2
     ;;
 esac

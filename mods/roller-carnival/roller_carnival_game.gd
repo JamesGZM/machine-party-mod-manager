@@ -328,7 +328,7 @@ func _build_post_fx_and_audio() -> void:
 			vm.shader = vig_shader
 			vm.set_shader_parameter("radius", 0.90)
 			vm.set_shader_parameter("softness", 0.38)
-			vm.set_shader_parameter("intensity", 1.85)
+			vm.set_shader_parameter("intensity", 1.90)
 			vm.set_shader_parameter("contrast", 1.57)
 			vm.set_shader_parameter("vignette_color", Color(0.0, 0.0, 0.0, 1.0))
 			vig_rect.material = vm

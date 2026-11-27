@@ -313,17 +313,17 @@ static func _build_foundry_backdrop(
 	# Warm furnace accent lights illuminating the rail bay
 	var furnace_l := OmniLight3D.new()
 	furnace_l.name = "FoundryGlowLeft"
-	furnace_l.light_color = Color(1.0, 0.66, 0.30)
-	furnace_l.light_energy = 2.0
-	furnace_l.omni_range = 20.0
+	furnace_l.light_color = Color(1.0, 0.60, 0.24)
+	furnace_l.light_energy = 2.1
+	furnace_l.omni_range = 17.0
 	furnace_l.position = Vector3(-7.0, 5.2, back_z + 3.0)
 	root.add_child(furnace_l)
 
 	var furnace_r := OmniLight3D.new()
 	furnace_r.name = "FoundryGlowRight"
-	furnace_r.light_color = Color(1.0, 0.66, 0.30)
-	furnace_r.light_energy = 2.0
-	furnace_r.omni_range = 20.0
+	furnace_r.light_color = Color(1.0, 0.60, 0.24)
+	furnace_r.light_energy = 2.1
+	furnace_r.omni_range = 17.0
 	furnace_r.position = Vector3(7.0, 5.2, back_z + 3.0)
 	root.add_child(furnace_r)
 

@@ -743,35 +743,37 @@ func _ensure_environment_and_camera(team_count: int = 2) -> void:
 		env_node.name = "WorldEnv"
 		var env := Environment.new()
 		env.background_mode = Environment.BG_COLOR
-		env.background_color = Color(0.045, 0.035, 0.032)
+		env.background_color = Color(0.025, 0.022, 0.022)
 		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-		env.ambient_light_color = Color(0.46, 0.36, 0.29)
-		env.ambient_light_energy = 0.92
+		env.ambient_light_color = Color(0.38, 0.36, 0.40)
+		env.ambient_light_energy = 0.26
 		env.adjustment_enabled = true
-		env.adjustment_brightness = 1.07
-		env.adjustment_contrast = 1.14
-		env.adjustment_saturation = 0.88
+		env.adjustment_brightness = 1.01
+		env.adjustment_contrast = 1.18
+		env.adjustment_saturation = 0.74
 		env.glow_enabled = true
-		env.glow_intensity = 0.42
-		env.glow_bloom = 0.16
+		env.glow_intensity = 0.36
+		env.glow_bloom = 0.12
 		env_node.environment = env
 		add_child(env_node)
 
 	if get_node_or_null("SunLight") == null:
 		var sun := DirectionalLight3D.new()
 		sun.name = "SunLight"
-		sun.rotation_degrees = Vector3(-52.0, 28.0, 0.0)
-		sun.light_color = Color(1.0, 0.89, 0.74)
-		sun.light_energy = 1.30
+		sun.rotation_degrees = Vector3(-50.0, 28.0, 0.0)
+		sun.light_color = Color(0.98, 0.88, 0.74)
+		sun.light_energy = 1.50
 		sun.shadow_enabled = true
+		sun.shadow_bias = 0.05
+		sun.shadow_blur = 1.2
 		add_child(sun)
 
 	if get_node_or_null("FillLight") == null:
 		var fill := DirectionalLight3D.new()
 		fill.name = "FillLight"
 		fill.rotation_degrees = Vector3(-34.0, -148.0, 0.0)
-		fill.light_color = Color(0.95, 0.62, 0.34)
-		fill.light_energy = 0.38
+		fill.light_color = Color(0.56, 0.66, 0.82)
+		fill.light_energy = 0.12
 		add_child(fill)
 
 
@@ -810,10 +812,10 @@ func _setup_post_fx() -> void:
 		vig_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var vm := ShaderMaterial.new()
 		vm.shader = vig_shader as Shader
-		vm.set_shader_parameter("radius", 0.92)
-		vm.set_shader_parameter("softness", 0.42)
-		vm.set_shader_parameter("intensity", 1.70)
-		vm.set_shader_parameter("contrast", 1.50)
+		vm.set_shader_parameter("radius", 0.91)
+		vm.set_shader_parameter("softness", 0.38)
+		vm.set_shader_parameter("intensity", 1.88)
+		vm.set_shader_parameter("contrast", 1.55)
 		vm.set_shader_parameter("vignette_color", Color(0.0, 0.0, 0.0, 1.0))
 		vig_rect.material = vm
 		vig_holder.add_child(vig_rect)

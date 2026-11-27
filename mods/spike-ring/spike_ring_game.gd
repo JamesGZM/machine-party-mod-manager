@@ -78,6 +78,7 @@ var _alive_label: Label3D = null
 var _nozzles: Array = []
 
 var _hud_layer: CanvasLayer = null
+var _shader_layer: CanvasLayer = null
 var _banner_label: Label = null
 var _top_label: Label = null
 var _stats_label: Label = null
@@ -170,6 +171,26 @@ func _load_helpers() -> void:
 
 
 func _ready() -> void:
+	var args: Array = Array(OS.get_cmdline_args()) + Array(OS.get_cmdline_user_args())
+	for raw_a in args:
+		var a: String = str(raw_a)
+		if a == "--self-test":
+			_is_self_test = true
+			_load_helpers()
+			_setup_environment()
+			_setup_hud()
+			_run_self_test()
+			return
+		if a == "--smoke-test":
+			_is_self_test = true
+			_load_helpers()
+			_setup_environment()
+			_setup_hud()
+			_run_smoke_test()
+			return
+		if a.begins_with("--capture-screenshot="):
+			_screenshot_path = a.substr("--capture-screenshot=".length())
+
 	_load_helpers()
 	_setup_environment()
 	_setup_post_fx()
@@ -178,20 +199,6 @@ func _ready() -> void:
 	var vp: Viewport = get_viewport()
 	if vp != null and not vp.size_changed.is_connected(_on_viewport_resized):
 		vp.size_changed.connect(_on_viewport_resized)
-
-	var args: Array = Array(OS.get_cmdline_args()) + Array(OS.get_cmdline_user_args())
-	for raw_a in args:
-		var a: String = str(raw_a)
-		if a == "--self-test":
-			_is_self_test = true
-			_run_self_test()
-			return
-		if a == "--smoke-test":
-			_is_self_test = true
-			_run_smoke_test()
-			return
-		if a.begins_with("--capture-screenshot="):
-			_screenshot_path = a.substr("--capture-screenshot=".length())
 
 	_warmup_fx_pipelines.call_deferred()
 
@@ -210,30 +217,39 @@ func _exit_tree() -> void:
 	_fx_pool = null
 	_ai_ctrl = null
 	_self_test_runner = null
+	_fx_hit_scene = null
+	_fx_dust_scene = null
+	_term_font = null
 
 
 func _setup_environment() -> void:
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
 	# 对齐 Machine Party / Bubble Blitz 深沉工业车间氛围，突出黄铜舞台与机关发光对比。
-	env.background_color = Color(0.05, 0.04, 0.04)
+	env.background_color = Color(0.025, 0.025, 0.03)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.44, 0.35, 0.28)
-	env.ambient_light_energy = 0.88
+	env.ambient_light_color = Color(0.42, 0.44, 0.48)
+	env.ambient_light_energy = 0.28
 	env.adjustment_enabled = true
-	env.adjustment_brightness = 1.05
-	env.adjustment_contrast = 1.12
-	env.adjustment_saturation = 0.90
+	env.adjustment_brightness = 1.01
+	env.adjustment_contrast = 1.18
+	env.adjustment_saturation = 0.72
 	env.glow_enabled = true
-	env.glow_intensity = 0.48
+	env.glow_intensity = 0.34
+	env.glow_bloom = 0.08
 	var world_env := WorldEnvironment.new()
 	world_env.environment = env
 	add_child(world_env)
 
 	var sun := DirectionalLight3D.new()
-	sun.light_color = Color(1.0, 0.92, 0.80)
-	sun.light_energy = 1.15
-	sun.rotation_degrees = Vector3(-56.0, 28.0, 0.0)
+	sun.name = "KeyLight"
+	sun.light_color = Color(0.96, 0.92, 0.85)
+	sun.light_energy = 1.55
+	sun.rotation_degrees = Vector3(-52.0, 26.0, 0.0)
+	sun.shadow_enabled = true
+	sun.shadow_bias = 0.05
+	sun.shadow_blur = 1.2
+	sun.directional_shadow_max_distance = 55.0
 	add_child(sun)
 
 	_camera = Camera3D.new()
@@ -260,16 +276,55 @@ func _setup_environment() -> void:
 
 
 func _setup_post_fx() -> void:
-	var post_shader = M.load_optional("res://shaders/postprocessing.gdshader")
-	if post_shader is Shader:
-		var post_layer := CanvasLayer.new()
-		post_layer.name = "PostProcessing"
-		post_layer.layer = 4
-		add_child(post_layer)
+	if _is_self_test or (_shader_layer != null and is_instance_valid(_shader_layer)) or get_node_or_null("PostFXLayer") != null or M == null:
+		return
+	var post_shader = M.load_optional("res://shaders/posterization.gdshader")
+	var vig_shader = M.load_optional("res://shaders/vignette.gdshader")
+	if not (post_shader is Shader or vig_shader is Shader):
+		return
 
-		var bbc := BackBufferCopy.new()
-		bbc.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
-		post_layer.add_child(bbc)
+	_shader_layer = CanvasLayer.new()
+	_shader_layer.name = "PostFXLayer"
+	_shader_layer.layer = 4
+	add_child(_shader_layer)
+
+	var fx_root := Control.new()
+	fx_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fx_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_shader_layer.add_child(fx_root)
+
+	if vig_shader is Shader:
+		var vig_holder := Control.new()
+		vig_holder.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		vig_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fx_root.add_child(vig_holder)
+
+		var vig_copy := BackBufferCopy.new()
+		vig_copy.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
+		vig_holder.add_child(vig_copy)
+
+		var vig_rect := ColorRect.new()
+		vig_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		vig_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var vm := ShaderMaterial.new()
+		vm.shader = vig_shader as Shader
+		vm.set_shader_parameter("radius", 0.91)
+		vm.set_shader_parameter("softness", 0.38)
+		vm.set_shader_parameter("intensity", 1.85)
+		vm.set_shader_parameter("contrast", 1.55)
+		vm.set_shader_parameter("vignette_color", Color(0.0, 0.0, 0.0, 1.0))
+		vig_rect.material = vm
+		vig_holder.add_child(vig_rect)
+
+	if post_shader is Shader:
+		var post_holder := Control.new()
+		post_holder.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		post_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fx_root.add_child(post_holder)
+
+		var post_copy := BackBufferCopy.new()
+		post_copy.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
+		post_holder.add_child(post_copy)
 
 		var post_rect := ColorRect.new()
 		post_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -281,7 +336,7 @@ func _setup_post_fx() -> void:
 		pm.set_shader_parameter("GREEN_COMPONENT", 8.0)
 		pm.set_shader_parameter("BLUE_COMPONENT", 8.0)
 		post_rect.material = pm
-		post_layer.add_child(post_rect)
+		post_holder.add_child(post_rect)
 
 
 # ---------------------------------------------------------------- 高角度斜俯视 3D 舞台相机

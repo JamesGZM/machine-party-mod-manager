@@ -1,7 +1,7 @@
 {
   "id": "core-heist",
   "name": "Core Heist (能源搶奪戰)",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "authors": ["MachineParty Mod Team"],
   "entry": "main.gd",
   "priority": 0,

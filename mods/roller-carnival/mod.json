@@ -1,7 +1,7 @@
 {
   "id": "roller-carnival",
   "name": "Roller Carnival (滾筒嘉年華)",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "authors": ["MachineParty Mod Team"],
   "entry": "main.gd",
   "priority": 0,

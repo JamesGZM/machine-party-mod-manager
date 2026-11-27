@@ -1,7 +1,7 @@
 {
   "id": "bomb-cart",
   "name": "Bomb Cart (炸彈推車)",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "authors": ["MachineParty Mod Team"],
   "entry": "main.gd",
   "priority": 0,

@@ -287,8 +287,8 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 	for wx in [-half * 0.58, 0.0, half * 0.58]:
 		var wall_light := OmniLight3D.new()
 		wall_light.light_color = Color(1.0, 0.88, 0.68)
-		wall_light.light_energy = 2.6
-		wall_light.omni_range = 14.0
+		wall_light.light_energy = 1.8
+		wall_light.omni_range = 11.5
 		wall_light.omni_attenuation = 1.15
 		wall_light.shadow_enabled = false
 		wall_light.position = Vector3(float(wx), 3.6, back_z + 2.4)

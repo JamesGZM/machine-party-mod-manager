@@ -210,17 +210,17 @@ static func build_stage_and_environment(root: Node3D, cfg) -> Dictionary:
 	# --- World Environment (Machine Party low-saturation warm industrial tone + bloom) ---
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.04, 0.04, 0.05)
+	env.background_color = Color(0.022, 0.022, 0.028)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.36, 0.31, 0.28)
-	env.ambient_light_energy = 0.72
+	env.ambient_light_color = Color(0.36, 0.40, 0.46)
+	env.ambient_light_energy = 0.26
 	env.adjustment_enabled = true
-	env.adjustment_brightness = 1.08
-	env.adjustment_contrast = 1.15
-	env.adjustment_saturation = 0.84
+	env.adjustment_brightness = 1.01
+	env.adjustment_contrast = 1.18
+	env.adjustment_saturation = 0.72
 	env.glow_enabled = true
-	env.glow_intensity = 0.42
-	env.glow_bloom = 0.12
+	env.glow_intensity = 0.36
+	env.glow_bloom = 0.10
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
 	var world_env := WorldEnvironment.new()
 	world_env.name = "WorldEnvironment"
@@ -230,17 +230,19 @@ static func build_stage_and_environment(root: Node3D, cfg) -> Dictionary:
 	# --- Warm Directional Key Light with Crisp Shadows ---
 	var dir_light := DirectionalLight3D.new()
 	dir_light.name = "KeyLight"
-	dir_light.light_color = Color(1.0, 0.89, 0.74)
-	dir_light.light_energy = 1.85
+	dir_light.light_color = Color(0.98, 0.89, 0.76)
+	dir_light.light_energy = 2.05
 	dir_light.shadow_enabled = true
+	dir_light.shadow_bias = 0.05
+	dir_light.shadow_blur = 1.2
 	dir_light.directional_shadow_max_distance = 45.0
-	dir_light.rotation_degrees = Vector3(-52.0, -28.0, 0.0)
+	dir_light.rotation_degrees = Vector3(-50.0, -28.0, 0.0)
 	root.add_child(dir_light)
 
 	var fill_light := DirectionalLight3D.new()
 	fill_light.name = "RimFillLight"
-	fill_light.light_color = Color(0.56, 0.68, 0.92)
-	fill_light.light_energy = 0.45
+	fill_light.light_color = Color(0.54, 0.68, 0.90)
+	fill_light.light_energy = 0.14
 	fill_light.shadow_enabled = false
 	fill_light.rotation_degrees = Vector3(-35.0, 145.0, 0.0)
 	root.add_child(fill_light)
@@ -455,8 +457,8 @@ static func _build_shredder_pit(root: Node3D, result: Dictionary, left_x: float,
 
 	var lava_light := OmniLight3D.new()
 	lava_light.name = "LavaGlowLight"
-	lava_light.light_color = Color(1.0, 0.34, 0.06)
-	lava_light.light_energy = 1.65
+	lava_light.light_color = Color(1.0, 0.32, 0.05)
+	lava_light.light_energy = 2.1
 	lava_light.omni_range = 10.5
 	lava_light.position = Vector3(left_x - 1.8, 1.1, 0.0)
 	root.add_child(lava_light)
@@ -552,16 +554,16 @@ static func _build_back_wall_and_monitor(root: Node3D, result: Dictionary, _left
 	var warm_stage_light := OmniLight3D.new()
 	warm_stage_light.name = "CarnivalStageGlow"
 	warm_stage_light.light_color = Color(1.0, 0.74, 0.38)
-	warm_stage_light.light_energy = 2.4
-	warm_stage_light.omni_range = 18.0
+	warm_stage_light.light_energy = 1.65
+	warm_stage_light.omni_range = 14.0
 	warm_stage_light.position = Vector3(1.5, 4.6, -2.5)
 	root.add_child(warm_stage_light)
 
 	var left_wall_light := OmniLight3D.new()
 	left_wall_light.name = "PitWallLight"
 	left_wall_light.light_color = Color(1.0, 0.64, 0.34)
-	left_wall_light.light_energy = 1.6
-	left_wall_light.omni_range = 14.0
+	left_wall_light.light_energy = 1.2
+	left_wall_light.omni_range = 11.5
 	left_wall_light.position = Vector3(-7.5, 4.2, -2.0)
 	root.add_child(left_wall_light)
 

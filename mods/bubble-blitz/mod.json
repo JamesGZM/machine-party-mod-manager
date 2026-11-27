@@ -1,7 +1,7 @@
 {
   "id": "bubble-blitz",
   "name": "Bubble Blitz (泡泡爆破)",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "authors": ["MachineParty Mod Team"],
   "entry": "main.gd",
   "priority": 0,

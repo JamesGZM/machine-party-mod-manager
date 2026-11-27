@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "revision": "2026-11-27.2-mpml1",
+  "revision": "2026-11-27.3-mpml1",
   "repo": "JamesGZM/machine-party-mod-manager",
   "mods": [
     {
@@ -176,21 +176,21 @@
       "cover": {
         "filename": "roller-carnival.png",
         "contentType": "image/png",
-        "size": 387168,
-        "sha256": "e1c83c2e7f39555a36c2490593e47ca00bc964c3570b7e4b9188c0915d45c49a"
+        "size": 331652,
+        "sha256": "e53c28f513ca1a8af3e6c304cb6ddbe9e927f9bfd65db0fd06c806260c8344be"
       },
-      "version": "v0.1.12",
+      "version": "v0.1.13",
       "releaseNotes": {
-        "version": "v0.1.12",
-        "zh-CN": "同步 mpm-core Hub v2 准入门槛驱动并提升最低依赖至 mpm-core v0.1.1。",
-        "zh-TW": "同步 mpm-core Hub v2 准入門檻驅動並提升最低依賴至 mpm-core v0.1.1。",
-        "en": "Syncs Hub v2 admission gating drivers and bumps minimum mpm-core dependency to v0.1.1."
+        "version": "v0.1.13",
+        "zh-CN": "官风重工光影与视觉润色：降低环境泛光并拉大主光与冷色补光反差，增强左侧熔岩反射光、聚焦舞台照明并收紧四角暗角；零玩法与数值改动。",
+        "zh-TW": "官風重工光影與視覺潤色：降低環境泛光並拉大主光與冷色補光反差，增強左側熔岩反射光、聚焦舞台照明並收緊四角暗角；零玩法與數值改動。",
+        "en": "Industrial lighting & visual polish: lowers ambient fill, sharpens key-to-cool-rim shadow contrast, boosts left lava glow reflection, focuses stage lights, and deepens corner vignette. Zero gameplay changes."
       },
       "package": {
-        "assetId": "1041",
-        "filename": "roller-carnival-0.1.12.zip",
-        "size": 182073,
-        "sha256": "f07f2a99dbd70e3b975473dd3638e1ccfa3539cd715001fa8de1f724a977893d",
+        "assetId": "1051",
+        "filename": "roller-carnival-0.1.13.zip",
+        "size": 182136,
+        "sha256": "1086c7b4f70ff86de281b50acf03bc4cec98bee228ef84462b7cf3424b8bc258",
         "mirrorApproved": true
       },
       "supportedGameVersions": [
@@ -496,21 +496,21 @@
       "cover": {
         "filename": "bubble-blitz.png",
         "contentType": "image/png",
-        "size": 287193,
-        "sha256": "19b1bc1396da255b91ad8d952a1b084eff3c6a28c4fe69ea4bcaf90a862d152c"
+        "size": 205436,
+        "sha256": "c7b66be0362a946b082ed611d10a0571f904ad74a7c48eaaf70428042343be1a"
       },
-      "version": "v0.1.6",
+      "version": "v0.1.7",
       "releaseNotes": {
-        "version": "v0.1.6",
-        "zh-CN": "同步 mpm-core Hub v2 准入门槛驱动。",
-        "zh-TW": "同步 mpm-core Hub v2 准入門檻驅動。",
-        "en": "Syncs Hub v2 admission gating drivers."
+        "version": "v0.1.7",
+        "zh-CN": "官风重工光影与视觉润色：收紧环境泛光与冷色补光比例，强化定向阴影、炸弹火光对比与边缘暗角框景；零玩法与数值改动。",
+        "zh-TW": "官風重工光影與視覺潤色：收緊環境泛光與冷色補光比例，強化定向陰影、炸彈火光對比與邊緣暗角框景；零玩法與數值改動。",
+        "en": "Industrial lighting & visual polish: lowers ambient and cool rim fill to sharpen cast shadows, bomb/flame contrast, and vignette framing. Zero gameplay changes."
       },
       "package": {
-        "assetId": "1042",
-        "filename": "bubble-blitz-0.1.6.zip",
-        "size": 205415,
-        "sha256": "12a42b4baf3f1b56b303cfb5eeb920e5efdbe98e231fa3f6299e247c12b42508",
+        "assetId": "1050",
+        "filename": "bubble-blitz-0.1.7.zip",
+        "size": 205467,
+        "sha256": "8285942ed7378e848ff24acebb88299f1d17cf2b5fc85604e993534c28b2df42",
         "mirrorApproved": true
       },
       "supportedGameVersions": [
@@ -592,21 +592,21 @@
       "cover": {
         "filename": "spike-ring.png",
         "contentType": "image/png",
-        "size": 832988,
-        "sha256": "7bdc73af6c0187543e7a2178129f0531464a9bee8823b7696754fb1a24424174"
+        "size": 198097,
+        "sha256": "fd13b7b9a1a8fc41f42e0e7da00dc250d6bd02994859189b0ba58384008888ad"
       },
-      "version": "v0.1.4",
+      "version": "v0.1.5",
       "releaseNotes": {
-        "version": "v0.1.4",
-        "zh-CN": "同步 mpm-core Hub v2 准入门槛驱动。",
-        "zh-TW": "同步 mpm-core Hub v2 准入門檻驅動。",
-        "en": "Syncs Hub v2 admission gating drivers."
+        "version": "v0.1.5",
+        "zh-CN": "官风重工光影与后处理升级：修复舞台重复平行光导致阴影发平的问题，统一主光源并微调金属地板与环形纹理反照率，新增暗角与 1920px 色调分离双通道后处理；零玩法与数值改动。",
+        "zh-TW": "官風重工光影與後製升級：修正舞台重複平行光導致陰影發平的問題，統一主光源並微調金屬地板與環形材質反照率，新增暗角與 1920px 色調分離雙通道後製；零玩法與數值改動。",
+        "en": "Industrial lighting & post-FX upgrade: fixes the duplicate DirectionalLight3D flattening shadows, unifies KeyLight shadow depth with balanced floor/ring albedos, and upgrades post-FX to vignette + 1920px posterization. Zero gameplay changes."
       },
       "package": {
-        "assetId": "1043",
-        "filename": "spike-ring-0.1.4.zip",
-        "size": 250965,
-        "sha256": "53a6a5809fe8f2f3f1458196562f1e2901b2ddc64af8504379e59b150fb0fb36",
+        "assetId": "1047",
+        "filename": "spike-ring-0.1.5.zip",
+        "size": 252687,
+        "sha256": "6431217762d1cc870ba911022dfd94565c3f6cb456761139a63a8d03c4bc2c82",
         "mirrorApproved": true
       },
       "supportedGameVersions": [
@@ -855,21 +855,21 @@
       "cover": {
         "filename": "core-heist.png",
         "contentType": "image/png",
-        "size": 229210,
-        "sha256": "33f5c42e920183e785de76a2994f2d3dca250173b8fb22fe5d9495121880994d"
+        "size": 226454,
+        "sha256": "7b4ca7200bbff19fde4f784f02a4613f4d0914cb9b06cf3534dcd93acb9eb21f"
       },
-      "version": "v0.1.1",
+      "version": "v0.1.2",
       "releaseNotes": {
-        "version": "v0.1.1",
-        "zh-CN": "官风重工视觉与 8 人多队升级：新增暖色低饱和重工光照与暗角/色调分离后处理、北墙 3D 荧光绿 CRT 监视器与面向镜头的回收炉记分牌；重做无边框左上角得分与开场 YOU 框标、底部零圆角共振条，并优化 4v4 / 2v2v2v2 能源池与出生点间距。",
-        "zh-TW": "官風重工視覺與 8 人多隊升級：新增暖色低飽和重工光照與暗角／色調分離後處理、北牆 3D 螢光綠 CRT 監視器與面向鏡頭的回收爐記分牌；重做無邊框左上角得分與開場 YOU 框標、底部零圓角共振條，並最佳化 4v4 / 2v2v2v2 能源池與出生點間距。",
-        "en": "Official industrial overhaul & 8-player polish: warm low-saturation lighting with vignette/posterization post-FX, north factory wall 3D phosphor-green CRT monitor & camera-facing vault scoreboards, frameless top-left HUD + opening YOU bracket + 0px CRT resonance bar, and scaled 4v4 / 2v2v2v2 battery pools and spawns."
+        "version": "v0.1.2",
+        "zh-CN": "官风重工光影与视觉润色：压低环境光与后墙灯溢光、拉开主光与冷色补光反差并收紧边缘暗角，增强立柱与角色投影层次；零玩法与数值改动。",
+        "zh-TW": "官風重工光影與視覺潤色：壓低環境光與後牆燈溢光、拉開主光與冷色補光反差並收緊邊緣暗角，增強立柱與角色投影層次；零玩法與數值改動。",
+        "en": "Industrial lighting & visual polish: lowers ambient energy and back-wall lamp spill, sharpens key-to-cool-rim shadow contrast, and deepens vignette framing. Zero gameplay changes."
       },
       "package": {
-        "assetId": "1044",
-        "filename": "core-heist-0.1.1.zip",
-        "size": 193181,
-        "sha256": "afb44e56fe676627a33b6acb0ed06e3c70b4dd6213f2cb5c65986725147e6d54",
+        "assetId": "1048",
+        "filename": "core-heist-0.1.2.zip",
+        "size": 193234,
+        "sha256": "87ec4a9849cadaeec5ff1816a522f5cef00682f965c4a2a33004613c6cbf04e3",
         "mirrorApproved": true
       },
       "supportedGameVersions": [
@@ -949,21 +949,21 @@
       "cover": {
         "filename": "bomb-cart.png",
         "contentType": "image/png",
-        "size": 177091,
-        "sha256": "15d32c2d45473e7f7fbe9678dedbf1e52e1a30eeeb1bd135e1aa5a72f3b06030"
+        "size": 193227,
+        "sha256": "ce9fff2255fb681e4417ea43f53958796644d0335385055e4205b3704b7b9f4e"
       },
-      "version": "v0.1.1",
+      "version": "v0.1.2",
       "releaseNotes": {
-        "version": "v0.1.1",
-        "zh-CN": "2–4 队自适应轨道与官风铸造视觉升级：原生解锁 2 队（直轨拔河）、3 队（Y 型中央转盘）与 4 队（十字中央转盘）破门淘汰赛；新增暖色铸造厂光照、后处理着色器、北墙 3D 琥珀 CRT 监视器、底部零圆角工业仪表盘（2 队钢轨条 / 3–4 队防爆门状态条）与开场 YOU 框标。",
-        "zh-TW": "2–4 隊自適應軌道與官風鑄造視覺升級：原生解鎖 2 隊（直軌拔河）、3 隊（Y 型中央轉盤）與 4 隊（十字中央轉盤）破門淘汰賽；新增暖色鑄造廠光照、後處理著色器、北牆 3D 琥珀 CRT 監視器、底部零圓角工業儀表盤（2 隊鋼軌條／3–4 隊防爆門狀態條）與開場 YOU 框標。",
-        "en": "2-4 team adaptive rails & foundry overhaul: unlocks 2-team straight rail, 3-team Y-turntable, and 4-team Cross-turntable Blast Door elimination; adds warm foundry lighting with vignette/posterization post-FX, north-wall 3D amber CRT monitor, bottom-center 0px industrial gauge HUD (rail bar / door status strip), and opening YOU bracket."
+        "version": "v0.1.2",
+        "zh-CN": "官风重工光影与视觉润色：拉大暖色主光与冷钢补光反差、收敛铸造厂左右炉火照明范围并收紧边缘暗角，保留中央铁轨与炸弹推车高亮对比；零玩法与数值改动。",
+        "zh-TW": "官風重工光影與視覺潤色：拉大暖色主光與冷鋼補光反差、收斂鑄造廠左右爐火照明範圍並收緊邊緣暗角，保留中央鐵軌與炸彈推車高亮對比；零玩法與數值改動。",
+        "en": "Industrial lighting & visual polish: widens warm key to cool-steel rim contrast, focuses foundry furnace glow, and deepens corner vignette while keeping central tracks crisp. Zero gameplay changes."
       },
       "package": {
-        "assetId": "1045",
-        "filename": "bomb-cart-0.1.1.zip",
-        "size": 244120,
-        "sha256": "584c2ceb772f4f63215a6e38ca79f0138a4b2dd4bbfefdc1ea02949acc63c994",
+        "assetId": "1049",
+        "filename": "bomb-cart-0.1.2.zip",
+        "size": 244170,
+        "sha256": "a7d52fd60a2109e2bc58d3218f3ca969058d675ecd9f633b38e1e920bf251885",
         "mirrorApproved": true
       },
       "supportedGameVersions": [

@@ -949,21 +949,21 @@
       "cover": {
         "filename": "bomb-cart.png",
         "contentType": "image/png",
-        "size": 193227,
-        "sha256": "ce9fff2255fb681e4417ea43f53958796644d0335385055e4205b3704b7b9f4e"
+        "size": 301120,
+        "sha256": "8ccbdd5e0986489a4651e2c095856db6a7717ebfe2c3780f2a026ff1b81a7e3c"
       },
       "version": "v0.1.2",
       "releaseNotes": {
         "version": "v0.1.2",
-        "zh-CN": "官风重工光影与视觉润色：拉大暖色主光与冷钢补光反差、收敛铸造厂左右炉火照明范围并收紧边缘暗角，保留中央铁轨与炸弹推车高亮对比；零玩法与数值改动。",
-        "zh-TW": "官風重工光影與視覺潤色：拉大暖色主光與冷鋼補光反差、收斂鑄造廠左右爐火照明範圍並收緊邊緣暗角，保留中央鐵軌與炸彈推車高亮對比；零玩法與數值改動。",
-        "en": "Industrial lighting & visual polish: widens warm key to cool-steel rim contrast, focuses foundry furnace glow, and deepens corner vignette while keeping central tracks crisp. Zero gameplay changes."
+        "zh-CN": "官风铸造厂视觉质感重构：改用室内多点聚光灯池、SSAO 接触阴影、深度雾与 ACES 色调映射；重构哑光混凝土、花纹钢板、铁网格与高光油润钢轨的材质反差，融入原版工业排风扇、吊灯、机柜、栈板、废料堆与地面油污/焦痕贴花，升级炸弹推车与防爆门轮廓并新增动态尘埃、轮轨火花、风扇旋转与工厂推车音效；零玩法与数值改动。",
+        "zh-TW": "官風鑄造廠視覺質感重構：改用室內多點聚光燈池、SSAO 接觸陰影、深度霧與 ACES 色調映射；重構霧面混凝土、花紋鋼板、鐵網格與高光油潤鋼軌的材質反差，融入原版工業排風扇、吊燈、機櫃、棧板、廢料堆與地面油污／焦痕貼花，升級炸彈推車與防爆門輪廓並新增動態塵埃、輪軌火花、風扇旋轉與工廠推車音效；零玩法與數值改動。",
+        "en": "Foundry visual craft overhaul: replaces flat directional fill with indoor SpotLight pools, SSAO contact shadows, depth fog, and ACES tonemapping; adds matte-concrete/treadplate/grate/oiled-rail PBR separation, vanilla PCK industrial props (exhaust fans, bay fixtures, racks, pallets, scrap), grounded grime & battle scorch decals, upgraded cart & blast door silhouettes, ambient dust motes, rail sparks, and foundry cart audio. Zero gameplay changes."
       },
       "package": {
         "assetId": "1049",
         "filename": "bomb-cart-0.1.2.zip",
-        "size": 244170,
-        "sha256": "a7d52fd60a2109e2bc58d3218f3ca969058d675ecd9f633b38e1e920bf251885",
+        "size": 277350,
+        "sha256": "47f01f7dfa24b21e156b728e57c592a5f24e8eb7cea24b4d777dca2b9aab859c",
         "mirrorApproved": true
       },
       "supportedGameVersions": [

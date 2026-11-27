@@ -11,7 +11,7 @@ This specification defines two deliverables:
 Earlier first-party minigames (`roller-carnival`, `bubble-blitz`, `spike-ring`, `core-heist`, `bomb-cart`) focus on top-down or side-view arena movement and positioning. The **Signature Series** complements them with **close-up theatrical stages** where every player's hat, glasses, nervous animation, sabotage tell, and execution climax remain in frame together.
 
 ### Series Design Pillars
-- **Close-Up Stage Framing**: Players sit or stand in a tight arc facing the Coach and a central mechanical prop, rather than roaming a large arena.
+- **Close-Up Stage Framing**: Players sit or stand in a tight arc facing the camera and a central industrial apparatus, rather than roaming a large arena.
 - **Ultra-Minimal Controls (2–3 Inputs)**: Learnable within 3 seconds on keyboard or controller without reading a wall of text.
 - **Zero Voice-Chat Dependency & Natural Bot Acting**: Works cleanly in silent lobbies or with `lobby-bots` fills—every bluff, kick, or panic bail is broadcast visually and diegetically.
 - **Dual-Mode Native (`"both"`) & 2–8+ Scaling**: Built for FFA chaos out of the box while supporting native `team-party` alliances and 5–8 player Overtime lobbies.

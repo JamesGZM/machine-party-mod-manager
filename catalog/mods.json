@@ -1092,7 +1092,7 @@
         ],
         "upstreamUninstall": false
       },
-      "verified": false,
+      "verified": true,
       "name": {
         "zh-CN": "高压绩效",
         "zh-TW": "高壓績效",

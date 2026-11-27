@@ -23,8 +23,6 @@ const GLB_WALL_LAMP := "res://models/elevator light2/elevator light2.glb"
 const GLB_FAN := "res://minigames/smoke_break/models/smoke break fan1/smoke break fan1.glb"
 const GLB_LIGHT_FIXTURE := "res://minigames/exploding_collar_race/models/collar race light fixture1/collar race light fixture1.glb"
 const GLB_SERVER_RACK := "res://minigames/intermission_new/models/intermission server rack temp1/intermission server rack temp1.glb"
-const GLB_PALLET := "res://minigames/chisel_gauntlet_multiplayer/models/chisel game pallet1/chisel game pallet1.glb"
-const GLB_DEBRIS := "res://minigames/junk_platform/models/junk platform debris1/junk platform debris1.glb"
 
 const TEAM_SUIT_TEXTURES := {
 	1: "res://modules/character_customization/character_customization_textures/main character painted red.png",

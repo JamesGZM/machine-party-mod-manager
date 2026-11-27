@@ -114,6 +114,8 @@ const TEX_GRATE := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd ro
 const TEX_PIPES := "res://minigames/forklift_certified/models/forklift certified visuals1/forklift certified visuals1_fc pipes2.png"
 const TEX_WALL := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba walls1.png"
 const TEX_SIDING := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba siding.png"
+const TEX_BRICK_WALL := "res://minigames/burn_recycle/models/burn recycle visuals6/burn recycle visuals6_burn and recycle brick wall bake.png"
+const TEX_PLASTER_NORMAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_plaster damaged normal.png"
 const TEX_CRATE_WOOD := "res://minigames/smoke_break/models/smoke break near final3/smoke break near final3_crate3.png"
 const TEX_CRATE_SUPPLY := "res://minigames/forklift_certified/models/forklift certified visuals1/forklift certified visuals1_box2.png"
 const TEX_BARREL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_barrel.jpg"
@@ -124,8 +126,6 @@ const TEX_DECAL_STAIN := "res://textures/decal stain masked1.png"
 
 const GLB_FAN := "res://minigames/smoke_break/models/smoke break fan1/smoke break fan1.glb"
 const GLB_SERVER_RACK := "res://minigames/intermission_new/models/intermission server rack temp1/intermission server rack temp1.glb"
-const GLB_PALLET := "res://minigames/chisel_gauntlet_multiplayer/models/chisel game pallet1/chisel game pallet1.glb"
-const GLB_DEBRIS := "res://minigames/junk_platform/models/junk platform debris1/junk platform debris1.glb"
 const GLB_SYRINGE := "res://minigames/knife_at_the_office/models/kato syringe2/kato syringe2.glb"
 const GLB_SHOE := "res://models/shared/shoe_gib.glb"
 const GLB_SPRING := "res://models/manufacture gun prop spring1/manufacture gun prop spring1.glb"
@@ -751,12 +751,16 @@ static func build_arena(radius: float, _accent_rgb: Array) -> Dictionary:
 
 	# --- 北侧井壁一体式 CRT 倒计时控制台 + 两侧旋转排风扇 ---
 	var crt_z: float = -radius - 0.85
-	var crt_backing := _box(Vector3(14.8, 3.8, 0.92), dark_iron)
-	crt_backing.position = Vector3(0.0, 2.20, crt_z - 0.54)
+	var brick_wall_mat := make_std_mat(
+		Color(0.82, 0.76, 0.70), 0.12, 0.86,
+		Color.BLACK, 0.0, false, TEX_BRICK_WALL, Vector3(0.24, 0.24, 0.24), TEX_PLASTER_NORMAL, 0.82, true
+	)
+	var crt_backing := _box(Vector3(maxf(radius * 2.25, 22.8), 6.2, 0.92), brick_wall_mat)
+	crt_backing.position = Vector3(0.0, 2.70, crt_z - 0.54)
 	root.add_child(crt_backing)
-	for bx in [-7.1, 7.1]:
-		var buttress := _box(Vector3(0.65, 4.1, 0.85), rust)
-		buttress.position = Vector3(float(bx), 2.15, crt_z - 0.25)
+	for bx in [-10.2, -3.7, 3.7, 10.2]:
+		var buttress := _box(Vector3(0.72, 6.4, 0.95), dark_iron)
+		buttress.position = Vector3(float(bx), 2.75, crt_z - 0.24)
 		root.add_child(buttress)
 	_add_floor_decal(root, stain_tex, Vector3(0.0, 0.03, -radius + 0.35), Vector3(3.6, 0.45, 2.4), Color(0.16, 0.13, 0.11, 0.55), 0.12)
 
@@ -764,26 +768,34 @@ static func build_arena(radius: float, _accent_rgb: Array) -> Dictionary:
 		var strut := _box(Vector3(0.36, 2.2, 0.36), dark_iron)
 		strut.position = Vector3(sx, 1.75, crt_z - 0.15)
 		root.add_child(strut)
-	for lx in [-4.8, 4.8]:
+	var lamp_specs: Array = [
+		[-8.0, 3.25],
+		[-5.35, 4.35],
+		[5.35, 4.35],
+		[8.0, 3.25],
+	]
+	for ls_raw in lamp_specs:
+		var ls: Array = ls_raw as Array
 		var fixture := Node3D.new()
-		fixture.position = Vector3(lx, 2.45, crt_z + 0.15)
+		fixture.position = Vector3(float(ls[0]), float(ls[1]), crt_z + 0.08)
 		root.add_child(fixture)
-		var hood := _box(Vector3(1.6, 0.14, 0.32), dark_iron)
-		hood.position = Vector3(0.0, 0.08, 0.0)
+		var hood := _box(Vector3(1.6, 0.14, 0.28), dark_iron)
+		hood.position = Vector3(0.0, 0.11, 0.0)
 		fixture.add_child(hood)
-		var tube := _box(Vector3(1.4, 0.09, 0.14), tube_mat)
+		var tube := _box(Vector3(1.42, 0.12, 0.16), tube_mat)
+		tube.position = Vector3(0.0, -0.01, 0.14)
 		fixture.add_child(tube)
 
 	# 两侧旋转排风扇（smoke break fan1.glb，无 PCK 时回退到四叶工业扇）
 	var fans: Array = []
 	var fan_packed = load_optional(GLB_FAN)
 	var fan_shroud_mesh := CylinderMesh.new()
-	fan_shroud_mesh.top_radius = 1.02
-	fan_shroud_mesh.bottom_radius = 1.08
-	fan_shroud_mesh.height = 0.36
+	fan_shroud_mesh.top_radius = 0.90
+	fan_shroud_mesh.bottom_radius = 0.96
+	fan_shroud_mesh.height = 0.24
 	fan_shroud_mesh.radial_segments = 20
-	for fx in [-5.1, 5.1]:
-		var fpos := Vector3(float(fx), 2.75, crt_z - 0.08)
+	for fx in [-5.35, 5.35]:
+		var fpos := Vector3(float(fx), 2.95, crt_z - 0.02)
 		var shroud := MeshInstance3D.new()
 		shroud.name = "ExhaustFanShroud_%d" % int(signf(float(fx)))
 		shroud.mesh = fan_shroud_mesh
@@ -793,13 +805,14 @@ static func build_arena(radius: float, _accent_rgb: Array) -> Dictionary:
 		root.add_child(shroud)
 
 		var fan_mount := Node3D.new()
-		fan_mount.position = fpos + Vector3(0.0, 0.0, 0.08)
+		fan_mount.position = fpos + Vector3(0.0, 0.0, 0.14)
 		fan_mount.rotation_degrees.y = 180.0
-		fan_mount.scale = Vector3(0.72, 0.72, 0.14)
+		fan_mount.scale = Vector3(0.64, 0.64, 0.64)
 		root.add_child(fan_mount)
 		if fan_packed is PackedScene:
 			var fan_inst: Node3D = (fan_packed as PackedScene).instantiate() as Node3D
 			_strip_prop_collisions(fan_inst)
+			_tint_prop_materials(fan_inst, Color(1.30, 1.24, 1.18), 0.36)
 			var fan_mesh := fan_inst.get_node_or_null("fan_002") as Node3D
 			if fan_mesh != null:
 				fan_mesh.position = Vector3.ZERO
@@ -864,13 +877,13 @@ static func build_arena(radius: float, _accent_rgb: Array) -> Dictionary:
 	fill.shadow_enabled = false
 	root.add_child(fill)
 
-	for fx_l in [-4.8, 4.8]:
+	for fx_l in [-8.2, 0.0, 8.2]:
 		var crt_glow := OmniLight3D.new()
-		crt_glow.name = "ForgeGlowNorth_%d" % int(signf(float(fx_l)))
-		crt_glow.position = Vector3(float(fx_l), 3.6, crt_z + 1.8)
+		crt_glow.name = "ForgeGlowNorth_%d" % int(roundf(float(fx_l)))
+		crt_glow.position = Vector3(float(fx_l), 3.8, crt_z + 2.4)
 		crt_glow.light_color = Color(1.0, 0.74, 0.42)
-		crt_glow.light_energy = 2.6
-		crt_glow.omni_range = 11.0
+		crt_glow.light_energy = 2.8 if is_zero_approx(float(fx_l)) else 4.4
+		crt_glow.omni_range = 18.0
 		crt_glow.shadow_enabled = false
 		root.add_child(crt_glow)
 
@@ -912,14 +925,6 @@ static func build_surroundings(radius: float, _accent_rgb: Array) -> Node3D:
 	var dark_iron := make_std_mat(
 		Color(0.40, 0.38, 0.37), 0.62, 0.46,
 		Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(0.42, 0.42, 0.42)
-	)
-	var rust_fallback := make_std_mat(
-		Color(0.48, 0.36, 0.30), 0.45, 0.65,
-		Color.BLACK, 0.0, false, TEX_RUST_PAINTED, Vector3(0.45, 0.45, 0.45)
-	)
-	var pallet_mat := make_std_mat(
-		Color(0.36, 0.30, 0.25), 0.15, 0.85,
-		Color.BLACK, 0.0, false, TEX_HEAVY_RUST, Vector3(0.75, 0.75, 0.75)
 	)
 
 	var ground := _disc(outer_r, 0.60, pit_floor)
@@ -969,15 +974,11 @@ static func build_surroundings(radius: float, _accent_rgb: Array) -> Node3D:
 		hub.position = Vector3(0.0, 0.14, 0.0)
 		gr_root.add_child(hub)
 
-	# --- 外围坑底甲板原版 .glb 工业道具（严禁进入竞技场内或遮挡前侧视线）---
+	# --- 北墙工业控制机柜（紧贴照明良好的砖墙护壁底座，移除外侧黑边易显悬空的托盘与废铁堆）---
 	var rack_packed = load_optional(GLB_SERVER_RACK)
-	var pallet_packed = load_optional(GLB_PALLET)
-	var debris_packed = load_optional(GLB_DEBRIS)
-
-	# 1) 工业控制机柜（紧贴北侧 CRT 护壁两侧钢柱，深色金属色调与结构融为一体）
 	var rack_specs: Array = [
-		[Vector3(-8.2, deck_y, -(radius + 0.55)), 16.0, 0.43],
-		[Vector3(8.2, deck_y, -(radius + 0.55)), -16.0, 0.43],
+		[Vector3(-9.2, deck_y, -(radius + 0.55)), 18.0, 0.50],
+		[Vector3(9.2, deck_y, -(radius + 0.55)), -18.0, 0.50],
 	]
 	for rs_raw in rack_specs:
 		var rs: Array = rs_raw as Array
@@ -987,7 +988,7 @@ static func build_surroundings(radius: float, _accent_rgb: Array) -> Node3D:
 		if rack_packed is PackedScene:
 			var rinst: Node3D = (rack_packed as PackedScene).instantiate() as Node3D
 			_strip_prop_collisions(rinst)
-			_tint_prop_materials(rinst, Color(0.62, 0.58, 0.54), 0.55)
+			_tint_prop_materials(rinst, Color(0.88, 0.85, 0.82), 0.42)
 			rinst.position = rpos
 			rinst.rotation_degrees.y = ryaw
 			rinst.scale = Vector3(rscale, rscale, rscale)
@@ -997,59 +998,6 @@ static func build_surroundings(radius: float, _accent_rgb: Array) -> Node3D:
 			rbox.position = rpos + Vector3(0.0, 1.18, 0.0)
 			rbox.rotation_degrees.y = ryaw
 			root.add_child(rbox)
-
-	# 2) 风化木/锈铁托盘（Cube_019 原点归零 + 深暗风化木色覆盖）
-	var pallet_specs: Array = [
-		[Vector3(-(radius + 2.05), deck_y + 0.13, -radius * 0.06), 14.0, 0.54],
-		[Vector3(radius + 2.05, deck_y + 0.13, radius * 0.12), -16.0, 0.54],
-	]
-	for ps_raw in pallet_specs:
-		var ps: Array = ps_raw as Array
-		var ppos: Vector3 = ps[0] as Vector3
-		var pyaw: float = float(ps[1])
-		var pscale: float = float(ps[2])
-		if pallet_packed is PackedScene:
-			var pinst: Node3D = (pallet_packed as PackedScene).instantiate() as Node3D
-			_strip_prop_collisions(pinst)
-			var cube := pinst.get_node_or_null("Cube_019") as MeshInstance3D
-			if cube != null:
-				cube.position = Vector3.ZERO
-				cube.rotation = Vector3.ZERO
-				cube.material_override = pallet_mat
-			pinst.position = ppos
-			pinst.rotation_degrees.y = pyaw
-			pinst.scale = Vector3(pscale, pscale, pscale)
-			root.add_child(pinst)
-		else:
-			var pbox := _box(Vector3(1.4, 0.22, 1.1), pallet_mat)
-			pbox.position = ppos
-			pbox.rotation_degrees.y = pyaw
-			root.add_child(pbox)
-
-	# 3) 工业废铁堆（min.y = -0.725，按 0.725 * scale 抬高贴地，深锈暗铁着色并远离北侧机柜）
-	var scrap_placements: Array = [
-		[Vector3(-(radius + 2.15), 0.0, radius * 0.38), 26.0, 0.62],
-		[Vector3(radius + 2.25, 0.0, -radius * 0.22), -34.0, 0.58],
-		[Vector3(-(radius + 2.10), 0.0, -radius * 0.28), 108.0, 0.56],
-	]
-	for sp_raw in scrap_placements:
-		var sp: Array = sp_raw as Array
-		var spos: Vector3 = sp[0] as Vector3
-		var syaw: float = float(sp[1])
-		var sscale: float = float(sp[2])
-		if debris_packed is PackedScene:
-			var dinst: Node3D = (debris_packed as PackedScene).instantiate() as Node3D
-			_strip_prop_collisions(dinst)
-			_tint_prop_materials(dinst, Color(0.60, 0.52, 0.46), 0.68)
-			dinst.position = Vector3(spos.x, deck_y + 0.725 * sscale, spos.z)
-			dinst.rotation_degrees.y = syaw
-			dinst.scale = Vector3(sscale, sscale, sscale)
-			root.add_child(dinst)
-		else:
-			var dbox := _box(Vector3(0.95, 0.75, 0.95), rust_fallback)
-			dbox.position = Vector3(spos.x, deck_y + 0.38, spos.z)
-			dbox.rotation_degrees.y = syaw
-			root.add_child(dbox)
 
 	# 4) 外围坑底焦痕 Decal + 暖色边缘照明（防止外圈铁栅死黑）
 	var scorch_tex := load_optional(TEX_EXPLOSION_MARK) as Texture2D

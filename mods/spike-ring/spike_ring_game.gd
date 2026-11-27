@@ -362,10 +362,10 @@ func _setup_post_fx() -> void:
 		vig_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var vm := ShaderMaterial.new()
 		vm.shader = vig_shader as Shader
-		vm.set_shader_parameter("radius", 0.93)
-		vm.set_shader_parameter("softness", 0.44)
-		vm.set_shader_parameter("intensity", 1.28)
-		vm.set_shader_parameter("contrast", 1.22)
+		vm.set_shader_parameter("radius", 0.95)
+		vm.set_shader_parameter("softness", 0.45)
+		vm.set_shader_parameter("intensity", 1.22)
+		vm.set_shader_parameter("contrast", 1.18)
 		vm.set_shader_parameter("vignette_color", Color(0.0, 0.0, 0.0, 1.0))
 		vig_rect.material = vm
 		vig_holder.add_child(vig_rect)

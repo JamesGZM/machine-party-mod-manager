@@ -289,14 +289,6 @@ static func build_stage_and_environment(root: Node3D, cfg) -> Dictionary:
 	dir_light.rotation_degrees = Vector3(-50.0, -28.0, 0.0)
 	root.add_child(dir_light)
 
-	var fill_light := DirectionalLight3D.new()
-	fill_light.name = "RimFillLight"
-	fill_light.light_color = Color(0.54, 0.68, 0.90)
-	fill_light.light_energy = 0.12
-	fill_light.shadow_enabled = false
-	fill_light.rotation_degrees = Vector3(-35.0, 145.0, 0.0)
-	root.add_child(fill_light)
-
 	# --- Overhead Industrial Stage Light Rig (Light Pools across center, dispenser & pit edge) ---
 	var light_rig := Node3D.new()
 	light_rig.name = "StageLightRig"
@@ -679,7 +671,7 @@ static func _build_back_wall_and_monitor(root: Node3D, result: Dictionary, _left
 	north_ledge.position = Vector3(stage_center_x - 3.6, -0.45, back_z + 0.22)
 	root.add_child(north_ledge)
 
-	for py in [1.95, 3.95]:
+	for py in [1.95, 4.55]:
 		var pipe := MeshInstance3D.new()
 		var pm := CylinderMesh.new()
 		pm.radial_segments = 10
@@ -843,25 +835,25 @@ static func _build_back_wall_and_monitor(root: Node3D, result: Dictionary, _left
 	var warm_stage_light := OmniLight3D.new()
 	warm_stage_light.name = "CarnivalStageGlow"
 	warm_stage_light.light_color = Color(1.0, 0.74, 0.40)
-	warm_stage_light.light_energy = 2.6
+	warm_stage_light.light_energy = 3.1
 	warm_stage_light.omni_range = 16.0
-	warm_stage_light.position = Vector3(1.5, 3.4, back_z + 2.2)
+	warm_stage_light.position = Vector3(1.5, 2.6, back_z + 2.2)
 	root.add_child(warm_stage_light)
 
 	var left_wall_light := OmniLight3D.new()
 	left_wall_light.name = "PitWallLight"
 	left_wall_light.light_color = Color(1.0, 0.66, 0.34)
-	left_wall_light.light_energy = 2.4
+	left_wall_light.light_energy = 2.8
 	left_wall_light.omni_range = 14.0
-	left_wall_light.position = Vector3(-7.0, 3.2, back_z + 2.2)
+	left_wall_light.position = Vector3(-7.0, 2.6, back_z + 2.2)
 	root.add_child(left_wall_light)
 
 	var right_wall_light := OmniLight3D.new()
 	right_wall_light.name = "DispenserWallLight"
 	right_wall_light.light_color = Color(1.0, 0.70, 0.38)
-	right_wall_light.light_energy = 2.5
+	right_wall_light.light_energy = 2.9
 	right_wall_light.omni_range = 14.0
-	right_wall_light.position = Vector3(8.5, 3.2, back_z + 2.2)
+	right_wall_light.position = Vector3(8.5, 2.6, back_z + 2.2)
 	root.add_child(right_wall_light)
 
 	# --- 3D Diegetic Industrial CRT Timer Monitor on Back Wall ---

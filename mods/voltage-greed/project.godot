@@ -1,0 +1,23 @@
+; Standalone Godot 4.5.2 preview project for Voltage Greed (電刑貪婪).
+; Excluded from the release ZIP by scripts/pack-mod.mjs (project.godot).
+; Local preview:
+;   Godot --headless --path mods/voltage-greed -- --self-test
+;   Godot --path mods/voltage-greed --windowed --resolution 1280x720
+
+config_version=5
+
+[application]
+
+config/name="Voltage Greed"
+run/main_scene="res://voltage_greed_scene.tscn"
+config/features=PackedStringArray("4.5", "Forward Plus")
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+
+[rendering]
+
+renderer/rendering_method="forward_plus"
+anti_aliasing/quality/msaa_3d=2

@@ -1,0 +1,9 @@
+{
+  "id": "voltage-greed",
+  "name": "Voltage Greed (電刑貪婪)",
+  "version": "0.1.0",
+  "authors": ["MachineParty Mod Team"],
+  "entry": "main.gd",
+  "priority": 0,
+  "requires": ["mpm-core"]
+}

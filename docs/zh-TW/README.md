@@ -16,6 +16,7 @@
 - [協作對抗小遊戲規劃與准入門檻規範](development/coop-minigame-gating.md)
 - [能源搶奪戰（Core Heist）玩法與開發規格書](development/core-heist-design.md)
 - [重工炸彈推車（Bomb Cart）玩法與開發規格書](development/bomb-cart-design.md)
+- [高壓績效（Voltage Greed）玩法與開發規格書（含原味系列路線圖）](development/voltage-greed-design.md)
 - [發布管理器更新](development/releasing.md)
 - [現行架構](architecture/README.md)及 ADR
 

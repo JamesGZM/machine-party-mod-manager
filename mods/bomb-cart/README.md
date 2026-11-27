@@ -32,9 +32,9 @@ Adaptive 2–4 team (`team_only`, `min_teams: 2`, `max_teams: 4`) 75-second indu
 | `main.gd` | MPML v2 entry, registers scripts & 2–4 team `team_only` admission into `mpm-core` |
 | `official_minigame.gd` | Official `Minigame` signal/RPC lifecycle wrapper |
 | `config.gd` | Balance constants, 4-team colors, adaptive 2/3/4-team rail & valve geometry, oriented cart collision |
-| `bomb_cart_game.gd` | Host-authoritative simulation, 2–4 team turntable physics, door breach elimination, post-FX & 20 Hz snapshots |
-| `arena_meshes.gd` | Warm foundry-railyard arena, 2/3/4-branch rails & turntable hub, 3D diegetic CRT monitor, cart & player rigs |
-| `fx_pool.gd` | Pre-allocated FX pools with frustum warmup |
+| `bomb_cart_game.gd` | Host-authoritative simulation, 2–4 team turntable physics, indoor SpotLight pools/SSAO/depth fog, post-FX, audio & 20 Hz snapshots |
+| `arena_meshes.gd` | Warm foundry-railyard arena (concrete/treadplate/grate/oiled-rail PBR contrast), vanilla PCK props & grime decals, 2/3/4-branch rails & turntable hub, 3D CRT monitor, cart & player rigs |
+| `fx_pool.gd` | Pre-allocated FX, scorch Decal, flash light, ambient mote & wheel-spark pools with frustum warmup |
 | `hud_ui.gd` | Bottom-center 0px-radius industrial gauge (2-team rail bar / 3–4 team door status strip), YOU marker & outlined 3-2-1-GO |
 | `ai_controller.gd` | 2–4 team 3-role flanking/pushing/dodging AI |
 | `team_support.gd` | Synced from `mods/_shared/team-support/team_support.gd` |

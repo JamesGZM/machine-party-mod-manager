@@ -189,8 +189,8 @@
       "package": {
         "assetId": "1051",
         "filename": "roller-carnival-0.1.13.zip",
-        "size": 202651,
-        "sha256": "8c7ea4641a5d96ac60f926d8cc011fe67b951f3c545f98a407394d6adb2adb2b",
+        "size": 202772,
+        "sha256": "d9a4a319518f3818595140279f3292a87aee48c3e69448d19916de3060998dbc",
         "mirrorApproved": true
       },
       "supportedGameVersions": [
@@ -509,8 +509,8 @@
       "package": {
         "assetId": "1050",
         "filename": "bubble-blitz-0.1.7.zip",
-        "size": 224744,
-        "sha256": "333885196ca36253d4913689f6e297bc61f3588fb0bc48a462acf71b806b1841",
+        "size": 226393,
+        "sha256": "51bb481b5657c32dff4685b7cdf0529ab4970552ae38fdc8afa4b1cc8689d032",
         "mirrorApproved": true
       },
       "supportedGameVersions": [
@@ -605,8 +605,8 @@
       "package": {
         "assetId": "1047",
         "filename": "spike-ring-0.1.5.zip",
-        "size": 274737,
-        "sha256": "0cc008f23150b3620eb9b87f03cdd7aad0ae7569e811cc3d7004e7770aa32b89",
+        "size": 275801,
+        "sha256": "5ebf9d08668fdce67cccfb5a53cfb27bf1d7a1f4c361bed3743f6d67876df26e",
         "mirrorApproved": true
       },
       "supportedGameVersions": [
@@ -855,8 +855,8 @@
       "cover": {
         "filename": "core-heist.png",
         "contentType": "image/png",
-        "size": 117388,
-        "sha256": "6fe4b555104b067cae06dd1d6844acf7c85610b0ab726cd17ba49175a39a6bfe"
+        "size": 140093,
+        "sha256": "62da08cbb376b3cadbe2e02bd60921609949e503741b970b7c5cb8c9605d4525"
       },
       "version": "v0.1.2",
       "releaseNotes": {
@@ -868,8 +868,8 @@
       "package": {
         "assetId": "1048",
         "filename": "core-heist-0.1.2.zip",
-        "size": 217014,
-        "sha256": "47b35d57f819e8d3cc0c6a75f3adb57acd7191f280a9b27725ce2ed0e4b01064",
+        "size": 215063,
+        "sha256": "95f464753735f9b8fc2c238b9fe6f2045951651643454a437c91e676546f6893",
         "mirrorApproved": true
       },
       "supportedGameVersions": [
@@ -949,8 +949,8 @@
       "cover": {
         "filename": "bomb-cart.png",
         "contentType": "image/png",
-        "size": 301120,
-        "sha256": "8ccbdd5e0986489a4651e2c095856db6a7717ebfe2c3780f2a026ff1b81a7e3c"
+        "size": 297659,
+        "sha256": "ad5378f49c292f3b13f1717e30fcdc570a4c1436d6bd202f13ee0426493655d4"
       },
       "version": "v0.1.2",
       "releaseNotes": {
@@ -962,8 +962,8 @@
       "package": {
         "assetId": "1049",
         "filename": "bomb-cart-0.1.2.zip",
-        "size": 277350,
-        "sha256": "47f01f7dfa24b21e156b728e57c592a5f24e8eb7cea24b4d777dca2b9aab859c",
+        "size": 275217,
+        "sha256": "8573804cb447493c586bd98abf35fd6f8517f33532e1bef5a86411f03831f869",
         "mirrorApproved": true
       },
       "supportedGameVersions": [

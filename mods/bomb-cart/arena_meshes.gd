@@ -477,15 +477,11 @@ static func _build_foundry_backdrop(
 			hood.material_override = rust_mat
 			root.add_child(hood)
 
-	# 4c. Outer sub-deck periphery & north-flank industrial dressing (racks, weathered pallets, debris grounded on y=-0.26 deck)
+	# 4c. North-flank industrial server racks anchored tight against the lit north brick back wall (zero outer-void props)
 	var rack_packed = load_optional(GLB_SERVER_RACK)
-	var pallet_packed = load_optional(GLB_PALLET)
-	var debris_packed = load_optional(GLB_DEBRIS)
-	var pallet_mat := _make_mat(Color(0.36, 0.30, 0.25), 0.15, 0.85, Color.BLACK, 0.0, false, false, TEX_HEAVY_RUST, Vector3(1.0, 1.0, 1.0))
-
 	var rack_placements: Array = [
-		[Vector3(-half_x - 1.45, -0.26, back_z + 0.85), 18.0],
-		[Vector3(half_x + 1.45, -0.26, back_z + 0.85), -18.0],
+		[Vector3(-half_x * 0.48, -0.26, back_z + 0.24), 10.0],
+		[Vector3(half_x * 0.48, -0.26, back_z + 0.24), -10.0],
 	]
 	for rp_raw in rack_placements:
 		var rp: Array = rp_raw as Array
@@ -496,68 +492,15 @@ static func _build_foundry_backdrop(
 			_strip_prop_collisions(rinst)
 			rinst.position = rpos
 			rinst.rotation_degrees.y = ryaw
-			rinst.scale = Vector3(0.56, 0.56, 0.56)
+			rinst.scale = Vector3(0.48, 0.48, 0.48)
 			root.add_child(rinst)
 		else:
 			var rbox := MeshInstance3D.new()
-			rbox.mesh = _box_mesh(Vector3(0.8, 3.0, 1.2))
-			rbox.position = rpos + Vector3(0.0, 1.5, 0.0)
+			rbox.mesh = _box_mesh(Vector3(0.8, 2.8, 1.0))
+			rbox.position = rpos + Vector3(0.0, 1.4, 0.0)
 			rbox.rotation_degrees.y = ryaw
 			rbox.material_override = dark_metal_mat
 			root.add_child(rbox)
-
-	var pallet_placements: Array = [
-		[Vector3(-half_x - 1.25, -0.08, -half_z * 0.36), 6.0],
-		[Vector3(half_x + 1.25, -0.08, half_z * 0.32), -8.0],
-	]
-	for pp_raw in pallet_placements:
-		var pp: Array = pp_raw as Array
-		var ppos: Vector3 = pp[0] as Vector3
-		var pyaw: float = float(pp[1])
-		if pallet_packed is PackedScene:
-			var pinst: Node3D = (pallet_packed as PackedScene).instantiate() as Node3D
-			_strip_prop_collisions(pinst)
-			var cube := pinst.get_node_or_null("Cube_019") as MeshInstance3D
-			if cube != null:
-				cube.position = Vector3.ZERO
-				cube.rotation = Vector3.ZERO
-				cube.material_override = pallet_mat
-			pinst.position = ppos
-			pinst.rotation_degrees.y = pyaw
-			pinst.scale = Vector3(0.50, 0.50, 0.50)
-			root.add_child(pinst)
-		else:
-			var pbox := MeshInstance3D.new()
-			pbox.mesh = _box_mesh(Vector3(1.5, 0.25, 1.2))
-			pbox.position = ppos
-			pbox.rotation_degrees.y = pyaw
-			pbox.material_override = pallet_mat
-			root.add_child(pbox)
-
-	var debris_placements: Array = [
-		[Vector3(-half_x - 1.55, 0.25, half_z * 0.42), 24.0, 0.70],
-		[Vector3(half_x + 1.50, 0.22, -half_z * 0.36), -35.0, 0.66],
-		[Vector3(-half_x - 1.45, 0.20, -half_z * 0.08), 110.0, 0.64],
-	]
-	for dp_raw in debris_placements:
-		var dp: Array = dp_raw as Array
-		var dpos: Vector3 = dp[0] as Vector3
-		var dyaw: float = float(dp[1])
-		var dscale: float = float(dp[2])
-		if debris_packed is PackedScene:
-			var dinst: Node3D = (debris_packed as PackedScene).instantiate() as Node3D
-			_strip_prop_collisions(dinst)
-			dinst.position = dpos
-			dinst.rotation_degrees.y = dyaw
-			dinst.scale = Vector3(dscale, dscale, dscale)
-			root.add_child(dinst)
-		else:
-			var dbox := MeshInstance3D.new()
-			dbox.mesh = _box_mesh(Vector3(0.9, 0.9, 0.9))
-			dbox.position = dpos
-			dbox.rotation_degrees.y = dyaw
-			dbox.material_override = rust_mat
-			root.add_child(dbox)
 
 	# Warm furnace accent lights washing the north brick wall, pipes, and exhaust fans
 	var furnace_l := OmniLight3D.new()

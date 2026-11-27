@@ -489,7 +489,7 @@ func _ensure_environment_and_camera() -> void:
 	env.background_color = Color(0.018, 0.016, 0.016)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
 	env.ambient_light_color = Color(0.36, 0.38, 0.43)
-	env.ambient_light_energy = 0.40
+	env.ambient_light_energy = 0.50
 	env.adjustment_enabled = true
 	env.adjustment_brightness = 1.02
 	env.adjustment_contrast = 1.09
@@ -504,8 +504,8 @@ func _ensure_environment_and_camera() -> void:
 	env.fog_enabled = true
 	env.fog_mode = Environment.FOG_MODE_DEPTH
 	env.fog_light_color = Color(0.028, 0.025, 0.024)
-	env.fog_depth_begin = 24.0 if _team_count <= 2 else 28.0
-	env.fog_depth_end = 56.0 if _team_count <= 2 else 66.0
+	env.fog_depth_begin = 30.0 if _team_count <= 2 else 36.0
+	env.fog_depth_end = 72.0 if _team_count <= 2 else 82.0
 	env.fog_depth_curve = 1.2
 
 	var old_fill := get_node_or_null("FillLight")
@@ -540,7 +540,7 @@ func _ensure_environment_and_camera() -> void:
 	center_spot.rotation_degrees = Vector3(-84.0, 0.0, 0.0)
 	center_spot.light_color = Color(1.0, 0.90, 0.76)
 	center_spot.light_energy = 12.0 if is_multi else 10.5
-	center_spot.spot_range = 34.0 if is_multi else 26.0
+	center_spot.spot_range = 34.0 if is_multi else 28.0
 	center_spot.spot_angle = 68.0
 	center_spot.spot_angle_attenuation = 0.85
 	center_spot.spot_attenuation = 1.15
@@ -548,11 +548,12 @@ func _ensure_environment_and_camera() -> void:
 	center_spot.shadow_bias = 0.05
 	center_spot.shadow_blur = 1.4
 
-	var flank_x: float = 10.2 if is_multi else 8.2
-	var flank_y: float = 12.6 if is_multi else 10.8
+	var flank_x: float = 10.2 if is_multi else 8.4
+	var flank_y: float = 12.6 if is_multi else 13.5
+	var flank_z: float = 0.4 if is_multi else -1.8
 	var flank_specs: Array = [
-		["WestBaySpot", Vector3(-flank_x, flank_y, 0.4)],
-		["EastBaySpot", Vector3(flank_x, flank_y, 0.4)],
+		["WestBaySpot", Vector3(-flank_x, flank_y, flank_z)],
+		["EastBaySpot", Vector3(flank_x, flank_y, flank_z)],
 	]
 	for f_raw in flank_specs:
 		var f_spec: Array = f_raw as Array
@@ -566,15 +567,16 @@ func _ensure_environment_and_camera() -> void:
 		flank_spot.position = s_pos
 		flank_spot.rotation_degrees = Vector3(-84.0, 0.0, 0.0)
 		flank_spot.light_color = Color(0.96, 0.84, 0.68)
-		flank_spot.light_energy = 9.5 if is_multi else 7.6
-		flank_spot.spot_range = 32.0 if is_multi else 24.0
-		flank_spot.spot_angle = 68.0 if is_multi else 62.0
-		flank_spot.spot_attenuation = 1.20
+		flank_spot.light_energy = 10.0 if is_multi else 9.5
+		flank_spot.spot_range = 34.0
+		flank_spot.spot_angle = 74.0 if is_multi else 82.0
+		flank_spot.spot_attenuation = 1.15
 		flank_spot.shadow_enabled = false
 
+	var ns_z: float = 9.0 if is_multi else 8.4
 	var ns_specs: Array = [
-		["NorthBaySpot", Vector3(0.0, 12.5, -8.8)],
-		["SouthBaySpot", Vector3(0.0, 12.5, 8.8)],
+		["NorthBaySpot", Vector3(0.0, 14.0, -ns_z)],
+		["SouthBaySpot", Vector3(0.0, 13.0, ns_z)],
 	]
 	for ns_raw in ns_specs:
 		var ns_spec: Array = ns_raw as Array
@@ -588,12 +590,12 @@ func _ensure_environment_and_camera() -> void:
 		ns_spot.position = ns_pos
 		ns_spot.rotation_degrees = Vector3(-84.0, 0.0, 0.0)
 		ns_spot.light_color = Color(0.96, 0.84, 0.68)
-		ns_spot.light_energy = 8.5
-		ns_spot.spot_range = 26.0
-		ns_spot.spot_angle = 60.0
-		ns_spot.spot_attenuation = 1.20
+		ns_spot.light_energy = 9.5 if is_multi else 8.5
+		ns_spot.spot_range = 34.0
+		ns_spot.spot_angle = 76.0 if is_multi else 82.0
+		ns_spot.spot_attenuation = 1.15
 		ns_spot.shadow_enabled = false
-		ns_spot.visible = is_multi
+		ns_spot.visible = true
 
 	_setup_post_fx()
 
@@ -631,10 +633,10 @@ func _setup_post_fx() -> void:
 		vig_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var vm := ShaderMaterial.new()
 		vm.shader = vig_shader as Shader
-		vm.set_shader_parameter("radius", 0.94)
-		vm.set_shader_parameter("softness", 0.45)
-		vm.set_shader_parameter("intensity", 1.24)
-		vm.set_shader_parameter("contrast", 1.20)
+		vm.set_shader_parameter("radius", 0.96)
+		vm.set_shader_parameter("softness", 0.48)
+		vm.set_shader_parameter("intensity", 1.12)
+		vm.set_shader_parameter("contrast", 1.12)
 		vm.set_shader_parameter("vignette_color", Color(0.0, 0.0, 0.0, 1.0))
 		vig_rect.material = vm
 		vig_holder.add_child(vig_rect)

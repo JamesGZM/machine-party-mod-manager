@@ -78,6 +78,7 @@ var _alive_label: Label3D = null
 var _nozzles: Array = []
 var _fans: Array = []
 var _world_env: Environment = null
+var _light_rig: Node3D = null
 
 var _hud_layer: CanvasLayer = null
 var _shader_layer: CanvasLayer = null
@@ -210,10 +211,15 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	if _ambience != null and is_instance_valid(_ambience):
+		_ambience.stop()
 	if _fx_pool != null:
 		_fx_pool.clear()
 	if M != null and M.has_method("clear_caches"):
 		M.clear_caches()
+	_ambience = null
+	_world_env = null
+	_light_rig = null
 	_team = null
 	_hazard_director = null
 	_fx_pool = null
@@ -270,6 +276,7 @@ func _setup_environment() -> void:
 	var rig := Node3D.new()
 	rig.name = "FoundryLightRig"
 	add_child(rig)
+	_light_rig = rig
 
 	var center_spot := SpotLight3D.new()
 	center_spot.name = "PitCenterSpot"
@@ -414,6 +421,24 @@ func _frame_arena() -> void:
 	if _world_env != null:
 		_world_env.fog_depth_begin = dist + 6.0
 		_world_env.fog_depth_end = dist + 42.0
+	if _light_rig != null and is_instance_valid(_light_rig):
+		var scale_r: float = maxf(1.0, _arena_radius / 8.5)
+		var energy_r: float = clampf(scale_r, 1.0, 1.35)
+		var c_spot := _light_rig.get_node_or_null("PitCenterSpot") as SpotLight3D
+		if c_spot != null:
+			c_spot.position = Vector3(0.0, 14.5 * scale_r, 0.8)
+			c_spot.spot_range = 32.0 * scale_r
+			c_spot.light_energy = 14.0 * energy_r
+		var w_spot := _light_rig.get_node_or_null("WestRimSpot") as SpotLight3D
+		if w_spot != null:
+			w_spot.position = Vector3(-_arena_radius * 1.08, 12.0 * scale_r, 0.4)
+			w_spot.spot_range = 28.0 * scale_r
+			w_spot.light_energy = 9.2 * energy_r
+		var e_spot := _light_rig.get_node_or_null("EastRimSpot") as SpotLight3D
+		if e_spot != null:
+			e_spot.position = Vector3(_arena_radius * 1.08, 12.0 * scale_r, 0.4)
+			e_spot.spot_range = 28.0 * scale_r
+			e_spot.light_energy = 9.2 * energy_r
 
 
 func _on_viewport_resized() -> void:

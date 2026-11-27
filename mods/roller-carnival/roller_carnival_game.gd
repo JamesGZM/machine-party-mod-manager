@@ -103,8 +103,11 @@ func _load_sibling_script(filename: String):
 
 
 func _exit_tree() -> void:
+	if _ambience_player != null and is_instance_valid(_ambience_player):
+		_ambience_player.stop()
 	if _fx_pool != null:
 		_fx_pool.clear()
+	_ambience_player = null
 	_team = null
 	_fx_pool = null
 	_hud_ui = null

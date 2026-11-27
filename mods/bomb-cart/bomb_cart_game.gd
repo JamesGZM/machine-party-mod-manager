@@ -30,7 +30,6 @@ var _self_test_runner = null
 var _standalone_mode: bool = false
 var _is_self_test: bool = false
 var _screenshot_path: String = ""
-var _poster_width: float = 1920.0
 var _cli_teams: int = 2
 var _cli_per_team: int = 2
 var _is_server_sim: bool = true
@@ -196,8 +195,6 @@ func _ready() -> void:
 			_screenshot_path = arg.substr("--screenshot=".length())
 		elif arg.begins_with("--capture-screenshot="):
 			_screenshot_path = arg.substr("--capture-screenshot=".length())
-		elif arg.begins_with("--poster-width="):
-			_poster_width = maxf(64.0, float(arg.substr("--poster-width=".length())))
 		elif arg.begins_with("--teams="):
 			_cli_teams = clampi(int(arg.substr("--teams=".length())), 2, 4)
 			teams_specified = true
@@ -940,7 +937,7 @@ func _setup_post_fx() -> void:
 		post_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var pm := ShaderMaterial.new()
 		pm.shader = post_shader as Shader
-		pm.set_shader_parameter("SCREEN_WIDTH", _poster_width)
+		pm.set_shader_parameter("SCREEN_WIDTH", 1920.0)
 		pm.set_shader_parameter("RED_COMPONENT", 8.0)
 		pm.set_shader_parameter("GREEN_COMPONENT", 8.0)
 		pm.set_shader_parameter("BLUE_COMPONENT", 8.0)
@@ -1132,6 +1129,11 @@ func _exit_tree() -> void:
 		_ambience.stop()
 	if _sfx_cart_roll != null and is_instance_valid(_sfx_cart_roll):
 		_sfx_cart_roll.stop()
+	if _fx_pool != null and _fx_pool.has_method("clear"):
+		_fx_pool.clear()
+	_fans.clear()
+	_flicker_lamp_mat = null
+	_cart_light = null
 
 
 func _read_local_input() -> Dictionary:

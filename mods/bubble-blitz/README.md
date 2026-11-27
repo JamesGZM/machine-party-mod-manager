@@ -5,7 +5,7 @@
 ![泡泡爆破小游戏图示](../../catalog/covers/bubble-blitz.png)
 
 - **模组 ID**：`bubble-blitz`
-- **版本**：`0.1.5`（目录清单对应 `v0.1.5`）
+- **版本**：`0.1.7`（目录清单对应 `v0.1.7`）
 - **授权**：`GPL-3.0-only`
 - **目标游戏版本**：Steam Windows `v2.1.2`
 - **开发与打包规范**：[自研模组开发、测试、接入与打包规范](../../docs/zh-CN/development/mod-development.md) · [ADR-009](../../docs/zh-CN/architecture/ADR-009-bundled-first-party-mods.md) · [ADR-015](../../docs/zh-CN/architecture/ADR-015-multi-minigame-hub.md)
@@ -47,8 +47,8 @@
 | `mod.json` | 是 | 模组清单与入口声明 |
 | `main.gd` | 是 | MPML API v2 入口：注册至多小游戏共存中心（槽位 `ScavangerChairs = 8`） |
 | `config.gd` | 是 | 预置参数、4 套随机对称地图生成、动态尺寸与综合计分 |
-| `arena_meshes.gd` | 是 | 程序化 3D 工业舞台、水泡、水柱、传送带、道具、压板与 CRT 图标 |
-| `fx_pool.gd` | 是 | 爆炸火焰、粒子、贴花与灯光常驻对象池与错帧清理 |
+| `arena_meshes.gd` | 是 | 程序化 3D 工业仓库舞台（混凝土/花纹钢板/高光滚轴对比材质）、原版排风扇/道具/油污贴花、水泡、传送带、道具、压板与 CRT 图标 |
+| `fx_pool.gd` | 是 | 爆炸火焰、粒子、焦痕/血迹贴花、漂浮尘埃与灯光常驻对象池与错帧清理 |
 | `ai_controller.gd` | 是 | 机器人避弹、寻路、放弹及组队救援 AI 决策 |
 | `team_support.gd` | 是 | 共享可选组队辅助模块（读取 `team-party` 注册表并降级支持 FFA） |
 | `bubble_blitz_game.gd` | 是 | 主游戏模拟与房主权威联机同步（含原生小队规则与封面截图） |

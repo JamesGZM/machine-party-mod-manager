@@ -65,6 +65,8 @@ var _monitor_timer: Label3D = null
 var _monitor_theme: Label3D = null
 var _fans: Array = []
 var _flicker_lamp_mat: StandardMaterial3D = null
+var _world_env: Environment = null
+var _light_rig: Node3D = null
 var _shader_layer: CanvasLayer = null
 var _hud_layer: CanvasLayer = null
 var _banner_label: Label = null
@@ -161,7 +163,11 @@ func _exit_tree() -> void:
 	_sfx_countdown = null
 	_sfx_ding = null
 	_sfx_beep = null
+	if _ambience_player != null and is_instance_valid(_ambience_player):
+		_ambience_player.stop()
 	_ambience_player = null
+	_world_env = null
+	_light_rig = null
 	if M != null and M.has_method("clear_caches"):
 		M.clear_caches()
 	C = null
@@ -224,6 +230,7 @@ func _setup_environment() -> void:
 	env.fog_depth_end = 60.0
 	env.fog_depth_curve = 1.2
 
+	_world_env = env
 	var we := WorldEnvironment.new()
 	we.name = "WorldEnv"
 	we.environment = env
@@ -242,6 +249,7 @@ func _setup_environment() -> void:
 	var rig := Node3D.new()
 	rig.name = "WarehouseLightRig"
 	add_child(rig)
+	_light_rig = rig
 
 	var center_spot := SpotLight3D.new()
 	center_spot.name = "CenterGridSpot"
@@ -363,17 +371,18 @@ func _setup_post_fx() -> void:
 
 
 func _setup_vanilla_audio_and_fx() -> void:
-	_sfx_shove = _make_audio_player("res://audio/unique/disco dodge/dd shove.ogg", -4.0)
-	_sfx_elim = _make_audio_player("res://audio/unique/disco dodge/dd fall scream impact.ogg", -2.0)
-	_sfx_explosion = _make_audio_player("res://audio/sfx/bad_explosion.ogg", -5.0)
-	_sfx_place = _make_audio_player("res://audio/unique/exploding collar race/mine_detected.ogg", -6.0)
-	_sfx_pickup = _make_audio_player("res://audio/sfx/manufacture_gun_pickup_gear.ogg", -4.0)
-	_sfx_countdown = _make_audio_player("res://audio/sfx/countdown_mechanism2.ogg", -3.0)
-	_sfx_ding = _make_audio_player("res://audio/sfx/airplane ding.ogg", -2.0)
-	_sfx_beep = _make_audio_player("res://audio/sfx/ekg_beep.ogg", -5.0)
-	_ambience_player = _make_audio_player("res://audio/ambience/industrial-machine-cycle_loop.ogg", -15.0, true)
-	if _ambience_player == null:
-		_ambience_player = _make_audio_player("res://audio/unique/dvd roomba/dvd roomba ambience.ogg", -15.0, true)
+	if _screenshot_path.is_empty():
+		_sfx_shove = _make_audio_player("res://audio/unique/disco dodge/dd shove.ogg", -4.0)
+		_sfx_elim = _make_audio_player("res://audio/unique/disco dodge/dd fall scream impact.ogg", -2.0)
+		_sfx_explosion = _make_audio_player("res://audio/sfx/bad_explosion.ogg", -5.0)
+		_sfx_place = _make_audio_player("res://audio/unique/exploding collar race/mine_detected.ogg", -6.0)
+		_sfx_pickup = _make_audio_player("res://audio/sfx/manufacture_gun_pickup_gear.ogg", -4.0)
+		_sfx_countdown = _make_audio_player("res://audio/sfx/countdown_mechanism2.ogg", -3.0)
+		_sfx_ding = _make_audio_player("res://audio/sfx/airplane ding.ogg", -2.0)
+		_sfx_beep = _make_audio_player("res://audio/sfx/ekg_beep.ogg", -5.0)
+		_ambience_player = _make_audio_player("res://audio/ambience/industrial-machine-cycle_loop.ogg", -15.0, true)
+		if _ambience_player == null:
+			_ambience_player = _make_audio_player("res://audio/unique/dvd roomba/dvd roomba ambience.ogg", -15.0, true)
 
 	var hit_scene = M.load_optional("res://prefabs/managed_effects/hit_blood.tscn")
 	if hit_scene is PackedScene:
@@ -627,6 +636,32 @@ func _setup_match_local(theme_id: int, seed_val: int, roster: Array, is_preview:
 	var cam_dist: float = maxf(span_z * 1.18, span_x * 0.80)
 	_camera.position = Vector3(0.0, cam_dist * 0.84, cam_dist * 0.64)
 	_camera.look_at(Vector3(0.0, 0.25, -0.45), Vector3.UP)
+	if _world_env != null:
+		_world_env.fog_depth_begin = maxf(25.0, cam_dist + 4.0)
+		_world_env.fog_depth_end = maxf(60.0, cam_dist + 38.0)
+	if _light_rig != null and is_instance_valid(_light_rig):
+		var dist_scale: float = clampf(cam_dist / 18.0, 1.0, 1.45)
+		var c_spot := _light_rig.get_node_or_null("CenterGridSpot") as SpotLight3D
+		if c_spot != null:
+			c_spot.position = Vector3(0.0, maxf(12.8, cam_dist * 0.72), 0.6)
+			c_spot.spot_range = maxf(28.0, cam_dist * 1.45)
+			c_spot.light_energy = 13.5 * dist_scale
+		var flank_x: float = maxf(10.2, span_x * 0.52)
+		var w_spot := _light_rig.get_node_or_null("WestBaySpot") as SpotLight3D
+		if w_spot != null:
+			w_spot.position = Vector3(-flank_x, maxf(12.0, cam_dist * 0.68), -0.4)
+			w_spot.spot_range = maxf(30.0, cam_dist * 1.55)
+			w_spot.light_energy = 10.6 * dist_scale
+		var e_spot := _light_rig.get_node_or_null("EastBaySpot") as SpotLight3D
+		if e_spot != null:
+			e_spot.position = Vector3(flank_x, maxf(12.0, cam_dist * 0.68), -0.4)
+			e_spot.spot_range = maxf(30.0, cam_dist * 1.55)
+			e_spot.light_energy = 10.6 * dist_scale
+		var s_spot := _light_rig.get_node_or_null("SouthBaySpot") as SpotLight3D
+		if s_spot != null:
+			s_spot.position = Vector3(0.0, maxf(11.4, cam_dist * 0.64), maxf(6.2, span_z * 0.44))
+			s_spot.spot_range = maxf(26.0, cam_dist * 1.35)
+			s_spot.light_energy = 6.5 * dist_scale
 
 	for i in range(synced_roster.size()):
 		var entry: Dictionary = synced_roster[i]

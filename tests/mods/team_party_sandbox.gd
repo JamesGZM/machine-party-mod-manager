@@ -625,7 +625,7 @@ func _boot() -> void:
 
 	if _is_self_test:
 		await _run_headless_self_tests()
-		_shutdown(1 if _failed else 0)
+		await _shutdown(1 if _failed else 0)
 		return
 
 	_switch_scene(SCENE_LOBBY)
@@ -721,7 +721,7 @@ func _boot() -> void:
 		DirAccess.make_dir_recursive_absolute(_screenshot_path.get_base_dir())
 		var err: int = img.save_png(_screenshot_path)
 		print("SANDBOX_SCREENSHOT_SAVED=%s err=%d" % [_screenshot_path, err])
-		_shutdown(err)
+		await _shutdown(err)
 
 
 func _load_untouched_minigame_modules() -> void:
@@ -2255,9 +2255,12 @@ func _shutdown(code: int) -> void:
 	_clear_current_scene()
 	_real_lobby_packed = null
 	if _tp_mod != null:
+		_disable_tree_safely(_tp_mod)
+		_tp_mod.set("_sfx_ui_click", null)
 		_tp_mod.free()
 		_tp_mod = null
 	if _spot_mod != null:
+		_disable_tree_safely(_spot_mod)
 		_spot_mod.free()
 		_spot_mod = null
 	if _chrome_layer != null:
@@ -2310,4 +2313,6 @@ func _shutdown(code: int) -> void:
 	]:
 		if FileAccess.file_exists(uid_rel):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(uid_rel))
+	await create_timer(0.10).timeout
+	await process_frame
 	quit(code)

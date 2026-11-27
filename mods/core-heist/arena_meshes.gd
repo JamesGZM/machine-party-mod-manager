@@ -456,23 +456,19 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 			hood.material_override = rust_mat
 			parent.add_child(hood)
 
-	# Outer sub-deck industrial dressing (server racks, weathered pallets, scrap debris — zero playable intrusion)
+	# North-flank industrial server racks anchored tight against the lit north brick back wall (zero outer-void props)
 	var rack_packed = load_optional(GLB_SERVER_RACK)
-	var pallet_packed = load_optional(GLB_PALLET)
-	var debris_packed = load_optional(GLB_DEBRIS)
-	var pallet_mat := _get_mat("pallet_weathered", Color(0.36, 0.30, 0.25), 0.15, 0.85, Color.BLACK, 0.0, false, TEX_HEAVY_RUST, Vector3(1.0, 1.0, 1.0))
-
 	for r_idx in range(2):
 		var side_s: float = -1.0 if r_idx == 0 else 1.0
-		var rpos := Vector3(side_s * (half + 1.05), -0.22, -half + 2.2)
-		var ryaw: float = 18.0 * (-side_s)
+		var rpos := Vector3(side_s * (half * 0.70), -0.22, back_z + 0.66)
+		var ryaw: float = 12.0 * (-side_s)
 		if rack_packed is PackedScene:
 			var rinst := (rack_packed as PackedScene).instantiate() as Node3D
 			_strip_prop_collisions(rinst)
 			rinst.name = "OuterServerRack_%d" % r_idx
 			rinst.position = rpos
 			rinst.rotation_degrees.y = ryaw
-			rinst.scale = Vector3(0.45, 0.45, 0.45)
+			rinst.scale = Vector3(0.42, 0.42, 0.42)
 			parent.add_child(rinst)
 		else:
 			var rbox := MeshInstance3D.new()
@@ -481,58 +477,6 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 			rbox.rotation_degrees.y = ryaw
 			rbox.material_override = dark_metal_mat
 			parent.add_child(rbox)
-
-	var pallet_specs: Array = [
-		[Vector3(-half - 1.00, -0.08, half * 0.24), 7.0],
-		[Vector3(half + 1.00, -0.08, -half * 0.14), -9.0],
-	]
-	for pp_raw in pallet_specs:
-		var pp: Array = pp_raw as Array
-		var ppos: Vector3 = pp[0] as Vector3
-		var pyaw: float = float(pp[1])
-		if pallet_packed is PackedScene:
-			var pinst := (pallet_packed as PackedScene).instantiate() as Node3D
-			_strip_prop_collisions(pinst)
-			var cube := pinst.get_node_or_null("Cube_019") as MeshInstance3D
-			if cube != null:
-				cube.position = Vector3.ZERO
-				cube.rotation = Vector3.ZERO
-				cube.material_override = pallet_mat
-			pinst.position = ppos
-			pinst.rotation_degrees.y = pyaw
-			pinst.scale = Vector3(0.46, 0.46, 0.46)
-			parent.add_child(pinst)
-		else:
-			var pbox := MeshInstance3D.new()
-			pbox.mesh = _get_box("pallet_fb", Vector3(1.3, 0.22, 1.0))
-			pbox.position = ppos
-			pbox.rotation_degrees.y = pyaw
-			pbox.material_override = pallet_mat
-			parent.add_child(pbox)
-
-	var debris_specs: Array = [
-		[Vector3(-half - 1.02, -0.20, -half * 0.18), 28.0, 0.56],
-		[Vector3(half + 1.02, -0.20, half * 0.34), -38.0, 0.54],
-	]
-	for dp_raw in debris_specs:
-		var dp: Array = dp_raw as Array
-		var base_dpos: Vector3 = dp[0] as Vector3
-		var dyaw: float = float(dp[1])
-		var dscale: float = float(dp[2])
-		if debris_packed is PackedScene:
-			var dinst := (debris_packed as PackedScene).instantiate() as Node3D
-			_strip_prop_collisions(dinst)
-			dinst.position = base_dpos + Vector3(0.0, 0.725 * dscale, 0.0)
-			dinst.rotation_degrees.y = dyaw
-			dinst.scale = Vector3(dscale, dscale, dscale)
-			parent.add_child(dinst)
-		else:
-			var dbox := MeshInstance3D.new()
-			dbox.mesh = _get_box("debris_fb", Vector3(0.8, 0.65, 0.8))
-			dbox.position = base_dpos + Vector3(0.0, 0.32, 0.0)
-			dbox.rotation_degrees.y = dyaw
-			dbox.material_override = rust_mat
-			parent.add_child(dbox)
 
 	# Large 3D Diegetic Industrial CRT Monitor mounted on the north back wall
 	var crt_root := Node3D.new()
@@ -805,7 +749,7 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 
 	# Team Recycling Furnace Vaults with overhead gantry & CRT scoreboard (tamed team emissives for ACES)
 	var vault_nodes: Dictionary = {}
-	var grate_mat := _get_mat("vault_grate", Color(0.44, 0.42, 0.40), 0.65, 0.50, Color.BLACK, 0.0, false, TEX_GRATE, Vector3(0.75, 0.75, 0.75), "", true)
+	var grate_mat := _get_mat("vault_grate", Color(0.20, 0.19, 0.19), 0.35, 0.78, Color.BLACK, 0.0, false, TEX_GRATE, Vector3(0.75, 0.75, 0.75), "", true)
 	for raw_tid in team_ids:
 		var tid: int = int(raw_tid)
 		var bp: Vector2 = vault_by_team.get(tid, Vector2.ZERO) as Vector2
@@ -831,16 +775,16 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 		vroot.add_child(grate)
 
 		var inner_pad := MeshInstance3D.new()
-		inner_pad.mesh = _get_cyl("vault_inner", float(cfg.VAULT_RADIUS) - 0.95, float(cfg.VAULT_RADIUS) - 0.95, 0.21, 24)
+		inner_pad.mesh = _get_cyl("vault_inner", float(cfg.VAULT_RADIUS) - 0.50, float(cfg.VAULT_RADIUS) - 0.50, 0.21, 24)
 		inner_pad.position = Vector3(0.0, 0.11, 0.0)
-		inner_pad.material_override = _get_mat("vault_pad_%d" % tid, tcol * 0.48, 0.2, 0.38, tcol, 0.42)
+		inner_pad.material_override = _get_mat("vault_pad_%d" % tid, tcol * 0.52, 0.06, 0.80, tcol, 0.20)
 		vroot.add_child(inner_pad)
 
 		var arch := MeshInstance3D.new()
 		arch.mesh = _get_torus("vault_arch", float(cfg.VAULT_RADIUS) - 0.20, float(cfg.VAULT_RADIUS) + 0.02, 24)
 		arch.position = Vector3(0.0, 0.20, 0.0)
 		arch.scale = Vector3(1.0, 0.24, 1.0)
-		arch.material_override = _get_mat("vault_arch_%d" % tid, tcol * 0.75, 0.2, 0.34, tcol, 0.72)
+		arch.material_override = _get_mat("vault_arch_%d" % tid, tcol * 0.65, 0.15, 0.55, tcol, 0.38)
 		vroot.add_child(arch)
 
 		# Twin gantry pylons + overhead CRT scoreboard housing

@@ -16,6 +16,7 @@
 - [Co-op minigame design and admission gating](development/coop-minigame-gating.md)
 - [Core Heist gameplay and development specification](development/core-heist-design.md)
 - [Bomb Cart gameplay and development specification](development/bomb-cart-design.md)
+- [Voltage Greed gameplay and development specification (with Signature Series roadmap)](development/voltage-greed-design.md)
 - [Releasing manager updates](development/releasing.md)
 - [Current architecture](architecture/README.md) and its ADRs
 

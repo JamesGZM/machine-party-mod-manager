@@ -89,6 +89,7 @@ Steam 目錄自動偵測 · 離線快取與還原 · 简体中文 / 繁體中文
 | [組隊派對](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/team-party) | `v0.1.1` | 房間 2–4 隊手動／洗牌／拖曳分隊、原版小遊戲掛接與全模組共享團隊註冊表 | 原生 MPML |
 | [能源搶奪戰](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/core-heist) | `v0.1.1` | 純組隊 2–4 隊 75 秒能源搶奪對抗：雙人合抬反應爐核心共振加速、回收爐磁吸鎖與過載偷家 | 原生 MPML |
 | [炸彈推車](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/bomb-cart) | `v0.1.1` | 2–4 隊 75 秒自適應軌道攻防（直軌／Y 型／十字轉盤）：強力撞車、蒸氣閥門火箭助推、震盪脈衝與突然死亡加時 | 原生 MPML |
+| [高壓績效](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/voltage-greed) | `v0.1.0` | 3 輪近景電椅貪心博弈（2–8+ 人，支援混戰與組隊）：按住刷 KPI、鬆手鎖分、硬撐專屬 S +12% 偷踢、監工抓摸魚與工業事件 | 原生 MPML（待 Windows 實機驗證） |
 
 驗收清單、上游授權邊界與互斥群組規則詳見[候選模組與收錄規範](../zh-TW/catalog/mods.md)。
 

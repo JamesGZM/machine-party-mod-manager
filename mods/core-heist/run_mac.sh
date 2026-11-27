@@ -27,10 +27,12 @@ case "$MODE" in
     ;;
   --screenshot)
     OUT="${2:-$REPO_ROOT/.agent/mod-dev/dist/core_heist_preview.png}"
-    exec "$GODOT" --path "$MOD_DIR" --windowed --resolution 1280x720 -- "--capture-screenshot=$OUT"
+    shift 2 2>/dev/null || shift $#
+    exec "$GODOT" --path "$MOD_DIR" --windowed --resolution 1280x720 -- "--capture-screenshot=$OUT" "$@"
     ;;
   play|"")
-    exec "$GODOT" --path "$MOD_DIR"
+    shift 1 2>/dev/null || true
+    exec "$GODOT" --path "$MOD_DIR" -- "$@"
     ;;
   *)
     echo "Usage: $0 [play | --self-test | --smoke-test | --screenshot <output.png>]" >&2

@@ -9,7 +9,7 @@ const PHASE3_START := 60.0
 const SECOND_CORE_TIME := 62.0
 const CORE_WARN_DURATION := 2.0
 
-const BATTERY_POOL_SIZE := 24
+const BATTERY_POOL_SIZE := 32
 
 const CELL_STANDARD := 1
 const CELL_GOLD := 2
@@ -56,6 +56,20 @@ const SPAWN_INTERVAL_P1 := 2.6
 const SPAWN_INTERVAL_P3 := 1.3
 const MAX_LOOSE_STANDARD := 10
 const MAX_LOOSE_GOLD := 3
+
+
+static func max_loose_standard(team_count: int, player_count: int) -> int:
+	return clampi(MAX_LOOSE_STANDARD + maxi(0, team_count - 2) * 2 + maxi(0, player_count - 4), MAX_LOOSE_STANDARD, 18)
+
+
+static func max_loose_gold(team_count: int, player_count: int) -> int:
+	return clampi(MAX_LOOSE_GOLD + maxi(0, team_count - 2) + (1 if player_count >= 7 else 0), MAX_LOOSE_GOLD, 6)
+
+
+static func spawn_interval(is_overdrive: bool, player_count: int) -> float:
+	var base: float = SPAWN_INTERVAL_P3 if is_overdrive else SPAWN_INTERVAL_P1
+	var scale_t: float = clampf(float(player_count - 4) / 4.0, 0.0, 1.0)
+	return base * lerpf(1.0, 0.68, scale_t)
 
 const SNAPSHOT_INTERVAL := 0.05
 

@@ -30,6 +30,9 @@ var _self_test_runner = null
 var _standalone_mode: bool = false
 var _is_self_test: bool = false
 var _screenshot_path: String = ""
+var _cli_teams: int = 0
+var _cli_per_team: int = 0
+var _per_team_count: int = 2
 var _is_server_sim: bool = true
 var _local_net_id: int = 1
 
@@ -77,12 +80,17 @@ var _arena_root: Node3D = null
 var _bat_root: Node3D = null
 var _fx_root: Node3D = null
 var _player_root: Node3D = null
+var _shader_layer: CanvasLayer = null
 var _camera: Camera3D = null
 var _vault_nodes: Dictionary = {}
 var _dispenser_ring: Node3D = null
 var _dispenser_ring_b: Node3D = null
 var _conveyor_mat_l: StandardMaterial3D = null
 var _conveyor_mat_r: StandardMaterial3D = null
+var _monitor_timer: Label3D = null
+var _monitor_phase: Label3D = null
+var _last_crt_timer_text: String = ""
+var _last_crt_phase_text: String = ""
 var _bat_vis_cache: Array = []
 var _cam_base_pos: Vector3 = Vector3.ZERO
 var _cam_shake: float = 0.0
@@ -150,12 +158,19 @@ func _ready() -> void:
 			return
 		if arg.begins_with("--capture-screenshot="):
 			_screenshot_path = arg.substr("--capture-screenshot=".length())
+		elif arg.begins_with("--teams="):
+			_cli_teams = clampi(int(arg.substr("--teams=".length())), 2, 4)
+		elif arg.begins_with("--per-team="):
+			_cli_per_team = clampi(int(arg.substr("--per-team=".length())), 1, 4)
 
 	if not _screenshot_path.is_empty():
 		_standalone_mode = true
 		_is_server_sim = true
 		_mount_preview_pck()
-		var demo_roster: Array = _build_standalone_roster(4, 2)
+		var shot_teams: int = _cli_teams if _cli_teams >= 2 else 4
+		var shot_per_team: int = _cli_per_team if _cli_per_team >= 1 else 2
+		_per_team_count = shot_per_team
+		var demo_roster: Array = _build_standalone_roster(shot_teams, shot_per_team)
 		_setup_match_local(0, 20261123, demo_roster, true)
 		var st_cls3 = _load_script_res(SELF_TEST_RES, "self_test.gd")
 		if st_cls3 != null:
@@ -168,7 +183,10 @@ func _ready() -> void:
 		_standalone_mode = true
 		_is_server_sim = true
 		_mount_preview_pck()
-		var roster: Array = _build_standalone_roster(2, 2)
+		var init_teams: int = _cli_teams if _cli_teams >= 2 else 2
+		var init_per_team: int = _cli_per_team if _cli_per_team >= 1 else 2
+		_per_team_count = init_per_team
+		var roster: Array = _build_standalone_roster(init_teams, init_per_team)
 		_setup_match_local(0, 20261123, roster, false)
 
 
@@ -187,13 +205,19 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and (event as InputEventKey).pressed and not (event as InputEventKey).echo:
 		var kc: Key = (event as InputEventKey).keycode
 		if kc == KEY_R:
-			_setup_match_local(0, _map_seed + 1, _build_standalone_roster(_team_count, 2), false)
+			_setup_match_local(0, _map_seed + 1, _build_standalone_roster(_team_count, _per_team_count), false)
 		elif kc == KEY_F2:
+			_per_team_count = 2
 			_setup_match_local(0, 20261123, _build_standalone_roster(2, 2), false)
 		elif kc == KEY_F3:
+			_per_team_count = 2
 			_setup_match_local(0, 20261123, _build_standalone_roster(3, 2), false)
 		elif kc == KEY_F4:
+			_per_team_count = 2
 			_setup_match_local(0, 20261123, _build_standalone_roster(4, 2), false)
+		elif kc == KEY_F5:
+			_per_team_count = 4
+			_setup_match_local(0, 20261123, _build_standalone_roster(2, 4), false)
 
 
 func _capture_and_quit() -> void:
@@ -209,19 +233,68 @@ func _capture_and_quit() -> void:
 	get_tree().quit(0)
 
 
+const SCREENSHOT_COSMETICS := [
+	["hard_hat", "sunglasses"],
+	["tophat", ""],
+	["traffic_cone", "reading_glasses"],
+	["drill_sgt_hat", "sunglasses"],
+	["maska_helmet", ""],
+	["cap_blade", "sunglasses"],
+	["beer_hat", ""],
+	["rubiks_cube", "reading_glasses"],
+]
+
+const SCREENSHOT_NAMES_TW := {
+	1: ["紅心活塞", "鍋爐紅醬", "赤焰扳手", "高熱紅管"],
+	2: ["高壓藍鴨", "發條藍仔", "磁軌藍星", "冷卻藍泵"],
+	3: ["電容綠寶", "齒輪綠豆", "螢光綠帽", "電弧綠葉"],
+	4: ["火花阿金", "熔爐黃王", "焊槍阿黃", "高爐金匠"],
+}
+
+const SCREENSHOT_NAMES_CN := {
+	1: ["红心活塞", "锅炉红酱", "赤焰扳手", "高热红管"],
+	2: ["高压蓝鸭", "发条蓝仔", "磁轨蓝星", "冷却蓝泵"],
+	3: ["电容绿宝", "齿轮绿豆", "荧光绿帽", "电弧绿叶"],
+	4: ["火花阿金", "熔炉黄王", "焊枪阿黄", "高炉金匠"],
+}
+
+const SCREENSHOT_NAMES_EN := {
+	1: ["Red Piston", "Boiler Red", "Rust Wrench", "Valve Red"],
+	2: ["Volt Blue", "Gear Blue", "Coil Blue", "Cryo Blue"],
+	3: ["Coil Green", "Bolt Green", "Neon Green", "Arc Green"],
+	4: ["Spark Gold", "Furnace King", "Weld Gold", "Forge King"],
+}
+
+
+func _screenshot_nickname(team_id: int, member_idx: int, fallback_nid: int) -> String:
+	var low: String = TranslationServer.get_locale().to_lower()
+	var table: Dictionary = SCREENSHOT_NAMES_EN
+	if low == "zht" or low.contains("tw") or low.contains("hk") or low.contains("hant") or low.contains("mo"):
+		table = SCREENSHOT_NAMES_TW
+	elif low.begins_with("zh") or low == "zhs":
+		table = SCREENSHOT_NAMES_CN
+	var pool: Array = table.get(team_id, []) as Array
+	if member_idx >= 0 and member_idx < pool.size():
+		return str(pool[member_idx])
+	return "Bot%d" % fallback_nid
+
+
 func _build_standalone_roster(teams: int, per_team: int) -> Array:
 	var roster: Array = []
 	var idx: int = 0
+	var is_shot: bool = not _screenshot_path.is_empty()
 	for t in range(1, teams + 1):
 		for m in range(per_team):
 			var nid: int = idx + 1
+			var nick: String = _screenshot_nickname(t, m, nid) if is_shot else ("Bot%d" % nid if idx > 0 else "Player1")
+			var custom: Array = (SCREENSHOT_COSMETICS[idx % SCREENSHOT_COSMETICS.size()] as Array).duplicate() if is_shot else []
 			roster.append({
 				"id": idx,
 				"network_id": nid,
-				"nickname": "Bot%d" % nid if idx > 0 else "Player1",
+				"nickname": nick,
 				"team_id": t,
 				"is_ai": idx > 0,
-				"customization": [],
+				"customization": custom,
 			})
 			idx += 1
 	return roster
@@ -250,6 +323,10 @@ func _clear_scene_children() -> void:
 	_battery_nodes.clear()
 	_resonance_beams.clear()
 	_warn_beacon_node = null
+	_monitor_timer = null
+	_monitor_phase = null
+	_last_crt_timer_text = ""
+	_last_crt_phase_text = ""
 
 
 func _setup_match_local(round_idx: int, seed_val: int, roster: Array, all_ai: bool = false) -> void:
@@ -345,6 +422,8 @@ func _setup_match_local(round_idx: int, seed_val: int, roster: Array, all_ai: bo
 			_dispenser_ring_b = arena_info.get("dispenser_ring_b", null) as Node3D
 			_conveyor_mat_l = arena_info.get("conveyor_mat_l", null) as StandardMaterial3D
 			_conveyor_mat_r = arena_info.get("conveyor_mat_r", null) as StandardMaterial3D
+			_monitor_timer = arena_info.get("monitor_timer", null) as Label3D
+			_monitor_phase = arena_info.get("monitor_phase", null) as Label3D
 		if _fx_pool != null:
 			_fx_pool.init_pools(_fx_root, not _screenshot_path.is_empty())
 			for _b in range(4):
@@ -356,9 +435,10 @@ func _setup_match_local(round_idx: int, seed_val: int, roster: Array, all_ai: bo
 			if _warn_beacon_node != null:
 				_warn_beacon_node.visible = false
 		if _hud != null:
-			_hud.build_hud(self, _team)
+			_hud.build_hud(self, _team, _standalone_mode)
 			_hud.hide_results()
 			_hud.set_standalone_hint(_standalone_mode)
+		_update_crt_monitor()
 
 	_init_battery_pool()
 	_spawn_players(roster, all_ai)
@@ -368,42 +448,119 @@ func _ensure_environment_and_camera() -> void:
 	if _camera == null or not is_instance_valid(_camera):
 		_camera = Camera3D.new()
 		_camera.name = "ArenaCamera"
-		_camera.fov = 42.0
+		_camera.fov = 45.0
 		_camera.current = true
 		add_child(_camera)
-	var cam_dist: float = 18.5 if _team_count <= 2 else 21.8
-	_camera.position = Vector3(0.0, cam_dist * 0.86, cam_dist * 0.72)
-	_camera.look_at(Vector3(0.0, 0.5, 0.0), Vector3.UP)
+	if _team_count <= 2:
+		_camera.position = Vector3(0.0, 20.6, 25.0)
+		_camera.look_at(Vector3(0.0, 0.2, 1.1), Vector3.UP)
+	else:
+		_camera.position = Vector3(0.0, 23.8, 29.0)
+		_camera.look_at(Vector3(0.0, 0.2, 1.3), Vector3.UP)
 	_cam_base_pos = _camera.position
 
 	if get_node_or_null("WorldEnv") == null:
+		# Authentic Machine Party warm low-saturation dark industrial workshop atmosphere.
 		var env_node := WorldEnvironment.new()
 		env_node.name = "WorldEnv"
 		var env := Environment.new()
 		env.background_mode = Environment.BG_COLOR
-		env.background_color = Color(0.06, 0.08, 0.11)
+		env.background_color = Color(0.04, 0.04, 0.05)
 		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-		env.ambient_light_color = Color(0.45, 0.50, 0.60)
-		env.ambient_light_energy = 0.90
+		env.ambient_light_color = Color(0.42, 0.36, 0.32)
+		env.ambient_light_energy = 0.86
+		env.adjustment_enabled = true
+		env.adjustment_brightness = 1.08
+		env.adjustment_contrast = 1.12
+		env.adjustment_saturation = 0.86
+		env.glow_enabled = true
+		env.glow_intensity = 0.42
+		env.glow_bloom = 0.16
 		env_node.environment = env
 		add_child(env_node)
 
-	if get_node_or_null("SunLight") == null:
+	if get_node_or_null("KeyLight") == null:
 		var sun := DirectionalLight3D.new()
-		sun.name = "SunLight"
-		sun.rotation_degrees = Vector3(-50.0, 32.0, 0.0)
-		sun.light_color = Color(1.0, 0.97, 0.92)
+		sun.name = "KeyLight"
+		sun.rotation_degrees = Vector3(-56.0, 22.0, 0.0)
+		sun.light_color = Color(1.0, 0.94, 0.86)
 		sun.light_energy = 1.25
 		sun.shadow_enabled = true
 		add_child(sun)
 
-	if get_node_or_null("RimLight") == null:
-		var rim := DirectionalLight3D.new()
-		rim.name = "RimLight"
-		rim.rotation_degrees = Vector3(-35.0, -145.0, 0.0)
-		rim.light_color = Color(0.45, 0.78, 1.0)
-		rim.light_energy = 0.45
-		add_child(rim)
+	if get_node_or_null("FillLight") == null:
+		var fill := DirectionalLight3D.new()
+		fill.name = "FillLight"
+		fill.rotation_degrees = Vector3(-32.0, -145.0, 0.0)
+		fill.light_color = Color(0.84, 0.80, 0.75)
+		fill.light_energy = 0.28
+		add_child(fill)
+
+	_setup_post_fx()
+
+
+func _setup_post_fx() -> void:
+	if _is_self_test or (_shader_layer != null and is_instance_valid(_shader_layer)) or M == null:
+		return
+	var post_shader = M.load_optional("res://shaders/posterization.gdshader")
+	var vig_shader = M.load_optional("res://shaders/vignette.gdshader")
+	if not (post_shader is Shader or vig_shader is Shader):
+		return
+
+	_shader_layer = CanvasLayer.new()
+	_shader_layer.name = "PostFXLayer"
+	_shader_layer.layer = 1
+	add_child(_shader_layer)
+
+	var fx_root := Control.new()
+	fx_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	fx_root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_shader_layer.add_child(fx_root)
+
+	if vig_shader is Shader:
+		var vig_holder := Control.new()
+		vig_holder.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		vig_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fx_root.add_child(vig_holder)
+
+		var vig_copy := BackBufferCopy.new()
+		vig_copy.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
+		vig_holder.add_child(vig_copy)
+
+		var vig_rect := ColorRect.new()
+		vig_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		vig_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var vm := ShaderMaterial.new()
+		vm.shader = vig_shader as Shader
+		vm.set_shader_parameter("radius", 0.96)
+		vm.set_shader_parameter("softness", 0.45)
+		vm.set_shader_parameter("intensity", 1.38)
+		vm.set_shader_parameter("contrast", 1.35)
+		vm.set_shader_parameter("vignette_color", Color(0.0, 0.0, 0.0, 1.0))
+		vig_rect.material = vm
+		vig_holder.add_child(vig_rect)
+
+	if post_shader is Shader:
+		var post_holder := Control.new()
+		post_holder.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		post_holder.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fx_root.add_child(post_holder)
+
+		var post_copy := BackBufferCopy.new()
+		post_copy.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
+		post_holder.add_child(post_copy)
+
+		var post_rect := ColorRect.new()
+		post_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		post_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var pm := ShaderMaterial.new()
+		pm.shader = post_shader as Shader
+		pm.set_shader_parameter("SCREEN_WIDTH", 1920.0)
+		pm.set_shader_parameter("RED_COMPONENT", 8.0)
+		pm.set_shader_parameter("GREEN_COMPONENT", 8.0)
+		pm.set_shader_parameter("BLUE_COMPONENT", 8.0)
+		post_rect.material = pm
+		post_holder.add_child(post_rect)
 
 
 func _make_audio_player(res_path: String, vol_db: float) -> AudioStreamPlayer:
@@ -480,6 +637,7 @@ func _spawn_players(roster: Array, all_ai: bool) -> void:
 			team_members[tid] = []
 		(team_members[tid] as Array).append(r)
 
+	var placed_spawns: Array = []
 	for tid_raw in team_members.keys():
 		var tid: int = int(tid_raw)
 		var members: Array = team_members[tid_raw] as Array
@@ -488,23 +646,41 @@ func _spawn_players(roster: Array, all_ai: bool) -> void:
 		if to_center.length() < 0.01:
 			to_center = Vector2(0.0, 1.0)
 		var perp := Vector2(-to_center.y, to_center.x)
-		var front_center: Vector2 = base2 + to_center * 2.55
+		var front_dist: float = 2.65 if _team_count <= 2 else 2.80
+		var spacing: float = 1.35
+		var front_center: Vector2 = base2 + to_center * front_dist
 
 		for m_idx in range(members.size()):
 			var r: Dictionary = members[m_idx] as Dictionary
 			var nid: int = int(r.get("network_id", 0))
-			var offset: float = (float(m_idx) - float(members.size() - 1) * 0.5) * 1.45
+			var offset: float = (float(m_idx) - float(members.size() - 1) * 0.5) * spacing
 			var spawn2: Vector2 = front_center + perp * offset
-			spawn2 = C.resolve_arena_obstacles(spawn2, float(C.PLAYER_RADIUS), _arena_half, _pillars)
+			# Push cleanly outside vault ring, pillars, walls, and prior spawn positions
+			var from_vault: Vector2 = spawn2 - base2
+			var min_vault: float = float(C.VAULT_RADIUS) + float(C.PLAYER_RADIUS) * 0.75
+			if from_vault.length() < min_vault:
+				spawn2 = base2 + (from_vault.normalized() if from_vault.length() > 0.01 else to_center) * min_vault
+			spawn2 = C.resolve_arena_obstacles(spawn2, float(C.PLAYER_RADIUS) + 0.05, _arena_half, _pillars)
+			for prev_raw in placed_spawns:
+				var prev2: Vector2 = prev_raw as Vector2
+				var sep: Vector2 = spawn2 - prev2
+				if sep.length() < float(C.PLAYER_RADIUS) * 2.2:
+					var push_dir: Vector2 = sep.normalized() if sep.length() > 0.01 else perp
+					spawn2 = C.resolve_arena_obstacles(prev2 + push_dir * (float(C.PLAYER_RADIUS) * 2.25), float(C.PLAYER_RADIUS) + 0.05, _arena_half, _pillars)
+			placed_spawns.append(spawn2)
 			var spawn3 := Vector3(spawn2.x, 0.0, spawn2.y)
 			var is_ai: bool = all_ai or bool(r.get("is_ai", nid < 0))
 			var pnode: Node3D = null
+			var rig_node: Node3D = null
+			var name_lbl: Label3D = null
 			var anim_player: AnimationPlayer = null
 			if not _is_self_test and M != null and _player_root != null:
 				var vis: Dictionary = M.build_player_visual(
 					nid, str(r.get("nickname", "P%d" % nid)), tid, r.get("customization", []) as Array, _team, C
 				)
 				pnode = vis.get("root", null) as Node3D
+				rig_node = vis.get("rig", null) as Node3D
+				name_lbl = vis.get("name_label", null) as Label3D
 				anim_player = vis.get("anim_player", null) as AnimationPlayer
 				if pnode != null:
 					pnode.position = spawn3
@@ -529,6 +705,8 @@ func _spawn_players(roster: Array, all_ai: bool) -> void:
 				"knockback_vel": Vector2.ZERO,
 				"has_resonance": false,
 				"node": pnode,
+				"rig": rig_node,
+				"name_label": name_lbl,
 				"anim_player": anim_player,
 			}
 
@@ -537,8 +715,8 @@ func _process(delta: float) -> void:
 	if _is_self_test or not _screenshot_path.is_empty():
 		return
 	var dt: float = minf(delta, 0.05)
+	_srv_time += dt
 	if _is_server_sim:
-		_srv_time += dt
 		if _phase == PH_PREP:
 			_step_prep(dt)
 		elif _phase == PH_LIVE:
@@ -636,7 +814,10 @@ func _rpc_banner_event(key: String, arg: int = 0) -> void:
 	match key:
 		"prep":
 			if _hud != null:
-				_hud.show_banner(str(arg) if arg > 0 else "GO!", Color(0.45, 0.95, 1.0), 0.9)
+				if arg > 0:
+					_hud.show_countdown(str(arg), Color(0.76, 1.0, 0.72), 0.90)
+				else:
+					_hud.show_countdown("GO!", Color(1.0, 0.90, 0.34), 0.75)
 			if arg > 0 and _sfx_beep != null:
 				_sfx_beep.play()
 			elif arg <= 0 and _sfx_ding != null:
@@ -757,27 +938,38 @@ func _step_phase_events(delta: float) -> void:
 
 
 func _step_spawner(delta: float) -> void:
-	var interval: float = float(C.SPAWN_INTERVAL_P3) if _elapsed_time >= float(C.PHASE3_START) else float(C.SPAWN_INTERVAL_P1)
+	var player_count: int = maxi(2, _players.size())
+	var is_overdrive: bool = _elapsed_time >= float(C.PHASE3_START)
+	var interval: float = float(C.spawn_interval(is_overdrive, player_count))
 	_spawn_timer -= delta
 	if _spawn_timer > 0.0:
 		return
 	_spawn_timer = interval
 	var loose_std: int = 0
 	var loose_gold: int = 0
+	var active_total: int = 0
 	for raw_b in _batteries:
 		var b: Dictionary = raw_b as Dictionary
-		if bool(b["active"]) and int(b["state"]) == int(C.BAT_LOOSE):
-			if int(b["type"]) == int(C.CELL_STANDARD):
-				loose_std += 1
-			elif int(b["type"]) == int(C.CELL_GOLD):
-				loose_gold += 1
+		if bool(b["active"]):
+			active_total += 1
+			if int(b["state"]) == int(C.BAT_LOOSE):
+				if int(b["type"]) == int(C.CELL_STANDARD):
+					loose_std += 1
+				elif int(b["type"]) == int(C.CELL_GOLD):
+					loose_gold += 1
 
+	# Always reserve 2 slots in the fixed pool for Heavy Reactor Cores #1 and #2.
+	if active_total >= int(C.BATTERY_POOL_SIZE) - 2:
+		return
+
+	var cap_std: int = int(C.max_loose_standard(_team_count, player_count))
+	var cap_gold: int = int(C.max_loose_gold(_team_count, player_count))
 	_spawn_counter += 1
 	var side: float = -1.0 if (_spawn_counter % 2 == 0) else 1.0
 	var spawn_pos := Vector3(side * 2.1, 0.0, _rng.randf_range(-0.6, 0.6))
-	if _spawn_counter % 3 == 0 and loose_gold < int(C.MAX_LOOSE_GOLD):
+	if _spawn_counter % 3 == 0 and loose_gold < cap_gold:
 		_spawn_battery(int(C.CELL_GOLD), spawn_pos)
-	elif loose_std < int(C.MAX_LOOSE_STANDARD):
+	elif loose_std < cap_std:
 		_spawn_battery(int(C.CELL_STANDARD), spawn_pos)
 
 
@@ -1252,6 +1444,7 @@ func _apply_snapshot(snap: Dictionary) -> void:
 	_phase = int(snap.get("ph", _phase))
 	_prep_remaining = float(snap.get("prep", _prep_remaining))
 	_time_remaining = float(snap.get("rem", _time_remaining))
+	_elapsed_time = 0.0 if _phase == PH_PREP else maxf(0.0, float(C.MATCH_DURATION) - _time_remaining)
 	var ts = snap.get("ts", {})
 	if ts is Dictionary:
 		_team_scores = (ts as Dictionary).duplicate()
@@ -1353,10 +1546,19 @@ func _animate_visuals(delta: float) -> void:
 			pnode.rotation.y = atan2(f.x, f.y)
 		var stunned: bool = float(p.get("stun_timer", 0.0)) > 0.0
 		var shoving: bool = float(p.get("shove_anim_timer", 0.0)) > 0.0
-		var rig := pnode.get_node_or_null("Rig") as Node3D
-		if rig != null:
+		var rig := p.get("rig", null) as Node3D
+		if rig != null and is_instance_valid(rig):
 			var target_tilt: float = 0.45 if stunned else 0.0
 			rig.rotation.z = lerpf(rig.rotation.z, target_tilt, clampf(delta * 16.0, 0.0, 1.0))
+		var name_lbl := p.get("name_label", null) as Label3D
+		if name_lbl != null and is_instance_valid(name_lbl):
+			var carry_idx: int = int(p.get("carried_battery", -1))
+			var target_lbl_y: float = 2.48
+			if carry_idx >= 0 and carry_idx < _batteries.size():
+				var cbat: Dictionary = _batteries[carry_idx] as Dictionary
+				target_lbl_y = 3.24 if int(cbat["type"]) == int(C.CELL_CORE) else 2.78
+			if not is_equal_approx(name_lbl.position.y, target_lbl_y):
+				name_lbl.position.y = target_lbl_y
 		var ap := p.get("anim_player", null) as AnimationPlayer
 		if ap != null and is_instance_valid(ap):
 			var desired_anim: StringName = &"mp_mod/idle"
@@ -1444,5 +1646,58 @@ func _animate_visuals(delta: float) -> void:
 			if _client_core_warn:
 				_warn_beacon_node.position = Vector3(0.0, 0.0, _client_core_warn_z)
 
+	_update_crt_monitor()
+
 	if _hud != null:
 		_hud.update_hud(_active_team_ids, _team_scores, _time_remaining, _phase, _prep_remaining, local_res, delta)
+		var show_you: bool = _screenshot_path.is_empty() and (_phase == PH_PREP or (_phase == PH_LIVE and _elapsed_time <= 2.5))
+		var local_pos := Vector3.ZERO
+		if show_you and _players.has(_local_net_id):
+			var lp: Dictionary = _players[_local_net_id] as Dictionary
+			if bool(lp.get("connected", true)):
+				local_pos = lp.get("render_pos", lp.get("pos", Vector3.ZERO)) as Vector3
+			else:
+				show_you = false
+		else:
+			show_you = false
+		_hud.update_you_marker(_camera, local_pos, show_you, _srv_time)
+
+
+func _update_crt_monitor() -> void:
+	if _monitor_timer != null and is_instance_valid(_monitor_timer):
+		var t_txt: String = ""
+		var t_col := Color(0.68, 1.0, 0.68)
+		if _phase == PH_PREP:
+			var psec: int = maxi(1, ceili(_prep_remaining))
+			t_txt = "00:0%d" % psec
+			t_col = Color(0.68, 1.0, 0.68)
+		else:
+			var secs: int = maxi(0, ceili(_time_remaining))
+			var mins: int = secs / 60
+			var rem: int = secs % 60
+			t_txt = "%02d:%02d" % [mins, rem]
+			if _phase == PH_LIVE and _time_remaining <= 15.0:
+				t_col = Color(1.0, 0.46, 0.24)
+		if t_txt != _last_crt_timer_text:
+			_last_crt_timer_text = t_txt
+			_monitor_timer.text = t_txt
+		_monitor_timer.modulate = t_col
+
+	if _monitor_phase != null and is_instance_valid(_monitor_phase):
+		var ph_txt: String = "STANDARD LINE"
+		var ph_col := Color(0.62, 0.96, 0.66)
+		if _phase == PH_PREP:
+			ph_txt = "STANDBY"
+		elif _phase == PH_ENDED:
+			ph_txt = "SHIFT COMPLETE"
+			ph_col = Color(0.82, 0.94, 0.78)
+		elif _elapsed_time >= float(C.PHASE3_START) or _time_remaining <= 15.0:
+			ph_txt = "OVERDRIVE"
+			ph_col = Color(1.0, 0.56, 0.24)
+		elif _elapsed_time >= float(C.PHASE2_START) or _time_remaining <= 30.0:
+			ph_txt = "HEAVY CORE"
+			ph_col = Color(0.72, 1.0, 0.68)
+		if ph_txt != _last_crt_phase_text:
+			_last_crt_phase_text = ph_txt
+			_monitor_phase.text = ph_txt
+		_monitor_phase.modulate = ph_col

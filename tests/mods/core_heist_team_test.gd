@@ -128,6 +128,8 @@ func _run() -> void:
 			break
 	if not _expect(ch_slot >= 1000, "core-heist must receive dynamic Hub v2 slot >= 1000, got %d" % ch_slot):
 		return
+	if not _expect(ch_spec.get("icon_texture", null) is Texture2D, "core-heist must register a non-null Texture2D icon_texture"):
+		return
 
 	# 2. Full admission gating matrix via mpm-core minigame_sdk
 	var sdk = (Engine.get_meta(&"mpm_core") as Dictionary)["minigame_sdk"]
@@ -154,6 +156,7 @@ func _run() -> void:
 	for ok_ctx in [
 		{"is_local": false, "team_enabled": true, "team_count": 2, "total_players": 2, "teams": {1: 1, 2: 2}},
 		{"is_local": false, "team_enabled": true, "team_count": 2, "total_players": 3, "teams": {1: 1, 2: 2, 3: 2}},
+		{"is_local": false, "team_enabled": true, "team_count": 2, "total_players": 8, "teams": {1: 1, 2: 1, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}},
 		{"is_local": false, "team_enabled": true, "team_count": 3, "total_players": 6, "teams": {1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3}},
 		{"is_local": false, "team_enabled": true, "team_count": 4, "total_players": 8, "teams": {1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3, 7: 4, 8: 4}},
 	]:
@@ -208,8 +211,10 @@ func _run() -> void:
 	stage._deposit_battery(b_std, 2)
 	stage._recompute_team_scores()
 
-	# 4. Host -> Client snapshot round-trip (including core warning beacon)
+	# 4. Host -> Client snapshot round-trip (including core warning beacon & derived elapsed time)
 	stage._core1_warn_timer = 1.5
+	stage._time_remaining = 65.0
+	stage._elapsed_time = 10.0
 	var snap: Dictionary = stage._build_snapshot()
 	var client_stage_script: GDScript = ResourceLoader.load("res://mods_core_heist/core_heist_game.gd") as GDScript
 	var client_stage: Node3D = client_stage_script.new()
@@ -220,6 +225,8 @@ func _run() -> void:
 	client_stage._setup_match_local(0, 505, roster, false)
 	client_stage._apply_snapshot(snap)
 	if not _expect(int(client_stage._team_scores.get(1, 0)) == 5 and int(client_stage._team_scores.get(2, 0)) == 1, "client snapshot must sync team scores (5 vs 1)"):
+		return
+	if not _expect(is_equal_approx(float(client_stage._elapsed_time), 10.0), "client snapshot must derive _elapsed_time (10.0) so YOU marker auto-hides"):
 		return
 	if not _expect(bool(client_stage._client_core_warn) and is_equal_approx(float(client_stage._client_core_warn_z), 3.0), "client snapshot must sync core warning beacon state"):
 		return
@@ -234,6 +241,66 @@ func _run() -> void:
 	if not _expect(int(tp._hud_wins.get(1, 0)) == 1, "team-party win counter must increment for Team 1"):
 		return
 	minigame_inst.queue_free()
+
+	# 5b. 4v4 (2x4) and 2v2v2v2 (4x2) 8-player scaling + non-standalone results panel suppression
+	tp.set_team_mode(2)
+	for pid in range(1, 5):
+		tp.assign_player_team(pid, 1)
+	for pid in range(5, 9):
+		tp.assign_player_team(pid, 2)
+	var mg_4v4: Node = packed.instantiate()
+	root.add_child(mg_4v4)
+	var stage_4v4: Node3D = mg_4v4.get_node("Stage") as Node3D
+	stage_4v4._is_self_test = true
+	stage_4v4._standalone_mode = false
+	stage_4v4._is_server_sim = true
+	stage_4v4.round_finished.connect(Callable(self, "_on_round_finished"))
+	var roster_4v4: Array = []
+	for pid in range(1, 9):
+		roster_4v4.append({"id": pid - 1, "network_id": pid, "nickname": "P%d" % pid, "is_ai": false, "customization": []})
+	stage_4v4._setup_match_local(0, 606, roster_4v4, false)
+	if not _expect(stage_4v4._batteries.size() == 32 and int(stage_4v4.C.max_loose_standard(2, 8)) == 14, "4v4 must use 32-battery pool and scaled loose cap (14)"):
+		return
+	var hud_4v4: Dictionary = tp._hud._gather_hud_teams()
+	if not _expect(int((hud_4v4.get(1, {}) as Dictionary).get("alive", 0)) == 4 and int((hud_4v4.get(2, {}) as Dictionary).get("alive", 0)) == 4, "4v4 team-party HUD must see 4 alive per team"):
+		return
+	# Build HUD in hosted (non-standalone) mode and verify results panel is suppressed on finish
+	stage_4v4._hud.build_hud(stage_4v4, stage_4v4._team, false)
+	stage_4v4._is_self_test = false
+	var b_4v4_gold: int = stage_4v4._spawn_battery(int(stage_4v4.C.CELL_GOLD), Vector3.ZERO)
+	stage_4v4._deposit_battery(b_4v4_gold, 2)
+	stage_4v4._finish_match()
+	var hosted_res_visible: bool = stage_4v4._hud._results_panel != null and is_instance_valid(stage_4v4._hud._results_panel) and bool(stage_4v4._hud._results_panel.visible)
+	if not _expect(not hosted_res_visible, "non-standalone hosted match must suppress custom _results_panel"):
+		return
+	if not _expect(int(_last_round_scores.get(5, -1)) == 3 and int(_last_round_scores.get(8, -1)) == 3, "4v4 Team 2 all 4 members must sync exact score 3"):
+		return
+	if stage_4v4._hud._layer != null and is_instance_valid(stage_4v4._hud._layer):
+		stage_4v4._hud._layer.queue_free()
+	mg_4v4.queue_free()
+
+	tp.set_team_mode(4)
+	for pid in range(1, 9):
+		tp.assign_player_team(pid, ((pid - 1) / 2) + 1)
+	var mg_4x2: Node = packed.instantiate()
+	root.add_child(mg_4x2)
+	var stage_4x2: Node3D = mg_4x2.get_node("Stage") as Node3D
+	stage_4x2._is_self_test = true
+	stage_4x2._standalone_mode = false
+	stage_4x2._is_server_sim = true
+	stage_4x2.round_finished.connect(Callable(self, "_on_round_finished"))
+	stage_4x2._setup_match_local(0, 707, roster_4v4, false)
+	if not _expect(stage_4x2._active_team_ids == [1, 2, 3, 4] and int(stage_4x2.C.max_loose_standard(4, 8)) == 18 and int(stage_4x2.C.max_loose_gold(4, 8)) == 6, "2v2v2v2 must scale 4 teams with 18 std / 6 gold loose caps"):
+		return
+	var hud_4x2: Dictionary = tp._hud._gather_hud_teams()
+	if not _expect(hud_4x2.size() == 4 and int((hud_4x2.get(4, {}) as Dictionary).get("alive", 0)) == 2, "2v2v2v2 team-party HUD must see 4 teams x 2 alive"):
+		return
+	var b_4x2_core: int = stage_4x2._spawn_battery(int(stage_4x2.C.CELL_CORE), Vector3.ZERO)
+	stage_4x2._deposit_battery(b_4x2_core, 4)
+	stage_4x2._finish_match()
+	if not _expect(int(_last_round_scores.get(7, -1)) == 5 and int(_last_round_scores.get(8, -1)) == 5, "2v2v2v2 Team 4 members must sync exact score 5"):
+		return
+	mg_4x2.queue_free()
 
 	# 6. Hub v2 end-to-end: override_playlist, override_game, and override_picker on dynamic slot >= 1000
 	tp.set_team_mode(0) # FFA

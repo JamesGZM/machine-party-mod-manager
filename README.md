@@ -87,8 +87,8 @@ The table lists the versions in this repository’s [catalog](catalog/mods.json)
 | [Bubble Blitz](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/bubble-blitz) | `v0.1.6` | Fast 3-HP hybrid water-bubble arena across 4 randomized maps | Native MPML |
 | [Spike Ring](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/spike-ring) | `v0.1.4` | 60s circular pit survival: wall-mounted gapped lasers, saws, floor spikes, shrinking ring & visible airdrops | Native MPML |
 | [Team Party](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/team-party) | `v0.1.1` | Room-level 2-4 team setup & chair swapping, vanilla minigame hooks, and shared team registry API | Native MPML |
-| [Core Heist](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/core-heist) | `v0.1.0` | Team-only 75s 2-4 squad energy heist with dual-team Core resonance, vault raids, and Overdrive steal bonuses | Native MPML |
-| [Bomb Cart](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/bomb-cart) | `v0.1.0` | Strict 2-team 75s rail tug-of-war with Power Ram, Steam Valve Rocket Surges, Shockwave Pulses, and 10s Sudden Death | Native MPML |
+| [Core Heist](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/core-heist) | `v0.1.1` | Team-only 75s 2-4 squad energy heist with dual-team Core resonance, vault raids, and Overdrive steal bonuses | Native MPML |
+| [Bomb Cart](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/bomb-cart) | `v0.1.1` | 2-4 team 75s adaptive rail assault (straight / Y / Cross turntable) with Power Ram, Steam Valve Rocket Surges, Shockwave Pulses, and Sudden Death | Native MPML |
 
 See [candidate mods and inclusion rules](docs/en/catalog/mods.md) for acceptance checklists, upstream licensing notes and conflict groups.
 

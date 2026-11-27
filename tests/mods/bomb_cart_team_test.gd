@@ -2,10 +2,10 @@ extends SceneTree
 
 ## Integration test for Bomb Cart + mpm-core + team-party:
 ## - Dynamic Hub v2 slot (>= 1000)
-## - Strict 2-team admission gating matrix (FFA, local couch, 3-4 teams [2 Teams Only], 1-player, 1-team, 2-team)
-## - Team Party live HUD stats & synchronized Squads score + win counter
-## - Host -> Client snapshot round-trip
-## - Hub v2 playlist/game/picker gating in FFA, 3-team, and 2-team modes
+## - 2-4 team admission gating matrix (FFA, local couch, 5-team blocked, 1-player, 1-team, 2/3/4-team eligible)
+## - Team Party live HUD stats & synchronized Squads score + win counter in 2-team & 4-team (2v2v2v2) modes
+## - Door breach elimination live HUD update & Host -> Client multi-branch snapshot round-trip
+## - Hub v2 playlist/game/picker gating in FFA, 2-team, 3-team, and 4-team modes
 
 var _failed: bool = false
 var _last_round_scores: Dictionary = {}
@@ -94,7 +94,7 @@ func preload_inline_handler() -> GDScript:
 
 func preload_inline_lobby() -> GDScript:
 	var s := GDScript.new()
-	s.source_code = "extends Node\nvar lobby_handler = null\nvar loading := false\nvar player_order_by_seat := {0: 1, 1: 2, 2: 3, 3: 4}\n"
+	s.source_code = "extends Node\nvar lobby_handler = null\nvar loading := false\nvar player_order_by_seat := {0: 1, 1: 2, 2: 3, 3: 4, 4: 5, 5: 6, 6: 7, 7: 8}\n"
 	s.reload()
 	return s
 
@@ -129,8 +129,31 @@ func _run() -> void:
 			break
 	if not _expect(bc_slot >= 1000, "bomb-cart must receive dynamic Hub v2 slot >= 1000, got %d" % bc_slot):
 		return
+	if not _expect(bc_spec.get("icon_texture", null) is Texture2D, "bomb-cart must register a non-null Texture2D icon"):
+		return
 
-	# 2. Strict 2-team admission gating matrix via mpm-core minigame_sdk
+	# 1b. FX pool reset / replay safety (simulates [R]/[F2-F5] or multi-round rebuild)
+	var fx_script: GDScript = ResourceLoader.load("res://mods_bomb_cart/fx_pool.gd") as GDScript
+	var fx_pool = fx_script.new()
+	var fx_parent1 := Node3D.new()
+	root.add_child(fx_parent1)
+	fx_pool.setup(fx_parent1)
+	fx_pool.spawn_shove_burst(Vector3.ZERO, Color.WHITE)
+	fx_pool.tick(0.05)
+	fx_pool.clear()
+	fx_parent1.free()
+	var fx_parent2 := Node3D.new()
+	root.add_child(fx_parent2)
+	fx_pool.setup(fx_parent2)
+	fx_pool.spawn_ram_sparks(Vector3.ZERO, Color.YELLOW)
+	fx_pool.spawn_steam_surge(Vector3.ZERO, Vector3(1.0, 0.0, 0.0), Color.RED)
+	fx_pool.tick(0.05)
+	if not _expect(fx_parent2.get_child_count() > 0, "fx_pool must cleanly rebuild nodes after clear() and setup()"):
+		return
+	fx_pool.clear()
+	fx_parent2.free()
+
+	# 2. 2-4 team admission gating matrix via mpm-core minigame_sdk
 	var sdk = (Engine.get_meta(&"mpm_core") as Dictionary)["minigame_sdk"]
 	var res_ffa: Dictionary = sdk.evaluate_minigame_eligibility(bc_spec, {"is_local": false, "team_enabled": false, "team_count": 2, "total_players": 4})
 	if not _expect(not bool(res_ffa["eligible"]) and bool(res_ffa["hard_blocked"]) and str(res_ffa["reason_key"]) == "needs_team_mode", "FFA must hard-block bomb-cart"):
@@ -140,16 +163,8 @@ func _run() -> void:
 	if not _expect(not bool(res_local["eligible"]) and bool(res_local["hard_blocked"]) and str(res_local["reason_key"]) == "local_unsupported", "local couch must hard-block bomb-cart"):
 		return
 
-	var res_3teams: Dictionary = sdk.evaluate_minigame_eligibility(bc_spec, {"is_local": false, "team_enabled": true, "team_count": 3, "total_players": 6})
-	if not _expect(not bool(res_3teams["eligible"]) and bool(res_3teams["hard_blocked"]) and str(res_3teams["reason_key"]) == "team_count_out_of_range", "3 teams must hard-block bomb-cart"):
-		return
-	if not _expect(str(sdk.format_admission_tag(res_3teams, bc_spec)) == "[2 Teams Only]", "3 teams lock tag must be [2 Teams Only]"):
-		return
-
-	var res_4teams: Dictionary = sdk.evaluate_minigame_eligibility(bc_spec, {"is_local": false, "team_enabled": true, "team_count": 4, "total_players": 8})
-	if not _expect(not bool(res_4teams["eligible"]) and bool(res_4teams["hard_blocked"]) and str(res_4teams["reason_key"]) == "team_count_out_of_range", "4 teams must hard-block bomb-cart"):
-		return
-	if not _expect(str(sdk.format_admission_tag(res_4teams, bc_spec)) == "[2 Teams Only]", "4 teams lock tag must be [2 Teams Only]"):
+	var res_5teams: Dictionary = sdk.evaluate_minigame_eligibility(bc_spec, {"is_local": false, "team_enabled": true, "team_count": 5, "total_players": 10})
+	if not _expect(not bool(res_5teams["eligible"]) and bool(res_5teams["hard_blocked"]) and str(res_5teams["reason_key"]) == "team_count_out_of_range", "5 teams must hard-block bomb-cart"):
 		return
 
 	var res_1p: Dictionary = sdk.evaluate_minigame_eligibility(bc_spec, {"is_local": false, "team_enabled": true, "team_count": 2, "total_players": 1, "teams": {1: 1}})
@@ -165,12 +180,14 @@ func _run() -> void:
 		{"is_local": false, "team_enabled": true, "team_count": 2, "total_players": 3, "teams": {1: 1, 2: 2, 3: 2}},
 		{"is_local": false, "team_enabled": true, "team_count": 2, "total_players": 4, "teams": {1: 1, 2: 1, 3: 2, 4: 2}},
 		{"is_local": false, "team_enabled": true, "team_count": 2, "total_players": 8, "teams": {1: 1, 2: 1, 3: 1, 4: 1, 5: 2, 6: 2, 7: 2, 8: 2}},
+		{"is_local": false, "team_enabled": true, "team_count": 3, "total_players": 6, "teams": {1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3}},
+		{"is_local": false, "team_enabled": true, "team_count": 4, "total_players": 8, "teams": {1: 1, 2: 1, 3: 2, 4: 2, 5: 3, 6: 3, 7: 4, 8: 4}},
 	]:
 		var res_ok: Dictionary = sdk.evaluate_minigame_eligibility(bc_spec, ok_ctx)
-		if not _expect(bool(res_ok["eligible"]), "valid 2-team config must be eligible: " + str(ok_ctx)):
+		if not _expect(bool(res_ok["eligible"]), "valid 2-4 team config must be eligible: " + str(ok_ctx)):
 			return
 
-	# 3. Team Party state + Bomb Cart Stage live HUD & score sync
+	# 3. Team Party state + Bomb Cart 2-team Stage live HUD & score sync
 	var lobby := Node.new()
 	var handler := Control.new()
 	handler.set_script(preload_inline_handler())
@@ -192,13 +209,13 @@ func _run() -> void:
 	var stage: Node3D = minigame_inst.get_node("Stage") as Node3D
 	stage.round_finished.connect(Callable(self, "_on_round_finished"))
 
-	var roster := [
+	var roster2 := [
 		{"id": 0, "network_id": 1, "nickname": "A1", "is_ai": false, "customization": []},
 		{"id": 1, "network_id": 2, "nickname": "A2", "is_ai": false, "customization": []},
 		{"id": 2, "network_id": 3, "nickname": "B1", "is_ai": false, "customization": []},
 		{"id": 3, "network_id": 4, "nickname": "B2", "is_ai": false, "customization": []},
 	]
-	stage.setup_headless_match(roster, false)
+	stage.setup_headless_match(roster2, false)
 	stage._phase = stage.PH_LIVE
 
 	if not _expect(bool(minigame_inst.get_meta(&"mpm_custom_team_game", false)), "mpm_custom_team_game meta must be set on parent"):
@@ -207,36 +224,95 @@ func _run() -> void:
 	if not _expect(int((hud_stats.get(1, {}) as Dictionary).get("alive", 0)) == 2 and int((hud_stats.get(2, {}) as Dictionary).get("alive", 0)) == 2, "team-party HUD must see 2 alive per team"):
 		return
 
-	# 4. Host -> Client snapshot round-trip
-	stage._cart_x = 3.5
-	stage._surge_team = 1
-	stage._surge_timer = 1.8
-	var snap: Dictionary = stage.get_state_snapshot()
+	stage._finish_match(1)
+	var s1: int = int(_last_round_scores.get(1, -1))
+	var s2: int = int(_last_round_scores.get(2, -1))
+	var s3: int = int(_last_round_scores.get(3, -1))
+	var s4: int = int(_last_round_scores.get(4, -1))
+	if not _expect(s1 == 1 and s2 == 1 and s3 == 0 and s4 == 0, "2-team final scores must be exact: Team 1 == 1, Team 2 == 0 (got %s)" % str(_last_round_scores)):
+		return
+	if not _expect(int(tp._hud_wins.get(1, 0)) == 1, "team-party win counter must increment for Team 1"):
+		return
+	minigame_inst.queue_free()
+
+	# 4. 4-team (2v2v2v2) Stage: breach elimination updates team-party HUD + multi-branch snapshot round-trip + score sync
+	tp.set_team_mode(4)
+	tp.assign_player_team(1, 1)
+	tp.assign_player_team(2, 1)
+	tp.assign_player_team(3, 2)
+	tp.assign_player_team(4, 2)
+	tp.assign_player_team(5, 3)
+	tp.assign_player_team(6, 3)
+	tp.assign_player_team(7, 4)
+	tp.assign_player_team(8, 4)
+
+	var mg4: Node = packed.instantiate()
+	root.add_child(mg4)
+	var stage4: Node3D = mg4.get_node("Stage") as Node3D
+	_last_round_scores.clear()
+	stage4.round_finished.connect(Callable(self, "_on_round_finished"))
+	var roster4 := [
+		{"id": 0, "network_id": 1, "nickname": "R1", "is_ai": false, "customization": []},
+		{"id": 1, "network_id": 2, "nickname": "R2", "is_ai": false, "customization": []},
+		{"id": 2, "network_id": 3, "nickname": "B1", "is_ai": false, "customization": []},
+		{"id": 3, "network_id": 4, "nickname": "B2", "is_ai": false, "customization": []},
+		{"id": 4, "network_id": 5, "nickname": "G1", "is_ai": false, "customization": []},
+		{"id": 5, "network_id": 6, "nickname": "G2", "is_ai": false, "customization": []},
+		{"id": 6, "network_id": 7, "nickname": "Y1", "is_ai": false, "customization": []},
+		{"id": 7, "network_id": 8, "nickname": "Y2", "is_ai": false, "customization": []},
+	]
+	stage4.setup_headless_match(roster4, false)
+	stage4._phase = stage4.PH_LIVE
+	if not _expect((stage4._active_team_ids as Array) == [1, 2, 3, 4], "4-team stage must detect [1, 2, 3, 4]"):
+		return
+
+	# Breach Team 3 -> Team 3 alive becomes 0 in team-party HUD immediately
+	stage4._cart_branch_team = 3
+	stage4._cart_branch_dist = 10.5
+	stage4._last_attacker_team = 2
+	stage4.step_headless(1.0 / 60.0)
+	var hud4: Dictionary = tp._hud._gather_hud_teams()
+	if not _expect(int((hud4.get(3, {}) as Dictionary).get("alive", -1)) == 0 and int((hud4.get(2, {}) as Dictionary).get("alive", 0)) == 2, "Breaching Team 3 must update team-party HUD alive=0 for Team 3"):
+		return
+
+	# Host -> Client multi-branch snapshot round-trip
+	stage4._cart_reset_pause = 0.0
+	stage4._cart_branch_team = 4
+	stage4._cart_branch_dist = 4.2
+	stage4._cart_pos = Vector2(0.0, 4.2)
+	stage4._surge_team = 2
+	stage4._surge_timer = 1.7
+	var snap4: Dictionary = stage4.get_state_snapshot()
 	var client_stage_script: GDScript = ResourceLoader.load("res://mods_bomb_cart/bomb_cart_game.gd") as GDScript
 	var client_stage: Node3D = client_stage_script.new()
 	client_stage._is_self_test = true
 	client_stage._standalone_mode = true
 	client_stage._is_server_sim = false
 	root.add_child(client_stage)
-	client_stage._setup_match_local(0, 20261123, roster, false)
-	client_stage._apply_snapshot(snap)
-	if not _expect(is_equal_approx(float(client_stage._cart_x), 3.5) and int(client_stage._surge_team) == 1, "client snapshot must sync cart_x and surge_team"):
+	client_stage._setup_match_local(0, 20261123, roster4, false)
+	client_stage._apply_snapshot(snap4)
+	if not _expect(int(client_stage._cart_branch_team) == 4 and is_equal_approx(float(client_stage._cart_branch_dist), 4.2) and not bool((client_stage._door_alive as Dictionary)[3]) and not bool((client_stage._players[5] as Dictionary)["alive"]), "client snapshot must sync multi-branch cart, door_alive, and eliminated players"):
 		return
 	client_stage.queue_free()
 
-	# 5. Finish match -> synchronized Squads scores & team-party win counter
-	stage._finish_match(1)
-	var s1: int = int(_last_round_scores.get(1, -1))
-	var s2: int = int(_last_round_scores.get(2, -1))
-	var s3: int = int(_last_round_scores.get(3, -1))
-	var s4: int = int(_last_round_scores.get(4, -1))
-	if not _expect(s1 == s2 and s3 == s4 and s1 > s3, "Team 1 members must have equal winning score > Team 2 members (got %s)" % str(_last_round_scores)):
+	# Finish 4-team match -> Team 2 wins (3), intact non-winners Team 1 & Team 4 (2), breached Team 3 (0)
+	stage4._finish_match(2)
+	var f_t1_a: int = int(_last_round_scores.get(1, -1))
+	var f_t1_b: int = int(_last_round_scores.get(2, -1))
+	var f_t2_a: int = int(_last_round_scores.get(3, -1))
+	var f_t2_b: int = int(_last_round_scores.get(4, -1))
+	var f_t3_a: int = int(_last_round_scores.get(5, -1))
+	var f_t3_b: int = int(_last_round_scores.get(6, -1))
+	var f_t4_a: int = int(_last_round_scores.get(7, -1))
+	var f_t4_b: int = int(_last_round_scores.get(8, -1))
+	if not _expect(
+		f_t2_a == 3 and f_t2_b == 3 and f_t1_a == 2 and f_t1_b == 2 and f_t4_a == 2 and f_t4_b == 2 and f_t3_a == 0 and f_t3_b == 0,
+		"4-team final scores must be exact: winner Team 2 == 3, intact Teams 1&4 == 2, breached Team 3 == 0 (got %s)" % str(_last_round_scores)
+	):
 		return
-	if not _expect(int(tp._hud_wins.get(1, 0)) == 1, "team-party win counter must increment for Team 1"):
-		return
-	minigame_inst.queue_free()
+	mg4.queue_free()
 
-	# 6. Hub v2 end-to-end: FFA, 3-team lock, and 2-team unlock
+	# 5. Hub v2 end-to-end: FFA blocked, 2-team / 3-team / 4-team ALL unlocked & in playlist!
 	tp.set_team_mode(0) # FFA
 	var game_script := ResourceLoader.load("res://scripts/scenes/game/game.gd") as GDScript
 	var game_node = game_script.new()
@@ -257,15 +333,30 @@ func _run() -> void:
 	if not _expect(bool(item_bc.get_meta(&"_mpm_hard_blocked", false)), "playlist item must be hard-blocked in FFA"):
 		return
 
-	# Switch to 3-team mode -> must STILL be hard-blocked and excluded from playlist!
+	# Switch to 3-team mode -> MUST unlock and enter playlist!
 	tp.set_team_mode(3)
-	if not _expect(bool(item_bc.get_meta(&"_mpm_hard_blocked", false)), "playlist item must stay hard-blocked in 3-team mode"):
+	tp.assign_player_team(1, 1)
+	tp.assign_player_team(2, 2)
+	tp.assign_player_team(3, 3)
+	if not _expect(not bool(item_bc.get_meta(&"_mpm_hard_blocked", false)), "playlist item must unlock in 3-team mode"):
 		return
 	game_node.generate_session_playlist()
-	if not _expect(not game_node.session_minigame_list.has(bc_slot), "3-team playlist must exclude max_teams=2 bomb-cart"):
+	if not _expect(game_node.session_minigame_list.has(bc_slot), "3-team playlist must include bomb-cart"):
 		return
 
-	# Enable 2-team mode -> playlist item unlocks & game.gd includes & loads dynamic slot
+	# Switch to 4-team mode -> MUST unlock and enter playlist!
+	tp.set_team_mode(4)
+	tp.assign_player_team(1, 1)
+	tp.assign_player_team(2, 2)
+	tp.assign_player_team(3, 3)
+	tp.assign_player_team(4, 4)
+	if not _expect(not bool(item_bc.get_meta(&"_mpm_hard_blocked", false)), "playlist item must unlock in 4-team mode"):
+		return
+	game_node.generate_session_playlist()
+	if not _expect(game_node.session_minigame_list.has(bc_slot), "4-team playlist must include bomb-cart"):
+		return
+
+	# Switch to 2-team mode -> MUST unlock, enter playlist & load dynamic slot!
 	tp.set_team_mode(2)
 	tp.assign_player_team(1, 1)
 	tp.assign_player_team(2, 2)

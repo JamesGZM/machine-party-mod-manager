@@ -62,13 +62,17 @@ Uses Machine Party's pure keyboard controls:
 
 ## 4. Arena Layout & Dynamic 2–4 Team Scaling
 
-- **Arena Footprint**: Scales with active team count—`24m × 24m` for 2 teams, `28m × 28m` for 3–4 teams, enclosed by industrial guardrails.
+- **Arena Footprint**: Scales with active team count—`24m × 24m` for 2 teams (`2v2`, `4v4`), `28m × 28m` for 3–4 teams (`2v2v2`, `2v2v2v2`), enclosed by industrial guardrails on a dark charcoal sub-deck.
 - **Symmetrical Team Bases**:
-  - **2 Teams**: Opposite corners (SW vs. NE).
+  - **2 Teams**: Opposite corners (SW vs. NE) with non-overlapping 4-player formation clearance (`4v4`).
   - **3 Teams**: 120° equilateral triangle vertices.
   - **4 Teams**: All 4 corners.
-- **Mid-Field Flow**: Central elevated dispenser with dual short conveyors splitting spawns laterally, plus 4 mid-field bumper pillars for juking pursuers and breaking line of sight.
+- **Mid-Field Flow & Industrial Backdrop**: Central elevated dispenser with dual short conveyors splitting spawns laterally, 4 mid-field bumper pillars, and a north factory back wall featuring rusted plating, overhead pipes, warm fluorescent tubes, and a large **3D Diegetic CRT Monitor** displaying live `MM:SS` countdown and phase (`STANDARD LINE` / `HEAVY CORE` / `OVERDRIVE`) in phosphor-green `Terminal F4`.
+- **Lighting, Post-FX & Diegetic HUD**:
+  - Warm low-saturation industrial lighting with `vignette.gdshader` and `posterization.gdshader` via `BackBufferCopy`.
+  - Frameless outlined top-left team score row (leaving top-right completely clear for `team-party`'s HUD), official opening `YOU` bracket marker during prep and the first `2.5s` of play, large centered bold outlined `3-2-1-GO!` countdown, 0px-radius CRT bottom resonance bar, and a standalone-only 0px-radius CRT results panel (suppressed in official hosted matches).
 - **Readable Vault Visuals**: Overhead team-colored scoreboards and physical furnace slots that visibly fill with deposited cell meshes so every player can immediately spot which rival leads and where to raid.
+- **8-Player Battery Scaling**: Loose Standard (`10`→`18`) and Gold (`3`→`6`) caps plus conveyor spawn cadence scale cleanly with active team and player counts (`2v2v2`, `2v2v2v2`, `4v4`), reserving 2 pool slots for Heavy Cores.
 
 ## 5. Network Authority & State Sync
 
@@ -98,14 +102,14 @@ mods/core-heist/
 ├── arena_meshes.gd          # Dynamic 2-4 team arena, conveyors, furnaces & pillars
 ├── ai_controller.gd         # Co-op escort & raid AI for lobby-bots
 ├── fx_pool.gd               # Pooled sparks/telegraphs/resonance via mpm-core.create_fx_pool()
-├── hud_ui.gd                # Top team score bars, countdown & phase siren banner
+├── hud_ui.gd                # Diegetic-first HUD: top-left scores, YOU marker, countdown & CRT resonance
 ├── team_support.gd          # Synced from mods/_shared/team-support/team_support.gd
 ├── self_test.gd             # --self-test headless verification
 └── README.md                # Mod documentation
 ```
 
 ### Performance & Lint Redlines (per [First-party mod development specification](mod-development.md))
-- **Zero runtime allocations**: Pre-allocate a fixed pool of up to **24 cell nodes** with shared cached meshes/materials; pre-allocate and frustum-warmup all FX via `mpm-core.create_fx_pool()`.
+- **Zero runtime allocations**: Pre-allocate a fixed pool of up to **32 cell nodes** with shared cached meshes/materials; pre-allocate and frustum-warmup all FX via `mpm-core.create_fx_pool()`.
 - **Hot-path bans**: No `get_property_list()`, `instantiate()`, `StandardMaterial3D.new()`, or `queue_free()` in `_process` / `_physics_process`.
 - **Lint & headless compliance**: Must pass `node scripts/mod-lint.mjs` with explicit types on `.call()` / `.get()` / `.get_meta()`.
 

@@ -10,6 +10,7 @@ const POOL_BLOOD_DECALS := 12
 const POOL_BLAST_LIGHTS := 2
 const POOL_BLAST_CENTER_CELLS := 12
 const POOL_BLAST_ARM_CELLS := 48
+const AMBIENT_MOTE_COUNT := 16
 const EXPLOSION_SFX_MIN_INTERVAL_MS := 45
 
 var explosion_fx_pool: Array[Dictionary] = []
@@ -30,6 +31,10 @@ var blast_light_cursor: int = 0
 var blast_center_pool: Array[Node3D] = []
 var blast_arm_pool: Array[Node3D] = []
 var active_blast_visuals: Dictionary = {} # Vector2i -> { "node": Node3D, "is_center": bool, "timer": float }
+var ambient_motes: Array[Dictionary] = []
+var mote_time: float = 0.0
+var _kept_blasts: Array = []
+var _expired_cells: Array[Vector2i] = []
 
 var last_explosion_sfx_ms: int = 0
 
@@ -50,6 +55,10 @@ func clear() -> void:
 	blast_center_pool.clear()
 	blast_arm_pool.clear()
 	active_blast_visuals.clear()
+	ambient_motes.clear()
+	mote_time = 0.0
+	_kept_blasts.clear()
+	_expired_cells.clear()
 
 
 func _collect_particles_recursive(node: Node, out: Array[Node], trim_smoke: bool) -> void:
@@ -117,15 +126,18 @@ func init_pools(stage: Node3D) -> void:
 	bloodmist_fx_pool = _build_fx_pool(fx_root, stage._fx_bloodmist_scene, POOL_BLOODMIST_FX, false)
 
 	var mark_tex: Texture2D = stage._explosion_mark_tex
-	if mark_tex != null:
-		for _i in range(POOL_EXPLOSION_DECALS):
-			var dec := Decal.new()
-			dec.size = Vector3(cfg.TILE_SIZE * 1.45, 0.35, cfg.TILE_SIZE * 1.45)
+	for _i in range(POOL_EXPLOSION_DECALS):
+		var dec := Decal.new()
+		dec.size = Vector3(cfg.TILE_SIZE * 2.10, 0.50, cfg.TILE_SIZE * 2.10)
+		if mark_tex != null:
 			dec.texture_albedo = mark_tex
-			dec.position = Vector3(0.0, -50.0, 0.0)
-			dec.visible = false
-			fx_root.add_child(dec)
-			explosion_decals.append(dec)
+		dec.modulate = Color(0.14, 0.11, 0.10, 0.94)
+		dec.upper_fade = 0.35
+		dec.lower_fade = 0.35
+		dec.position = Vector3(0.0, -50.0, 0.0)
+		dec.visible = false
+		fx_root.add_child(dec)
+		explosion_decals.append(dec)
 
 	var btex1: Texture2D = stage._blood_tex_01
 	var btex2: Texture2D = stage._blood_tex_02
@@ -148,6 +160,38 @@ func init_pools(stage: Node3D) -> void:
 		flash.visible = false
 		fx_root.add_child(flash)
 		blast_light_pool.append({"light": flash, "timer": 0.0})
+
+	# Pre-allocate subtle drifting warehouse dust motes across overhead light pools (zero runtime alloc).
+	var mote_mesh := QuadMesh.new()
+	mote_mesh.size = Vector2(0.075, 0.075)
+	var mote_mat := StandardMaterial3D.new()
+	mote_mat.albedo_color = Color(1.0, 0.84, 0.56, 0.34)
+	mote_mat.emission_enabled = true
+	mote_mat.emission = Color(1.0, 0.78, 0.42)
+	mote_mat.emission_energy_multiplier = 1.25
+	mote_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mote_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mote_mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	for m_i in range(AMBIENT_MOTE_COUNT):
+		var mmi := MeshInstance3D.new()
+		mmi.mesh = mote_mesh
+		mmi.material_override = mote_mat
+		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var bx: float = -7.6 + float(m_i % 4) * 5.0 + sin(float(m_i) * 2.1) * 1.1
+		var by: float = 1.20 + float(m_i % 3) * 0.90
+		var bz: float = -5.2 + float(m_i / 4) * 3.1 + cos(float(m_i) * 1.7) * 0.6
+		var base_pos := Vector3(bx, by, bz)
+		mmi.position = base_pos
+		fx_root.add_child(mmi)
+		ambient_motes.append({
+			"node": mmi,
+			"base": base_pos,
+			"phase": float(m_i) * 0.83,
+			"sx": 0.35 + float(m_i % 3) * 0.14,
+			"sy": 0.52 + float(m_i % 4) * 0.11,
+			"sz": 0.31 + float(m_i % 5) * 0.09,
+			"scale": 0.72 + float(m_i % 4) * 0.16,
+		})
 
 	# Warm up shaders & GPU particle pipelines in camera frustum during intro so first real blast has zero hitch.
 	if str(stage._screenshot_path).is_empty() and stage.is_inside_tree():
@@ -202,6 +246,21 @@ func trigger_fx_entry(entry: Dictionary, world_pos: Vector3, scale_val: float, l
 
 
 func step_fx_pools(stage: Node3D, delta: float) -> void:
+	mote_time += delta
+	for m_raw in ambient_motes:
+		var md: Dictionary = m_raw
+		var mn: MeshInstance3D = md["node"]
+		if mn == null or not is_instance_valid(mn):
+			continue
+		var base_p: Vector3 = md["base"]
+		var ph: float = float(md["phase"])
+		var ox: float = sin(mote_time * float(md["sx"]) + ph) * 0.65
+		var oy: float = sin(mote_time * float(md["sy"]) + ph * 1.7) * 0.32
+		var oz: float = cos(mote_time * float(md["sz"]) + ph * 0.9) * 0.55
+		mn.position = Vector3(base_p.x + ox, base_p.y + oy, base_p.z + oz)
+		var ms: float = float(md["scale"]) * (0.78 + 0.22 * sin(mote_time * 1.9 + ph))
+		mn.scale = Vector3(ms, ms, ms)
+
 	for pool in [explosion_fx_pool, hit_blood_fx_pool, bloodmist_fx_pool]:
 		for entry in pool:
 			var rem: float = float(entry["timer"])
@@ -263,8 +322,8 @@ func spawn_explosion_mark(stage: Node3D, world_pos: Vector3, size_val: float) ->
 		return
 	var dec: Decal = explosion_decals[explosion_decal_cursor % explosion_decals.size()]
 	explosion_decal_cursor += 1
-	if is_instance_valid(dec):
-		dec.size = Vector3(size_val, 0.35, size_val)
+	if is_instance_valid(dec) and dec.texture_albedo != null:
+		dec.size = Vector3(size_val, 0.45, size_val)
 		dec.position = Vector3(world_pos.x, 0.04, world_pos.z)
 		dec.rotation_degrees.y = (stage._rng as RandomNumberGenerator).randf_range(0.0, 360.0)
 		dec.visible = true
@@ -309,7 +368,7 @@ func spawn_blast_visual(stage: Node3D, cells: Array, owner_id: int) -> void:
 					}
 		if is_center:
 			spawn_vanilla_fx(stage, stage._fx_explosion_scene, Vector3(wpos.x, 0.25, wpos.z), 0.22, 1.8)
-			spawn_explosion_mark(stage, wpos, float(cfg.TILE_SIZE) * 1.45)
+			spawn_explosion_mark(stage, wpos, float(cfg.TILE_SIZE) * 2.10)
 			trigger_blast_light(stage, wpos)
 
 	var sfx_exp: AudioStreamPlayer = stage._sfx_explosion
@@ -332,7 +391,7 @@ func step_blasts(stage: Node3D, delta: float) -> void:
 	var map_h: int = int(stage._map_height)
 	var players: Dictionary = stage._players
 	var blasts: Array = stage._blasts
-	var kept: Array = []
+	_kept_blasts.clear()
 	for b_raw in blasts:
 		var b: Dictionary = b_raw
 		b["timer"] = float(b["timer"]) - delta
@@ -349,16 +408,18 @@ func step_blasts(stage: Node3D, delta: float) -> void:
 					stage._hit_player_by_blast(p, owner_id)
 
 		if float(b["timer"]) > 0.0:
-			kept.append(b)
-	stage._blasts = kept
+			_kept_blasts.append(b)
+	blasts.clear()
+	for kb in _kept_blasts:
+		blasts.append(kb)
 
-	var expired_cells: Array[Vector2i] = []
+	_expired_cells.clear()
 	for cell_key in active_blast_visuals.keys():
 		var entry: Dictionary = active_blast_visuals[cell_key]
 		entry["timer"] = float(entry["timer"]) - delta
 		if float(entry["timer"]) <= 0.0:
-			expired_cells.append(cell_key)
-	for c in expired_cells:
+			_expired_cells.append(cell_key)
+	for c in _expired_cells:
 		var entry: Dictionary = active_blast_visuals[c]
 		active_blast_visuals.erase(c)
 		var n: Node3D = entry["node"]

@@ -12,16 +12,16 @@ This directory holds GDScript mods authored in `machine-party-mod-manager`. Ever
 
 | ID | Name | Version | Package ZIP | Game Compatibility | Windows Verification | Documentation |
 | --- | --- | --- | --- | --- | --- | --- |
-| `roller-carnival` | Roller Carnival (滾筒嘉年華) | `0.1.12` | `roller-carnival-0.1.12.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [mods/roller-carnival/README.md](roller-carnival/README.md) |
+| `roller-carnival` | Roller Carnival (滾筒嘉年華) | `0.1.13` | `roller-carnival-0.1.13.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [mods/roller-carnival/README.md](roller-carnival/README.md) |
 | `lobby-bots` | Lobby Bots (房間機器人) | `0.2.2` | `lobby-bots-0.2.2.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Lobby Bots](lobby-bots/README.md) |
 | `standalone-hd` | Standalone HD (獨立高清) | `0.1.2` | `standalone-hd-0.1.2.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Standalone HD](standalone-hd/README.md) |
 | `player-spotlight` | Player Spotlight (玩家聚光燈) | `0.1.1` | `player-spotlight-0.1.1.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Player Spotlight](player-spotlight/README.md) |
-| `bubble-blitz` | Bubble Blitz (泡泡爆破) | `0.1.6` | `bubble-blitz-0.1.6.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Bubble Blitz](bubble-blitz/README.md) |
-| `spike-ring` | Spike Ring (尖刺圆环) | `0.1.4` | `spike-ring-0.1.4.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Spike Ring](spike-ring/README.md) |
+| `bubble-blitz` | Bubble Blitz (泡泡爆破) | `0.1.7` | `bubble-blitz-0.1.7.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Bubble Blitz](bubble-blitz/README.md) |
+| `spike-ring` | Spike Ring (尖刺圆环) | `0.1.5` | `spike-ring-0.1.5.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Spike Ring](spike-ring/README.md) |
 | `team-party` | Team Party (組隊派對) | `0.1.1` | `team-party-0.1.1.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Team Party](team-party/README.md) |
 | `mpm-core` | MPM Core (MPM 核心運行庫) | `0.1.1` | `mpm-core-0.1.1.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [MPM Core](mpm-core/README.md) |
-| `core-heist` | Core Heist (能源搶奪戰) | `0.1.1` | `core-heist-0.1.1.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Core Heist](core-heist/README.md) |
-| `bomb-cart` | Bomb Cart (炸彈推車) | `0.1.1` | `bomb-cart-0.1.1.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Bomb Cart](bomb-cart/README.md) |
+| `core-heist` | Core Heist (能源搶奪戰) | `0.1.2` | `core-heist-0.1.2.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Core Heist](core-heist/README.md) |
+| `bomb-cart` | Bomb Cart (炸彈推車) | `0.1.2` | `bomb-cart-0.1.2.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Bomb Cart](bomb-cart/README.md) |
 | `voltage-greed` | Voltage Greed (高壓績效) | `0.1.0` | `voltage-greed-0.1.0.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Voltage Greed](voltage-greed/README.md) |
 
 ## Deterministic ZIP packaging rules

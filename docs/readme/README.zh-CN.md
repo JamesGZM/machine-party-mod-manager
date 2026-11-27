@@ -80,15 +80,15 @@ Steam 目录自动检测 · 离线缓存与还原 · 简体中文 / 繁體中文
 | --- | --- | --- | --- |
 | [Overtime](https://github.com/DarkJadeStone/MachineParty-Overtime) | `v1.7` | 最多 8 人在线或本地同玩 | 作者 CLI 资源清单 → MPML |
 | [MachineParty+](https://github.com/Ghostx10742/MachineParty-Plus) | `v2.1.0` | 公开房间、语音与文字聊天 | 原生 MPML |
-| [滚筒嘉年华](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/roller-carnival) | `v0.1.12` | 机械狂欢躲避小游戏 | 原生 MPML |
+| [滚筒嘉年华](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/roller-carnival) | `v0.1.13` | 机械狂欢躲避小游戏 | 原生 MPML |
 | [Lobby Bots](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/lobby-bots) | `v0.2.2` | 房主可添加或移除默认就绪的测试机器人。 | 原生 MPML |
 | [独立高清](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/standalone-hd) | `v0.1.2` | 提高 3D 渲染清晰度，保留窗口模式和 HUD 布局 | 原生 MPML |
 | [玩家聚光灯](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/player-spotlight) | `v0.1.1` | 在所有 3D 小游戏中只为自己点亮头顶工业聚光灯 | 原生 MPML |
-| [泡泡爆破](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/bubble-blitz) | `v0.1.6` | 3 滴血结合版泡泡堂小游戏，4 套随机地图与传送带互坑 | 原生 MPML |
-| [尖刺圆环](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/spike-ring) | `v0.1.4` | 60 秒重工业环形生存赛：墙壁缺口激光、电锯、伸缩地刺、缩圈尖刺环与空投道具互推 | 原生 MPML |
+| [泡泡爆破](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/bubble-blitz) | `v0.1.7` | 3 滴血结合版泡泡堂小游戏，4 套随机地图与传送带互坑 | 原生 MPML |
+| [尖刺圆环](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/spike-ring) | `v0.1.5` | 60 秒重工业环形生存赛：墙壁缺口激光、电锯、伸缩地刺、缩圈尖刺环与空投道具互推 | 原生 MPML |
 | [组队派对](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/team-party) | `v0.1.1` | 房间 2–4 队手动/洗牌/拖拽分队、原版小游戏挂接与全模组共享团队注册表 | 原生 MPML |
-| [能源抢夺战](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/core-heist) | `v0.1.1` | 纯组队 2–4 队 75 秒能源抢夺对抗：双人合抬反应炉核心共振加速、回收炉磁吸锁与过载偷家 | 原生 MPML |
-| [炸弹推车](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/bomb-cart) | `v0.1.1` | 2–4 队 75 秒自适应轨道攻防（直轨／Y 型／十字转盘）：强力撞车、蒸汽阀门火箭助推、震荡脉冲与突然死亡加时 | 原生 MPML |
+| [能源抢夺战](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/core-heist) | `v0.1.2` | 纯组队 2–4 队 75 秒能源抢夺对抗：双人合抬反应炉核心共振加速、回收炉磁吸锁与过载偷家 | 原生 MPML |
+| [炸弹推车](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/bomb-cart) | `v0.1.2` | 2–4 队 75 秒自适应轨道攻防（直轨／Y 型／十字转盘）：强力撞车、蒸汽阀门火箭助推、震荡脉冲与突然死亡加时 | 原生 MPML |
 | [高压绩效](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/voltage-greed) | `v0.1.0` | 3 轮近景电椅贪心博弈（2–8+ 人，支持混战与组队）：按住刷 KPI、松手锁分、硬撑专属 S +12% 偷踹、工厂监控电罚与工业事件 | 原生 MPML |
 
 验收清单、上游授权边界与互斥组规则详见[候选模组与收录规范](../zh-CN/catalog/mods.md)。

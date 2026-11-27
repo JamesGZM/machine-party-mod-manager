@@ -8,12 +8,23 @@ const POOL_DEPOSIT := 4
 const POOL_WARN := 2
 const POOL_RESONANCE := 4
 const POOL_POPUPS := 8
+const SCORCH_POOL_SIZE := 6
+const FLASH_LIGHT_POOL_SIZE := 2
+const AMBIENT_MOTE_COUNT := 16
+const TEX_EXPLOSION_MARK := "res://textures/decals/explosion_mark.png"
 
 var _core_pool = null
 var _fallback_pools: Dictionary = {}
 var _fallback_active: Dictionary = {}
+var _fallback_kinds: Array = []
 var _popup_pool: Array = []
 var _popup_cursor: int = 0
+var _scorch_pool: Array = []
+var _scorch_cursor: int = 0
+var _flash_pool: Array = []
+var _flash_cursor: int = 0
+var _motes: Array = []
+var _mote_time: float = 0.0
 var _shared_meshes: Dictionary = {}
 var _shared_mats: Dictionary = {}
 var _initialized: bool = false
@@ -124,6 +135,9 @@ func init_pools(fx_root: Node3D, skip_warmup: bool = false) -> void:
 	_register_kind("warn", fx_root, func(): return _make_warn_beacon(), POOL_WARN)
 	_register_kind("resonance", fx_root, func(): return _make_resonance_beam(), POOL_RESONANCE)
 	_init_popup_pool(fx_root)
+	_init_scorch_pool(fx_root)
+	_init_flash_pool(fx_root)
+	_init_motes(fx_root)
 	_initialized = true
 	if not skip_warmup:
 		_warmup_in_frustum()
@@ -143,6 +157,8 @@ func _register_kind(kind: String, parent: Node3D, factory: Callable, capacity: i
 			arr.append(n)
 	_fallback_pools[kind] = arr
 	_fallback_active[kind] = []
+	if not _fallback_kinds.has(kind):
+		_fallback_kinds.append(kind)
 
 
 func _warmup_in_frustum() -> void:
@@ -256,9 +272,174 @@ func update_resonance_beam(node: Node3D, a: Vector3, b: Vector3, color: Color) -
 		mat.emission = color
 
 
+func _init_scorch_pool(fx_root: Node3D) -> void:
+	_scorch_pool.clear()
+	_scorch_cursor = 0
+	var mark_tex: Texture2D = null
+	if ResourceLoader.exists(TEX_EXPLOSION_MARK):
+		var loaded_tex = ResourceLoader.load(TEX_EXPLOSION_MARK)
+		if loaded_tex is Texture2D:
+			mark_tex = loaded_tex as Texture2D
+	var scorch_plane_mesh: PlaneMesh = null
+	var scorch_fallback_mat: StandardMaterial3D = null
+	if mark_tex == null:
+		scorch_plane_mesh = PlaneMesh.new()
+		scorch_plane_mesh.size = Vector2(1.0, 1.0)
+		scorch_fallback_mat = StandardMaterial3D.new()
+		scorch_fallback_mat.albedo_color = Color(0.08, 0.06, 0.05, 0.42)
+		scorch_fallback_mat.roughness = 0.95
+		scorch_fallback_mat.metallic = 0.0
+		scorch_fallback_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	for s_i in range(SCORCH_POOL_SIZE):
+		if mark_tex != null:
+			var dec := Decal.new()
+			dec.size = Vector3(2.0, 0.45, 2.0)
+			dec.texture_albedo = mark_tex
+			dec.modulate = Color(0.20, 0.16, 0.14, 0.72)
+			dec.upper_fade = 0.35
+			dec.lower_fade = 0.35
+			dec.position = Vector3(0.0, -50.0, 0.0)
+			dec.visible = false
+			fx_root.add_child(dec)
+			_scorch_pool.append({"node": dec, "is_decal": true, "seed_ang": float(s_i) * 1.13})
+		else:
+			var smi := MeshInstance3D.new()
+			smi.mesh = scorch_plane_mesh
+			smi.material_override = scorch_fallback_mat
+			smi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			smi.position = Vector3(0.0, -50.0, 0.0)
+			smi.visible = false
+			fx_root.add_child(smi)
+			_scorch_pool.append({"node": smi, "is_decal": false, "seed_ang": float(s_i) * 1.13})
+
+
+func _init_flash_pool(fx_root: Node3D) -> void:
+	_flash_pool.clear()
+	_flash_cursor = 0
+	for _i in range(FLASH_LIGHT_POOL_SIZE):
+		var fl := OmniLight3D.new()
+		fl.shadow_enabled = false
+		fl.light_color = Color(1.0, 0.62, 0.24)
+		fl.light_energy = 0.0
+		fl.omni_range = 6.5
+		fl.position = Vector3(0.0, -50.0, 0.0)
+		fl.visible = false
+		fx_root.add_child(fl)
+		_flash_pool.append({"light": fl, "timer": 0.0, "duration": 0.25, "peak_energy": 4.0})
+
+
+func _init_motes(fx_root: Node3D) -> void:
+	_motes.clear()
+	_mote_time = 0.0
+	var mote_mesh := QuadMesh.new()
+	mote_mesh.size = Vector2(0.075, 0.075)
+	var mote_mat := StandardMaterial3D.new()
+	mote_mat.albedo_color = Color(1.0, 0.84, 0.56, 0.34)
+	mote_mat.emission_enabled = true
+	mote_mat.emission = Color(1.0, 0.78, 0.42)
+	mote_mat.emission_energy_multiplier = 1.2
+	mote_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mote_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mote_mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	for m_i in range(AMBIENT_MOTE_COUNT):
+		var mmi := MeshInstance3D.new()
+		mmi.mesh = mote_mesh
+		mmi.material_override = mote_mat
+		mmi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var bx: float = -7.2 + float(m_i % 4) * 4.8 + sin(float(m_i) * 2.1) * 1.1
+		var by: float = 1.25 + float(m_i % 3) * 0.95
+		var bz: float = -3.0 + float(m_i / 4) * 2.0 + cos(float(m_i) * 1.7) * 0.55
+		var base_pos := Vector3(bx, by, bz)
+		mmi.position = base_pos
+		fx_root.add_child(mmi)
+		_motes.append({
+			"node": mmi,
+			"base": base_pos,
+			"phase": float(m_i) * 0.83,
+			"sx": 0.35 + float(m_i % 3) * 0.14,
+			"sy": 0.52 + float(m_i % 4) * 0.11,
+			"sz": 0.31 + float(m_i % 5) * 0.09,
+			"scale": 0.72 + float(m_i % 4) * 0.16,
+		})
+
+
+func spawn_scorch_decal(pos: Vector3, scale_r: float = 2.0) -> void:
+	if not _initialized or _scorch_pool.is_empty():
+		return
+	var slot: Dictionary = _scorch_pool[_scorch_cursor] as Dictionary
+	_scorch_cursor = (_scorch_cursor + 1) % _scorch_pool.size()
+	var rot_y: float = fmod(absf(pos.x * 1.73 + pos.z * 2.31) + float(slot["seed_ang"]), TAU)
+	if bool(slot["is_decal"]):
+		var dec := slot["node"] as Decal
+		if dec != null and is_instance_valid(dec):
+			dec.size = Vector3(scale_r, 0.45, scale_r)
+			dec.position = Vector3(pos.x, 0.04, pos.z)
+			dec.rotation.y = rot_y
+			dec.visible = true
+	else:
+		var mi := slot["node"] as MeshInstance3D
+		if mi != null and is_instance_valid(mi):
+			mi.position = Vector3(pos.x, 0.024, pos.z)
+			mi.rotation.y = rot_y
+			mi.scale = Vector3(scale_r * 0.85, 1.0, scale_r * 0.85)
+			mi.visible = true
+
+
+func spawn_flash_light(pos: Vector3, col: Color, peak_energy: float = 4.0, range_m: float = 6.5, dur: float = 0.25) -> void:
+	if not _initialized or _flash_pool.is_empty():
+		return
+	var slot: Dictionary = _flash_pool[_flash_cursor] as Dictionary
+	_flash_cursor = (_flash_cursor + 1) % _flash_pool.size()
+	var fl := slot["light"] as OmniLight3D
+	if fl == null or not is_instance_valid(fl):
+		return
+	fl.position = Vector3(pos.x, maxf(pos.y, 0.85), pos.z)
+	fl.light_color = col
+	fl.omni_range = range_m
+	fl.light_energy = peak_energy
+	fl.visible = true
+	slot["timer"] = dur
+	slot["duration"] = dur
+	slot["peak_energy"] = peak_energy
+
+
 func tick(delta: float) -> void:
 	if not _initialized:
 		return
+	_mote_time += delta
+	for m_raw in _motes:
+		var md: Dictionary = m_raw as Dictionary
+		var mn := md["node"] as MeshInstance3D
+		if mn == null or not is_instance_valid(mn):
+			continue
+		var base_p: Vector3 = md["base"] as Vector3
+		var ph: float = float(md["phase"])
+		var ox: float = sin(_mote_time * float(md["sx"]) + ph) * 0.65
+		var oy: float = sin(_mote_time * float(md["sy"]) + ph * 1.7) * 0.32
+		var oz: float = cos(_mote_time * float(md["sz"]) + ph * 0.9) * 0.55
+		mn.position = Vector3(base_p.x + ox, base_p.y + oy, base_p.z + oz)
+		var ms: float = float(md["scale"]) * (0.78 + 0.22 * sin(_mote_time * 1.9 + ph))
+		mn.scale = Vector3(ms, ms, ms)
+
+	for f_raw in _flash_pool:
+		var fslot: Dictionary = f_raw as Dictionary
+		var ft: float = float(fslot["timer"])
+		if ft <= 0.0:
+			continue
+		ft = maxf(0.0, ft - delta)
+		fslot["timer"] = ft
+		var fl := fslot["light"] as OmniLight3D
+		if fl == null or not is_instance_valid(fl):
+			fslot["timer"] = 0.0
+			continue
+		if ft <= 0.0:
+			fl.light_energy = 0.0
+			fl.visible = false
+			fl.position = Vector3(0.0, -50.0, 0.0)
+		else:
+			var fdur: float = maxf(0.001, float(fslot["duration"]))
+			fl.light_energy = float(fslot["peak_energy"]) * clampf(ft / fdur, 0.0, 1.0)
+
 	for raw_pop in _popup_pool:
 		var pop: Dictionary = raw_pop as Dictionary
 		var t: float = float(pop["timer"])
@@ -277,20 +458,26 @@ func tick(delta: float) -> void:
 	if _core_pool != null and _core_pool.has_method("tick"):
 		_core_pool.call("tick", delta)
 		return
-	for kind in _fallback_active.keys():
+	for raw_kind in _fallback_kinds:
+		var kind: String = str(raw_kind)
 		var act: Array = _fallback_active[kind] as Array
-		var expired: Array = []
-		for item in act:
-			var d: Dictionary = item as Dictionary
+		for i in range(act.size() - 1, -1, -1):
+			var d: Dictionary = act[i] as Dictionary
 			if not bool(d.get("timed", false)):
 				continue
 			var rem: float = float(d.get("remaining", 0.0)) - delta
 			d["remaining"] = rem
 			if rem <= 0.0:
-				expired.append(d.get("node", null))
-		for n in expired:
-			if n is Node:
-				release(str(kind), n as Node)
+				var exp_node = d.get("node", null)
+				act.remove_at(i)
+				if exp_node is Node:
+					var n3 := exp_node as Node
+					if is_instance_valid(n3):
+						if n3 is Node3D:
+							(n3 as Node3D).visible = false
+						var pool: Array = _fallback_pools.get(kind, []) as Array
+						if not pool.has(n3):
+							pool.append(n3)
 
 
 func clear() -> void:
@@ -299,5 +486,12 @@ func clear() -> void:
 	_core_pool = null
 	_fallback_pools.clear()
 	_fallback_active.clear()
+	_fallback_kinds.clear()
 	_popup_pool.clear()
+	_scorch_pool.clear()
+	_flash_pool.clear()
+	_motes.clear()
+	_scorch_cursor = 0
+	_flash_cursor = 0
+	_mote_time = 0.0
 	_initialized = false

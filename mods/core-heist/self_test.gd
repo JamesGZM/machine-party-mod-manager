@@ -120,8 +120,9 @@ func stage_screenshot_action(stage: Node3D) -> void:
 				stage._deposit_battery(b_dep, tid)
 				if tid != int(stage._active_team_ids[0]):
 					(stage._batteries[b_dep] as Dictionary)["lock_timer"] = 0.0
-	# Clear transient deposit popups/bursts from staging so vault scoreboards read crisply
+	# Clear transient deposit popups/bursts from staging so vault scoreboards & pads read crisply
 	if stage._fx_pool != null:
+		stage._fx_pool.tick(1.0)
 		for raw_pop in stage._fx_pool._popup_pool:
 			var pop: Dictionary = raw_pop as Dictionary
 			pop["timer"] = 0.0

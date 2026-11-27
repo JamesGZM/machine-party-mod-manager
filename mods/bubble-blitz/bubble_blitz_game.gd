@@ -63,6 +63,10 @@ var _camera: Camera3D = null
 
 var _monitor_timer: Label3D = null
 var _monitor_theme: Label3D = null
+var _fans: Array = []
+var _flicker_lamp_mat: StandardMaterial3D = null
+var _world_env: Environment = null
+var _light_rig: Node3D = null
 var _shader_layer: CanvasLayer = null
 var _hud_layer: CanvasLayer = null
 var _banner_label: Label = null
@@ -134,6 +138,40 @@ func _load_helpers() -> void:
 func _exit_tree() -> void:
 	if _fx_pool != null:
 		_fx_pool.clear()
+	_tile_nodes.clear()
+	_bubble_nodes.clear()
+	_item_nodes.clear()
+	_players.clear()
+	_bubbles.clear()
+	_blasts.clear()
+	_items.clear()
+	_client_inputs.clear()
+	_fans.clear()
+	_flicker_lamp_mat = null
+	_fx_hit_blood_scene = null
+	_fx_bloodmist_scene = null
+	_fx_explosion_scene = null
+	_fx_dustplume_scene = null
+	_explosion_mark_tex = null
+	_blood_tex_01 = null
+	_blood_tex_02 = null
+	_sfx_shove = null
+	_sfx_elim = null
+	_sfx_explosion = null
+	_sfx_place = null
+	_sfx_pickup = null
+	_sfx_countdown = null
+	_sfx_ding = null
+	_sfx_beep = null
+	if _ambience_player != null and is_instance_valid(_ambience_player):
+		_ambience_player.stop()
+	_ambience_player = null
+	_world_env = null
+	_light_rig = null
+	if M != null and M.has_method("clear_caches"):
+		M.clear_caches()
+	C = null
+	M = null
 	_team = null
 	_fx_pool = null
 	_ai_ctrl = null
@@ -142,20 +180,23 @@ func _exit_tree() -> void:
 
 func _ready() -> void:
 	_load_helpers()
-	_setup_environment()
-	_setup_post_fx()
-	_setup_vanilla_audio_and_fx()
-	_setup_hud()
-
 	var args: Array = Array(OS.get_cmdline_args()) + Array(OS.get_cmdline_user_args())
 	for raw_a in args:
 		var a: String = str(raw_a)
 		if a == "--self-test":
 			_is_self_test = true
-			_run_self_test()
-			return
-		if a.begins_with("--capture-screenshot="):
+		elif a.begins_with("--capture-screenshot="):
 			_screenshot_path = a.substr("--capture-screenshot=".length())
+
+	_setup_environment()
+	if not _is_self_test:
+		_setup_post_fx()
+		_setup_vanilla_audio_and_fx()
+	_setup_hud()
+
+	if _is_self_test:
+		_run_self_test()
+		return
 
 	_standalone_mode = (get_parent() == get_tree().root)
 	if _standalone_mode:
@@ -163,21 +204,33 @@ func _ready() -> void:
 
 
 func _setup_environment() -> void:
-	# Authentic Machine Party warm low-saturation industrial atmosphere.
+	# Authentic Machine Party indoor warehouse light pools + SSAO + depth fog + ACES.
 	var env := Environment.new()
+	env.tonemap_mode = Environment.TONE_MAPPER_ACES
 	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.04, 0.04, 0.05)
+	env.background_color = Color(0.018, 0.016, 0.016)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.36, 0.31, 0.28)
-	env.ambient_light_energy = 0.72
+	env.ambient_light_color = Color(0.36, 0.38, 0.43)
+	env.ambient_light_energy = 0.38
 	env.adjustment_enabled = true
-	env.adjustment_brightness = 1.06
-	env.adjustment_contrast = 1.14
-	env.adjustment_saturation = 0.86
+	env.adjustment_brightness = 1.02
+	env.adjustment_contrast = 1.09
+	env.adjustment_saturation = 0.78
 	env.glow_enabled = true
-	env.glow_intensity = 0.45
-	env.glow_bloom = 0.18
+	env.glow_intensity = 0.32
+	env.glow_bloom = 0.09
+	env.ssao_enabled = true
+	env.ssao_radius = 0.75
+	env.ssao_intensity = 1.75
+	env.ssao_power = 1.45
+	env.fog_enabled = true
+	env.fog_mode = Environment.FOG_MODE_DEPTH
+	env.fog_light_color = Color(0.028, 0.025, 0.024)
+	env.fog_depth_begin = 25.0
+	env.fog_depth_end = 60.0
+	env.fog_depth_curve = 1.2
 
+	_world_env = env
 	var we := WorldEnvironment.new()
 	we.name = "WorldEnv"
 	we.environment = env
@@ -185,18 +238,51 @@ func _setup_environment() -> void:
 
 	var sun := DirectionalLight3D.new()
 	sun.name = "KeyLight"
-	sun.rotation_degrees = Vector3(-56.0, 22.0, 0.0)
-	sun.light_color = Color(1.0, 0.94, 0.86)
-	sun.light_energy = 1.25
+	sun.rotation_degrees = Vector3(-52.0, 26.0, 0.0)
+	sun.light_color = Color(0.92, 0.90, 0.90)
+	sun.light_energy = 0.92
 	sun.shadow_enabled = true
+	sun.shadow_bias = 0.04
+	sun.shadow_blur = 1.3
 	add_child(sun)
 
-	var fill := DirectionalLight3D.new()
-	fill.name = "FillLight"
-	fill.rotation_degrees = Vector3(-32.0, -145.0, 0.0)
-	fill.light_color = Color(0.75, 0.86, 1.0)
-	fill.light_energy = 0.40
-	add_child(fill)
+	var rig := Node3D.new()
+	rig.name = "WarehouseLightRig"
+	add_child(rig)
+	_light_rig = rig
+
+	var center_spot := SpotLight3D.new()
+	center_spot.name = "CenterGridSpot"
+	center_spot.position = Vector3(0.0, 12.8, 0.6)
+	center_spot.rotation_degrees = Vector3(-84.0, 0.0, 0.0)
+	center_spot.light_color = Color(1.0, 0.90, 0.76)
+	center_spot.light_energy = 13.5
+	center_spot.spot_range = 28.0
+	center_spot.spot_angle = 68.0
+	center_spot.spot_angle_attenuation = 0.85
+	center_spot.spot_attenuation = 1.15
+	center_spot.shadow_enabled = true
+	center_spot.shadow_bias = 0.05
+	center_spot.shadow_blur = 1.4
+	rig.add_child(center_spot)
+
+	for bay_raw in [
+		["WestBaySpot", Vector3(-10.2, 12.0, -0.4), 10.6, 72.0, 30.0],
+		["EastBaySpot", Vector3(10.2, 12.0, -0.4), 10.6, 72.0, 30.0],
+		["SouthBaySpot", Vector3(0.0, 11.4, 6.2), 6.5, 66.0, 26.0],
+	]:
+		var bay: Array = bay_raw as Array
+		var bay_spot := SpotLight3D.new()
+		bay_spot.name = str(bay[0])
+		bay_spot.position = bay[1] as Vector3
+		bay_spot.rotation_degrees = Vector3(-84.0, 0.0, 0.0)
+		bay_spot.light_color = Color(0.96, 0.84, 0.68)
+		bay_spot.light_energy = float(bay[2])
+		bay_spot.spot_range = float(bay[4])
+		bay_spot.spot_angle = float(bay[3])
+		bay_spot.spot_attenuation = 1.05
+		bay_spot.shadow_enabled = false
+		rig.add_child(bay_spot)
 
 	_camera = Camera3D.new()
 	_camera.name = "ArenaCamera"
@@ -253,10 +339,10 @@ func _setup_post_fx() -> void:
 		vig_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var vm := ShaderMaterial.new()
 		vm.shader = vig_shader as Shader
-		vm.set_shader_parameter("radius", 0.92)
-		vm.set_shader_parameter("softness", 0.40)
-		vm.set_shader_parameter("intensity", 1.75)
-		vm.set_shader_parameter("contrast", 1.52)
+		vm.set_shader_parameter("radius", 0.94)
+		vm.set_shader_parameter("softness", 0.45)
+		vm.set_shader_parameter("intensity", 1.24)
+		vm.set_shader_parameter("contrast", 1.20)
 		vm.set_shader_parameter("vignette_color", Color(0.0, 0.0, 0.0, 1.0))
 		vig_rect.material = vm
 		vig_holder.add_child(vig_rect)
@@ -285,15 +371,18 @@ func _setup_post_fx() -> void:
 
 
 func _setup_vanilla_audio_and_fx() -> void:
-	_sfx_shove = _make_audio_player("res://audio/unique/disco dodge/dd shove.ogg", -4.0)
-	_sfx_elim = _make_audio_player("res://audio/unique/disco dodge/dd fall scream impact.ogg", -2.0)
-	_sfx_explosion = _make_audio_player("res://audio/sfx/bad_explosion.ogg", -5.0)
-	_sfx_place = _make_audio_player("res://audio/unique/exploding collar race/mine_detected.ogg", -6.0)
-	_sfx_pickup = _make_audio_player("res://audio/sfx/manufacture_gun_pickup_gear.ogg", -4.0)
-	_sfx_countdown = _make_audio_player("res://audio/sfx/countdown_mechanism2.ogg", -3.0)
-	_sfx_ding = _make_audio_player("res://audio/sfx/airplane ding.ogg", -2.0)
-	_sfx_beep = _make_audio_player("res://audio/sfx/ekg_beep.ogg", -5.0)
-	_ambience_player = _make_audio_player("res://audio/unique/dvd roomba/dvd roomba ambience.ogg", -14.0)
+	if _screenshot_path.is_empty():
+		_sfx_shove = _make_audio_player("res://audio/unique/disco dodge/dd shove.ogg", -4.0)
+		_sfx_elim = _make_audio_player("res://audio/unique/disco dodge/dd fall scream impact.ogg", -2.0)
+		_sfx_explosion = _make_audio_player("res://audio/sfx/bad_explosion.ogg", -5.0)
+		_sfx_place = _make_audio_player("res://audio/unique/exploding collar race/mine_detected.ogg", -6.0)
+		_sfx_pickup = _make_audio_player("res://audio/sfx/manufacture_gun_pickup_gear.ogg", -4.0)
+		_sfx_countdown = _make_audio_player("res://audio/sfx/countdown_mechanism2.ogg", -3.0)
+		_sfx_ding = _make_audio_player("res://audio/sfx/airplane ding.ogg", -2.0)
+		_sfx_beep = _make_audio_player("res://audio/sfx/ekg_beep.ogg", -5.0)
+		_ambience_player = _make_audio_player("res://audio/ambience/industrial-machine-cycle_loop.ogg", -15.0, true)
+		if _ambience_player == null:
+			_ambience_player = _make_audio_player("res://audio/unique/dvd roomba/dvd roomba ambience.ogg", -15.0, true)
 
 	var hit_scene = M.load_optional("res://prefabs/managed_effects/hit_blood.tscn")
 	if hit_scene is PackedScene:
@@ -318,10 +407,12 @@ func _setup_vanilla_audio_and_fx() -> void:
 		_blood_tex_02 = bt2 as Texture2D
 
 
-func _make_audio_player(res_path: String, volume_db: float) -> AudioStreamPlayer:
+func _make_audio_player(res_path: String, volume_db: float, loop_audio: bool = false) -> AudioStreamPlayer:
 	var stream = M.load_optional(res_path)
 	if not (stream is AudioStream):
 		return null
+	if loop_audio and stream is AudioStreamOggVorbis:
+		(stream as AudioStreamOggVorbis).loop = true
 	var p := AudioStreamPlayer.new()
 	p.stream = stream as AudioStream
 	p.volume_db = volume_db
@@ -471,6 +562,8 @@ func _clear_arena() -> void:
 	_prev_drop_pressed = false
 	_monitor_timer = null
 	_monitor_theme = null
+	_fans.clear()
+	_flicker_lamp_mat = null
 
 
 func _setup_match_local(theme_id: int, seed_val: int, roster: Array, is_preview: bool) -> void:
@@ -510,6 +603,10 @@ func _setup_match_local(theme_id: int, seed_val: int, roster: Array, is_preview:
 	_arena_root.add_child(stage_pack["root"])
 	_monitor_timer = stage_pack["monitor_timer"] as Label3D
 	_monitor_theme = stage_pack["monitor_theme"] as Label3D
+	var raw_fans = stage_pack.get("fans", [])
+	_fans = raw_fans as Array if raw_fans is Array else []
+	var raw_flicker = stage_pack.get("flicker_lamp_mat", null)
+	_flicker_lamp_mat = raw_flicker as StandardMaterial3D if raw_flicker is StandardMaterial3D else null
 
 	for cell_key in _conveyors.keys():
 		var c: Vector2i = cell_key
@@ -539,6 +636,32 @@ func _setup_match_local(theme_id: int, seed_val: int, roster: Array, is_preview:
 	var cam_dist: float = maxf(span_z * 1.18, span_x * 0.80)
 	_camera.position = Vector3(0.0, cam_dist * 0.84, cam_dist * 0.64)
 	_camera.look_at(Vector3(0.0, 0.25, -0.45), Vector3.UP)
+	if _world_env != null:
+		_world_env.fog_depth_begin = maxf(25.0, cam_dist + 4.0)
+		_world_env.fog_depth_end = maxf(60.0, cam_dist + 38.0)
+	if _light_rig != null and is_instance_valid(_light_rig):
+		var dist_scale: float = clampf(cam_dist / 18.0, 1.0, 1.45)
+		var c_spot := _light_rig.get_node_or_null("CenterGridSpot") as SpotLight3D
+		if c_spot != null:
+			c_spot.position = Vector3(0.0, maxf(12.8, cam_dist * 0.72), 0.6)
+			c_spot.spot_range = maxf(28.0, cam_dist * 1.45)
+			c_spot.light_energy = 13.5 * dist_scale
+		var flank_x: float = maxf(10.2, span_x * 0.52)
+		var w_spot := _light_rig.get_node_or_null("WestBaySpot") as SpotLight3D
+		if w_spot != null:
+			w_spot.position = Vector3(-flank_x, maxf(12.0, cam_dist * 0.68), -0.4)
+			w_spot.spot_range = maxf(30.0, cam_dist * 1.55)
+			w_spot.light_energy = 10.6 * dist_scale
+		var e_spot := _light_rig.get_node_or_null("EastBaySpot") as SpotLight3D
+		if e_spot != null:
+			e_spot.position = Vector3(flank_x, maxf(12.0, cam_dist * 0.68), -0.4)
+			e_spot.spot_range = maxf(30.0, cam_dist * 1.55)
+			e_spot.light_energy = 10.6 * dist_scale
+		var s_spot := _light_rig.get_node_or_null("SouthBaySpot") as SpotLight3D
+		if s_spot != null:
+			s_spot.position = Vector3(0.0, maxf(11.4, cam_dist * 0.64), maxf(6.2, span_z * 0.44))
+			s_spot.spot_range = maxf(26.0, cam_dist * 1.35)
+			s_spot.light_energy = 6.5 * dist_scale
 
 	for i in range(synced_roster.size()):
 		var entry: Dictionary = synced_roster[i]
@@ -615,7 +738,7 @@ func _setup_match_local(theme_id: int, seed_val: int, roster: Array, is_preview:
 	_update_local_stats_hud()
 	_banner_label.text = "3" if _intro_timer > 0.0 else ""
 	_kill_feed_label.text = ""
-	if _ambience_player != null and not _ambience_player.playing and _screenshot_path.is_empty():
+	if _ambience_player != null and not _ambience_player.playing and not _is_self_test and _screenshot_path.is_empty():
 		_ambience_player.play()
 	if _intro_timer <= 0.0:
 		_round_active = true
@@ -1682,6 +1805,14 @@ func _rpc_snapshot(rem_time: float, p_snap: Dictionary, b_snap: Dictionary) -> v
 
 func _animate_visuals(delta: float) -> void:
 	var t: float = Time.get_ticks_msec() * 0.001
+	for raw_fan in _fans:
+		var fan: Node3D = raw_fan as Node3D
+		if fan != null and is_instance_valid(fan):
+			fan.rotate_z(delta * 4.5)
+	if _flicker_lamp_mat != null:
+		var fl_wave: float = sin(t * 13.7) * sin(t * 31.3)
+		var fl_dip: float = 0.48 if fl_wave > 0.72 else 1.0
+		_flicker_lamp_mat.emission_energy_multiplier = 1.85 * fl_dip + 0.12 * sin(t * 5.3)
 	for net_id in _players.keys():
 		var p: Dictionary = _players[net_id]
 		var node: Node3D = p["node"]

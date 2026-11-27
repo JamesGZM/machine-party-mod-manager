@@ -103,8 +103,11 @@ func _load_sibling_script(filename: String):
 
 
 func _exit_tree() -> void:
+	if _ambience_player != null and is_instance_valid(_ambience_player):
+		_ambience_player.stop()
 	if _fx_pool != null:
 		_fx_pool.clear()
+	_ambience_player = null
 	_team = null
 	_fx_pool = null
 	_hud_ui = null
@@ -275,11 +278,15 @@ func _build_post_fx_and_audio() -> void:
 			_sfx_timer_beep.volume_db = -9.0
 			add_child(_sfx_timer_beep)
 
-		var amb_stream = _meshes.load_optional("res://audio/unique/dvd roomba/dvd roomba ambience.ogg")
+		var amb_stream = _meshes.load_optional("res://audio/ambience/industrial-machine-cycle_loop.ogg")
+		if amb_stream == null:
+			amb_stream = _meshes.load_optional("res://audio/unique/dvd roomba/dvd roomba ambience.ogg")
 		if amb_stream is AudioStream and _screenshot_path.is_empty():
+			if amb_stream is AudioStreamOggVorbis:
+				(amb_stream as AudioStreamOggVorbis).loop = true
 			_ambience_player = AudioStreamPlayer.new()
 			_ambience_player.stream = amb_stream
-			_ambience_player.volume_db = -10.0
+			_ambience_player.volume_db = -14.0
 			add_child(_ambience_player)
 			_ambience_player.play()
 
@@ -326,10 +333,10 @@ func _build_post_fx_and_audio() -> void:
 			vig_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			var vm := ShaderMaterial.new()
 			vm.shader = vig_shader
-			vm.set_shader_parameter("radius", 0.90)
-			vm.set_shader_parameter("softness", 0.38)
-			vm.set_shader_parameter("intensity", 1.85)
-			vm.set_shader_parameter("contrast", 1.57)
+			vm.set_shader_parameter("radius", 0.93)
+			vm.set_shader_parameter("softness", 0.44)
+			vm.set_shader_parameter("intensity", 1.32)
+			vm.set_shader_parameter("contrast", 1.22)
 			vm.set_shader_parameter("vignette_color", Color(0.0, 0.0, 0.0, 1.0))
 			vig_rect.material = vm
 			vig_holder.add_child(vig_rect)
@@ -605,6 +612,7 @@ func _animate_environment(delta: float) -> void:
 		node.scale = Vector3(s, s, s)
 
 	var bulbs: Array = _scene_props.get("bulbs", [])
+	var flicker_mat := _scene_props.get("flicker_lamp_mat") as StandardMaterial3D
 	for i in range(bulbs.size()):
 		var entry = bulbs[i]
 		var mat: StandardMaterial3D = null
@@ -613,7 +621,18 @@ func _animate_environment(delta: float) -> void:
 		elif entry is MeshInstance3D:
 			mat = (entry as MeshInstance3D).material_override as StandardMaterial3D
 		if mat != null:
-			mat.emission_energy_multiplier = 1.25 + 0.30 * sin(_cam_sway_time * 5.2 + float(i) * 1.7)
+			if mat == flicker_mat:
+				var fl_wave: float = sin(_cam_sway_time * 13.7) * sin(_cam_sway_time * 31.3)
+				var fl_dip: float = 0.48 if fl_wave > 0.72 else 1.0
+				mat.emission_energy_multiplier = 1.65 * fl_dip + 0.12 * sin(_cam_sway_time * 5.3)
+			else:
+				mat.emission_energy_multiplier = 1.45 + 0.18 * sin(_cam_sway_time * 4.2 + float(i) * 1.7)
+
+	var fans: Array = _scene_props.get("fans", [])
+	for raw_fan in fans:
+		var fan := raw_fan as Node3D
+		if fan != null and is_instance_valid(fan):
+			fan.rotate_z(delta * 4.5)
 
 	_beacon_gold_flash = maxf(0.0, _beacon_gold_flash - delta * 2.8)
 	_beacon_silver_flash = maxf(0.0, _beacon_silver_flash - delta * 2.8)

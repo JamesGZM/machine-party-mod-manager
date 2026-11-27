@@ -111,6 +111,10 @@ var _track_leds: Array = []
 var _turntable_node: Node3D = null
 var _monitor_timer_label: Label3D = null
 var _monitor_phase_label: Label3D = null
+var _fans: Array = []
+var _flicker_lamp_mat: StandardMaterial3D = null
+var _cart_light: OmniLight3D = null
+var _rail_spark_accum: float = 0.0
 var _mon_timer_text: String = ""
 var _mon_timer_col: Color = Color(-1.0, -1.0, -1.0, -1.0)
 var _mon_phase_text: String = ""
@@ -125,6 +129,8 @@ var _sfx_push: AudioStreamPlayer = null
 var _sfx_ding: AudioStreamPlayer = null
 var _sfx_beep: AudioStreamPlayer = null
 var _sfx_warn: AudioStreamPlayer = null
+var _sfx_explosion: AudioStreamPlayer = null
+var _sfx_cart_roll: AudioStreamPlayer = null
 var _ambience: AudioStreamPlayer = null
 
 
@@ -293,8 +299,10 @@ func _stage_default_screenshot() -> void:
 				p["shove_anim_timer"] = 0.16
 		if _fx_pool != null:
 			var col1: Color = C.TEAM_COLORS.get(left_tid, Color.WHITE) as Color
+			_fx_pool.spawn_scorch_decal(Vector3(_cart_pos.x - 1.6, 0.0, 1.25), 2.1)
 			_fx_pool.spawn_ram_sparks(Vector3(_cart_pos.x, 0.85, _cart_pos.y), col1)
 			_fx_pool.spawn_steam_surge(Vector3(0.0, 0.35, -6.0), Vector3(_cart_pos.x, 0.65, _cart_pos.y), col1)
+			_fx_pool.spawn_rail_spark(Vector3(_cart_pos.x, 0.14, _cart_pos.y), 1.0, _cart_angle)
 			_fx_pool.tick(0.10)
 	else:
 		# Multi-team active turntable/branch brawl staging (zero overlap, clear sightlines)
@@ -380,8 +388,10 @@ func _stage_default_screenshot() -> void:
 		if _fx_pool != null and not _valves.is_empty():
 			var col_atk: Color = C.TEAM_COLORS.get(atk_tid, Color.WHITE) as Color
 			var vp0: Vector2 = (_valves[0] as Dictionary)["pos"] as Vector2
+			_fx_pool.spawn_scorch_decal(Vector3(_cart_pos.x * 0.55 - 1.1, 0.0, _cart_pos.y * 0.55 + 1.1), 2.1)
 			_fx_pool.spawn_ram_sparks(Vector3(_cart_pos.x, 0.85, _cart_pos.y), col_atk)
 			_fx_pool.spawn_steam_surge(Vector3(vp0.x, 0.35, vp0.y), Vector3(_cart_pos.x, 0.65, _cart_pos.y), col_atk)
+			_fx_pool.spawn_rail_spark(Vector3(_cart_pos.x, 0.14, _cart_pos.y), 1.0, _cart_angle)
 			_fx_pool.tick(0.10)
 
 	if _cart_root != null and is_instance_valid(_cart_root):
@@ -580,6 +590,10 @@ func _clear_scene_children() -> void:
 	_turntable_node = null
 	_monitor_timer_label = null
 	_monitor_phase_label = null
+	_fans.clear()
+	_flicker_lamp_mat = null
+	_cart_light = null
+	_rail_spark_accum = 0.0
 	_mon_timer_text = ""
 	_mon_timer_col = Color(-1.0, -1.0, -1.0, -1.0)
 	_mon_phase_text = ""
@@ -712,6 +726,12 @@ func _setup_match_local(round_idx: int, seed_val: int, roster: Array, all_ai: bo
 			_turntable_node = arena_info.get("turntable_node", null) as Node3D
 			_monitor_timer_label = arena_info.get("monitor_timer_label", null) as Label3D
 			_monitor_phase_label = arena_info.get("monitor_phase_label", null) as Label3D
+			var raw_fans = arena_info.get("fans", [])
+			_fans = raw_fans as Array if raw_fans is Array else []
+			var raw_flicker = arena_info.get("flicker_lamp_mat", null)
+			_flicker_lamp_mat = raw_flicker as StandardMaterial3D if raw_flicker is StandardMaterial3D else null
+			var raw_cart_light = arena_info.get("cart_light", null)
+			_cart_light = raw_cart_light as OmniLight3D if raw_cart_light is OmniLight3D else null
 		if _fx_pool != null:
 			_fx_pool.setup(_fx_root)
 		if _hud != null:
@@ -737,42 +757,126 @@ func _ensure_environment_and_camera(team_count: int = 2) -> void:
 		_camera.look_at(Vector3(0.0, 0.5, 0.2), Vector3.UP)
 	_cam_base_pos = _camera.position
 
-	# Authentic Machine Party warm heavy-foundry / steel-railyard atmosphere
-	if get_node_or_null("WorldEnv") == null:
-		var env_node := WorldEnvironment.new()
+	# Authentic Machine Party indoor heavy-foundry light pools + SSAO + depth fog + ACES
+	var env_node := get_node_or_null("WorldEnv") as WorldEnvironment
+	if env_node == null:
+		env_node = WorldEnvironment.new()
 		env_node.name = "WorldEnv"
-		var env := Environment.new()
-		env.background_mode = Environment.BG_COLOR
-		env.background_color = Color(0.045, 0.035, 0.032)
-		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-		env.ambient_light_color = Color(0.46, 0.36, 0.29)
-		env.ambient_light_energy = 0.92
-		env.adjustment_enabled = true
-		env.adjustment_brightness = 1.07
-		env.adjustment_contrast = 1.14
-		env.adjustment_saturation = 0.88
-		env.glow_enabled = true
-		env.glow_intensity = 0.42
-		env.glow_bloom = 0.16
-		env_node.environment = env
 		add_child(env_node)
+	var env: Environment = env_node.environment
+	if env == null:
+		env = Environment.new()
+		env_node.environment = env
+	env.tonemap_mode = Environment.TONE_MAPPER_ACES
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = Color(0.018, 0.016, 0.016)
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color(0.36, 0.38, 0.43)
+	env.ambient_light_energy = 0.42
+	env.adjustment_enabled = true
+	env.adjustment_brightness = 1.03
+	env.adjustment_contrast = 1.08
+	env.adjustment_saturation = 0.78
+	env.glow_enabled = true
+	env.glow_intensity = 0.30
+	env.glow_bloom = 0.08
+	env.ssao_enabled = true
+	env.ssao_radius = 0.75
+	env.ssao_intensity = 1.85
+	env.ssao_power = 1.45
+	env.fog_enabled = true
+	env.fog_mode = Environment.FOG_MODE_DEPTH
+	env.fog_light_color = Color(0.028, 0.024, 0.022)
+	env.fog_depth_begin = 22.0 if team_count <= 2 else 30.0
+	env.fog_depth_end = 54.0 if team_count <= 2 else 68.0
+	env.fog_depth_curve = 1.2
 
-	if get_node_or_null("SunLight") == null:
-		var sun := DirectionalLight3D.new()
+	var old_fill := get_node_or_null("FillLight")
+	if old_fill != null and is_instance_valid(old_fill):
+		old_fill.queue_free()
+
+	var sun := get_node_or_null("SunLight") as DirectionalLight3D
+	if sun == null:
+		sun = DirectionalLight3D.new()
 		sun.name = "SunLight"
-		sun.rotation_degrees = Vector3(-52.0, 28.0, 0.0)
-		sun.light_color = Color(1.0, 0.89, 0.74)
-		sun.light_energy = 1.30
-		sun.shadow_enabled = true
 		add_child(sun)
+	sun.rotation_degrees = Vector3(-52.0, 26.0, 0.0)
+	sun.light_color = Color(0.90, 0.90, 0.93)
+	sun.light_energy = 0.90
+	sun.shadow_enabled = true
+	sun.shadow_bias = 0.04
+	sun.shadow_blur = 1.3
 
-	if get_node_or_null("FillLight") == null:
-		var fill := DirectionalLight3D.new()
-		fill.name = "FillLight"
-		fill.rotation_degrees = Vector3(-34.0, -148.0, 0.0)
-		fill.light_color = Color(0.95, 0.62, 0.34)
-		fill.light_energy = 0.38
-		add_child(fill)
+	var rig := get_node_or_null("FoundryLightRig") as Node3D
+	if rig == null:
+		rig = Node3D.new()
+		rig.name = "FoundryLightRig"
+		add_child(rig)
+
+	var is_multi: bool = team_count >= 3
+	var center_spot := rig.get_node_or_null("CenterBaySpot") as SpotLight3D
+	if center_spot == null:
+		center_spot = SpotLight3D.new()
+		center_spot.name = "CenterBaySpot"
+		rig.add_child(center_spot)
+	center_spot.position = Vector3(0.0, 15.5 if is_multi else 12.5, 0.8)
+	center_spot.rotation_degrees = Vector3(-84.0, 0.0, 0.0)
+	center_spot.light_color = Color(1.0, 0.90, 0.76)
+	center_spot.light_energy = 15.0 if is_multi else 12.0
+	center_spot.spot_range = 34.0 if is_multi else 26.0
+	center_spot.spot_angle = 68.0
+	center_spot.spot_angle_attenuation = 0.85
+	center_spot.spot_attenuation = 1.15
+	center_spot.shadow_enabled = true
+	center_spot.shadow_bias = 0.05
+	center_spot.shadow_blur = 1.4
+
+	var flank_x: float = 9.5 if is_multi else 7.8
+	var flank_y: float = 12.5 if is_multi else 10.5
+	var flank_specs: Array = [
+		["WestBaySpot", Vector3(-flank_x, flank_y, 0.4)],
+		["EastBaySpot", Vector3(flank_x, flank_y, 0.4)],
+	]
+	for f_raw in flank_specs:
+		var f_spec: Array = f_raw as Array
+		var s_name: String = str(f_spec[0])
+		var s_pos: Vector3 = f_spec[1] as Vector3
+		var flank_spot := rig.get_node_or_null(s_name) as SpotLight3D
+		if flank_spot == null:
+			flank_spot = SpotLight3D.new()
+			flank_spot.name = s_name
+			rig.add_child(flank_spot)
+		flank_spot.position = s_pos
+		flank_spot.rotation_degrees = Vector3(-84.0, 0.0, 0.0)
+		flank_spot.light_color = Color(0.96, 0.84, 0.68)
+		flank_spot.light_energy = 9.0 if is_multi else 7.2
+		flank_spot.spot_range = 28.0 if is_multi else 22.0
+		flank_spot.spot_angle = 60.0
+		flank_spot.spot_attenuation = 1.20
+		flank_spot.shadow_enabled = false
+
+	var ns_specs: Array = [
+		["NorthBaySpot", Vector3(0.0, 12.5, -8.8)],
+		["SouthBaySpot", Vector3(0.0, 12.5, 8.8)],
+	]
+	for ns_raw in ns_specs:
+		var ns_spec: Array = ns_raw as Array
+		var ns_name: String = str(ns_spec[0])
+		var ns_pos: Vector3 = ns_spec[1] as Vector3
+		var ns_spot := rig.get_node_or_null(ns_name) as SpotLight3D
+		if ns_spot == null:
+			ns_spot = SpotLight3D.new()
+			ns_spot.name = ns_name
+			rig.add_child(ns_spot)
+		ns_spot.position = ns_pos
+		ns_spot.rotation_degrees = Vector3(-84.0, 0.0, 0.0)
+		ns_spot.light_color = Color(0.96, 0.84, 0.68)
+		ns_spot.light_energy = 8.5
+		ns_spot.spot_range = 26.0
+		ns_spot.spot_angle = 60.0
+		ns_spot.spot_attenuation = 1.20
+		ns_spot.shadow_enabled = false
+		ns_spot.visible = is_multi
 
 
 func _setup_post_fx() -> void:
@@ -810,10 +914,10 @@ func _setup_post_fx() -> void:
 		vig_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var vm := ShaderMaterial.new()
 		vm.shader = vig_shader as Shader
-		vm.set_shader_parameter("radius", 0.92)
-		vm.set_shader_parameter("softness", 0.42)
-		vm.set_shader_parameter("intensity", 1.70)
-		vm.set_shader_parameter("contrast", 1.50)
+		vm.set_shader_parameter("radius", 0.94)
+		vm.set_shader_parameter("softness", 0.46)
+		vm.set_shader_parameter("intensity", 1.22)
+		vm.set_shader_parameter("contrast", 1.18)
 		vm.set_shader_parameter("vignette_color", Color(0.0, 0.0, 0.0, 1.0))
 		vig_rect.material = vm
 		vig_holder.add_child(vig_rect)
@@ -841,12 +945,14 @@ func _setup_post_fx() -> void:
 		post_holder.add_child(post_rect)
 
 
-func _make_audio_player(res_path: String, vol_db: float) -> AudioStreamPlayer:
+func _make_audio_player(res_path: String, vol_db: float, loop_audio: bool = false) -> AudioStreamPlayer:
 	if not ResourceLoader.exists(res_path):
 		return null
 	var stream = ResourceLoader.load(res_path)
 	if not (stream is AudioStream):
 		return null
+	if loop_audio and stream is AudioStreamOggVorbis:
+		(stream as AudioStreamOggVorbis).loop = true
 	var ap := AudioStreamPlayer.new()
 	ap.stream = stream as AudioStream
 	ap.volume_db = vol_db
@@ -855,7 +961,7 @@ func _make_audio_player(res_path: String, vol_db: float) -> AudioStreamPlayer:
 
 
 func _init_audio() -> void:
-	if not _screenshot_path.is_empty():
+	if _is_self_test or not _screenshot_path.is_empty():
 		return
 	if _sfx_push == null:
 		_sfx_push = _make_audio_player("res://audio/unique/disco dodge/dd shove.ogg", -4.0)
@@ -865,8 +971,14 @@ func _init_audio() -> void:
 		_sfx_beep = _make_audio_player("res://audio/sfx/ekg_beep.ogg", -5.0)
 	if _sfx_warn == null:
 		_sfx_warn = _make_audio_player("res://audio/unique/exploding collar race/mine_detected.ogg", -5.0)
+	if _sfx_explosion == null:
+		_sfx_explosion = _make_audio_player("res://audio/sfx/bad_explosion.ogg", -3.0)
+	if _sfx_cart_roll == null:
+		_sfx_cart_roll = _make_audio_player("res://audio/unique/232136__yottasounds__rolling-cart-002.ogg", -22.0, true)
 	if _ambience == null:
-		_ambience = _make_audio_player("res://audio/unique/dvd roomba/dvd roomba ambience.ogg", -16.0)
+		_ambience = _make_audio_player("res://audio/ambience/industrial-machine-cycle_loop.ogg", -16.0, true)
+		if _ambience == null:
+			_ambience = _make_audio_player("res://audio/unique/dvd roomba/dvd roomba ambience.ogg", -16.0, true)
 		if _ambience != null and not _ambience.playing:
 			_ambience.play()
 
@@ -1015,6 +1127,13 @@ func _rpc_client_action() -> void:
 func _exit_tree() -> void:
 	if _ambience != null and is_instance_valid(_ambience):
 		_ambience.stop()
+	if _sfx_cart_roll != null and is_instance_valid(_sfx_cart_roll):
+		_sfx_cart_roll.stop()
+	if _fx_pool != null and _fx_pool.has_method("clear"):
+		_fx_pool.clear()
+	_fans.clear()
+	_flicker_lamp_mat = null
+	_cart_light = null
 
 
 func _read_local_input() -> Dictionary:
@@ -1140,18 +1259,23 @@ func _rpc_fx_event(kind: String, pos: Vector3, aux: Vector3, team_id: int) -> vo
 				_fx_pool.spawn_shove_burst(pos, col)
 			"ram":
 				_fx_pool.spawn_ram_sparks(pos, col)
+				_fx_pool.spawn_scorch_decal(pos, 1.45)
 			"surge":
 				_fx_pool.spawn_steam_surge(pos, aux, col)
 			"shockwave":
 				_fx_pool.spawn_shockwave(pos)
+				_fx_pool.spawn_scorch_decal(pos, 2.2)
 			"breach":
 				_fx_pool.spawn_door_explosion(pos, col)
+				_fx_pool.spawn_scorch_decal(pos, 2.6)
 	if kind == "shove" or kind == "ram":
 		if _sfx_push != null:
 			_sfx_push.play()
 		_cam_shake = maxf(_cam_shake, 0.14)
 	elif kind == "shockwave" or kind == "breach":
-		if _sfx_warn != null:
+		if _sfx_explosion != null:
+			_sfx_explosion.play()
+		elif _sfx_warn != null:
 			_sfx_warn.play()
 		_cam_shake = maxf(_cam_shake, 0.30)
 
@@ -2347,6 +2471,52 @@ func _update_diegetic_monitor() -> void:
 func _animate_visuals(delta: float) -> void:
 	if _fx_pool != null:
 		_fx_pool.tick(delta)
+		if _phase == PH_LIVE and (absf(_cart_vel) > 1.35 or _surge_timer > 0.0):
+			_rail_spark_accum += delta
+			var spark_interval: float = 0.07 if _surge_timer > 0.0 else 0.15
+			if _rail_spark_accum >= spark_interval:
+				_rail_spark_accum = 0.0
+				var dir_sign: float = 1.0 if _cart_vel >= 0.0 else -1.0
+				_fx_pool.spawn_rail_spark(Vector3(_cart_pos.x, 0.14, _cart_pos.y), dir_sign, _cart_angle)
+		else:
+			_rail_spark_accum = 0.0
+
+	for raw_fan in _fans:
+		var fan := raw_fan as Node3D
+		if fan != null and is_instance_valid(fan):
+			fan.rotate_z(delta * 4.5)
+
+	if _flicker_lamp_mat != null:
+		var fl_wave: float = sin(_srv_time * 13.7) * sin(_srv_time * 31.3)
+		var fl_dip: float = 0.48 if fl_wave > 0.72 else 1.0
+		_flicker_lamp_mat.emission_energy_multiplier = 1.85 * fl_dip + 0.12 * sin(_srv_time * 5.3)
+
+	if _cart_light != null and is_instance_valid(_cart_light):
+		var cl_pulse: float = 0.5 + 0.5 * sin(_srv_time * (14.0 if _match_phase >= 3 else 5.0))
+		if _surge_timer > 0.0:
+			var scol: Color = C.TEAM_COLORS.get(_surge_team, Color(1.0, 0.72, 0.24)) as Color
+			_cart_light.light_color = scol.lerp(Color(1.0, 0.82, 0.35), 0.35)
+			_cart_light.light_energy = 2.4 + 0.8 * cl_pulse
+		elif _match_phase >= 3:
+			_cart_light.light_color = Color(1.0, 0.28, 0.12)
+			_cart_light.light_energy = 2.1 + 1.1 * cl_pulse
+		elif _match_phase == 2:
+			_cart_light.light_color = Color(1.0, 0.46, 0.14)
+			_cart_light.light_energy = 1.7 + 0.65 * cl_pulse
+		else:
+			_cart_light.light_color = Color(1.0, 0.52, 0.18)
+			_cart_light.light_energy = 1.45 + 0.25 * cl_pulse
+
+	if _sfx_cart_roll != null and is_instance_valid(_sfx_cart_roll):
+		var roll_speed: float = absf(_cart_vel)
+		if _phase == PH_LIVE and roll_speed > 0.25:
+			var t_roll: float = clampf(roll_speed / 6.0, 0.0, 1.0)
+			_sfx_cart_roll.volume_db = lerpf(-24.0, -7.0, t_roll)
+			_sfx_cart_roll.pitch_scale = lerpf(0.85, 1.35, t_roll)
+			if not _sfx_cart_roll.playing:
+				_sfx_cart_roll.play()
+		elif _sfx_cart_roll.playing:
+			_sfx_cart_roll.stop()
 
 	_update_diegetic_monitor()
 

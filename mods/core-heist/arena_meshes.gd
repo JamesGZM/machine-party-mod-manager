@@ -7,6 +7,11 @@ extends RefCounted
 
 const TEX_THREADPLATE := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_threadplate albedo.png"
 const TEX_THREADPLATE_NORMAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_threadplate normal 1024.png"
+const TEX_FLOOR_CONCRETE := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_chisel gauntlet floor6.png"
+const TEX_BRICK_WALL := "res://minigames/burn_recycle/models/burn recycle visuals6/burn recycle visuals6_burn and recycle brick wall bake.png"
+const TEX_PLASTER_NORMAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_plaster damaged normal.png"
+const TEX_DARK_METAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_shotgun device metal darkened3.png"
+const TEX_RUST_PAINTED := "res://minigames/junk_platform/models/junk platform visuals2/junk platform visuals2_heavy rust painted2.png"
 const TEX_CONTROL_PANEL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_chisel gauntlet control panel1.png"
 const TEX_METAL_PLATE := "res://minigames/dvd_roomba/models/dvd roomba visuals1_metal plate1.png"
 const TEX_GRATE := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba grate.png"
@@ -15,7 +20,14 @@ const TEX_SIDING := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd r
 const TEX_PIPES := "res://minigames/forklift_certified/models/forklift certified visuals1/forklift certified visuals1_fc pipes2.png"
 const TEX_HEAVY_RUST := "res://minigames/junk_platform/models/junk platform visuals2/junk platform visuals2_heavy rust2.png"
 const TEX_CONVEYOR := "res://textures/conveyor belt new1.png"
+const TEX_DECAL_STAIN := "res://textures/decal stain masked1.png"
+const TEX_DECAL_SCORCH := "res://textures/decals/explosion_mark.png"
 const GLB_WALL_LAMP := "res://models/elevator light2/elevator light2.glb"
+const GLB_FAN := "res://minigames/smoke_break/models/smoke break fan1/smoke break fan1.glb"
+const GLB_LIGHT_FIXTURE := "res://minigames/exploding_collar_race/models/collar race light fixture1/collar race light fixture1.glb"
+const GLB_SERVER_RACK := "res://minigames/intermission_new/models/intermission server rack temp1/intermission server rack temp1.glb"
+const GLB_PALLET := "res://minigames/chisel_gauntlet_multiplayer/models/chisel game pallet1/chisel game pallet1.glb"
+const GLB_DEBRIS := "res://minigames/junk_platform/models/junk platform debris1/junk platform debris1.glb"
 
 const TEAM_SUIT_TEXTURES := {
 	1: "res://modules/character_customization/character_customization_textures/main character painted red.png",
@@ -120,7 +132,10 @@ func _get_mat(
 	alpha: bool = false,
 	tex_path: String = "",
 	uv_scale: Vector3 = Vector3.ONE,
-	normal_path: String = ""
+	normal_path: String = "",
+	triplanar: bool = false,
+	normal_scale: float = 0.72,
+	linear_filter: bool = false
 ) -> StandardMaterial3D:
 	if _mat_cache.has(key):
 		return _mat_cache[key] as StandardMaterial3D
@@ -138,16 +153,51 @@ func _get_mat(
 		var tex = load_optional(tex_path)
 		if tex is Texture2D:
 			mat.albedo_texture = tex as Texture2D
-			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS if linear_filter else BaseMaterial3D.TEXTURE_FILTER_NEAREST
 			mat.uv1_scale = uv_scale
 	if not normal_path.is_empty():
 		var ntex = load_optional(normal_path)
 		if ntex is Texture2D:
 			mat.normal_enabled = true
 			mat.normal_texture = ntex as Texture2D
-			mat.normal_scale = 0.72
+			mat.normal_scale = normal_scale
+	if triplanar:
+		mat.uv1_triplanar = true
+		mat.uv1_world_triplanar = true
 	_mat_cache[key] = mat
 	return mat
+
+
+static func _strip_prop_collisions(node: Node) -> void:
+	var children: Array = node.get_children()
+	for raw_c in children:
+		var c: Node = raw_c as Node
+		if c is CollisionObject3D or c is CollisionShape3D:
+			node.remove_child(c)
+			c.free()
+		else:
+			_strip_prop_collisions(c)
+
+
+static func _add_floor_decal(
+	parent: Node3D,
+	tex: Texture2D,
+	pos: Vector3,
+	size: Vector3,
+	modulate: Color,
+	rot_y: float = 0.0
+) -> void:
+	if tex == null or parent == null:
+		return
+	var decal := Decal.new()
+	decal.texture_albedo = tex
+	decal.size = size
+	decal.modulate = modulate
+	decal.upper_fade = 0.25
+	decal.lower_fade = 0.25
+	decal.position = pos
+	decal.rotation.y = rot_y
+	parent.add_child(decal)
 
 
 func _get_box(key: String, size: Vector3) -> BoxMesh:
@@ -189,26 +239,32 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 	var arena_size: float = float(cfg.arena_size_for_teams(team_count))
 	var half: float = arena_size * 0.5
 	var term_font: Font = load_terminal_font()
+	var stain_tex := load_optional(TEX_DECAL_STAIN) as Texture2D
+	var scorch_tex := load_optional(TEX_DECAL_SCORCH) as Texture2D
 
-	var floor_mat := _get_mat("floor", Color(0.72, 0.67, 0.61), 0.20, 0.72, Color.BLACK, 0.0, false, TEX_THREADPLATE, Vector3(12.0, 12.0, 1.0), TEX_THREADPLATE_NORMAL)
-	var subdeck_mat := _get_mat("subdeck", Color(0.15, 0.13, 0.12), 0.14, 0.84, Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(6.0, 6.0, 1.0))
-	var rim_mat := _get_mat("floor_rim", Color(0.18, 0.16, 0.15), 0.35, 0.68, Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(4.0, 4.0, 1.0))
-	var wall_mat := _get_mat("wall_tex", Color(0.66, 0.60, 0.54), 0.25, 0.72, Color.BLACK, 0.0, false, TEX_WALL, Vector3(8.0, 1.0, 1.0))
-	var back_wall_mat := _get_mat("back_wall", Color(0.68, 0.54, 0.44), 0.14, 0.82, Color(0.10, 0.07, 0.05), 0.28, false, TEX_HEAVY_RUST, Vector3(6.0, 2.2, 1.0))
-	var trim_mat := _get_mat("trim", Color(0.50, 0.46, 0.42), 0.55, 0.52, Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(2.0, 2.0, 1.0))
-	var panel_mat := _get_mat("ctrl_panel", Color(0.70, 0.65, 0.59), 0.36, 0.52, Color.BLACK, 0.0, false, TEX_CONTROL_PANEL, Vector3(1.0, 1.0, 1.0))
-	var hazard_mat := _get_mat("hazard", Color(0.94, 0.68, 0.18), 0.18, 0.50, Color(0.88, 0.60, 0.12), 0.30, false, TEX_SIDING, Vector3(6.0, 1.0, 1.0))
-	var pipes_mat := _get_mat("pipes", Color(0.62, 0.56, 0.50), 0.60, 0.46, Color.BLACK, 0.0, false, TEX_PIPES, Vector3(2.0, 2.0, 1.0))
-	var rust_mat := _get_mat("rust", Color(0.72, 0.56, 0.44), 0.26, 0.74, Color.BLACK, 0.0, false, TEX_HEAVY_RUST, Vector3(2.0, 2.0, 1.0))
+	var floor_mat := _get_mat("floor", Color(0.60, 0.56, 0.52), 0.10, 0.86, Color.BLACK, 0.0, false, TEX_FLOOR_CONCRETE, Vector3(0.22, 0.22, 0.22), "", true, 0.72, true)
+	var apron_mat := _get_mat("apron", Color(0.50, 0.46, 0.43), 0.68, 0.42, Color.BLACK, 0.0, false, TEX_THREADPLATE, Vector3(0.50, 0.50, 0.50), TEX_THREADPLATE_NORMAL, true, 0.88, true)
+	var subdeck_mat := _get_mat("subdeck", Color(0.48, 0.44, 0.41), 0.46, 0.60, Color.BLACK, 0.0, false, TEX_THREADPLATE, Vector3(0.42, 0.42, 0.42), TEX_THREADPLATE_NORMAL, true, 0.82, true)
+	var dark_metal_mat := _get_mat("dark_metal", Color(0.46, 0.42, 0.40), 0.62, 0.46, Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(1.5, 1.5, 1.0))
+	var rim_mat := _get_mat("floor_rim", Color(0.32, 0.30, 0.29), 0.62, 0.46, Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(4.0, 4.0, 1.0))
+	var wall_mat := _get_mat("wall_tex", Color(0.56, 0.50, 0.45), 0.42, 0.58, Color.BLACK, 0.0, false, TEX_WALL, Vector3(8.0, 1.0, 1.0))
+	var back_wall_mat := _get_mat("back_wall", Color(0.82, 0.76, 0.70), 0.12, 0.86, Color.BLACK, 0.0, false, TEX_BRICK_WALL, Vector3(0.22, 0.22, 0.22), TEX_PLASTER_NORMAL, true, 0.85, true)
+	var trim_mat := _get_mat("trim", Color(0.50, 0.46, 0.42), 0.62, 0.44, Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(2.0, 2.0, 1.0))
+	var steel_trim_mat := _get_mat("steel_trim", Color(0.58, 0.55, 0.52), 0.88, 0.24)
+	var panel_mat := _get_mat("ctrl_panel", Color(0.70, 0.65, 0.59), 0.40, 0.48, Color.BLACK, 0.0, false, TEX_CONTROL_PANEL, Vector3(1.0, 1.0, 1.0))
+	var hazard_mat := _get_mat("hazard", Color(0.92, 0.64, 0.16), 0.20, 0.48, Color(0.86, 0.56, 0.12), 0.24, false, TEX_SIDING, Vector3(6.0, 1.0, 1.0))
+	var pipes_mat := _get_mat("pipes", Color(0.58, 0.52, 0.46), 0.60, 0.44, Color.BLACK, 0.0, false, TEX_PIPES, Vector3(2.0, 2.0, 1.0))
+	var rust_mat := _get_mat("rust", Color(0.58, 0.46, 0.38), 0.48, 0.56, Color.BLACK, 0.0, false, TEX_RUST_PAINTED, Vector3(2.0, 2.0, 1.0))
 	var conv_mat_l := _get_mat("conveyor_l", Color(0.60, 0.57, 0.54), 0.26, 0.62, Color.BLACK, 0.0, false, TEX_CONVEYOR, Vector3(3.0, 1.0, 1.0))
 	var conv_mat_r := _get_mat("conveyor_r", Color(0.60, 0.57, 0.54), 0.26, 0.62, Color.BLACK, 0.0, false, TEX_CONVEYOR, Vector3(3.0, 1.0, 1.0))
-	var crt_body_mat := _get_mat("crt_body", Color(0.18, 0.18, 0.19), 0.45, 0.48, Color(0.03, 0.04, 0.03), 0.20, false, TEX_METAL_PLATE, Vector3(1.0, 1.0, 1.0))
-	var amber_beacon_mat := _get_mat("amber_beacon", Color(1.0, 0.64, 0.14), 0.2, 0.2, Color(1.0, 0.60, 0.10), 2.2)
+	var crt_body_mat := _get_mat("crt_body", Color(0.22, 0.21, 0.21), 0.52, 0.46, Color(0.02, 0.03, 0.02), 0.15, false, TEX_DARK_METAL, Vector3(1.0, 1.0, 1.0))
+	var amber_beacon_mat := _get_mat("amber_beacon", Color(1.0, 0.64, 0.16), 0.2, 0.22, Color(1.0, 0.60, 0.12), 1.65)
 
 	# Heavy dark industrial sub-deck & trim rim (grounds the arena into the factory floor with zero seams or Z-fighting)
+	var deck_w: float = arena_size + 4.4
 	var subdeck := MeshInstance3D.new()
 	subdeck.name = "SubDeck"
-	subdeck.mesh = _get_box("subdeck_" + str(int(arena_size)), Vector3(arena_size + 3.6, 1.12, arena_size + 3.6))
+	subdeck.mesh = _get_box("subdeck_" + str(int(arena_size)), Vector3(deck_w, 1.12, deck_w))
 	subdeck.position = Vector3(0.0, -0.78, 0.0)
 	subdeck.material_override = subdeck_mat
 	parent.add_child(subdeck)
@@ -220,7 +276,7 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 	rim.material_override = rim_mat
 	parent.add_child(rim)
 
-	# Main industrial floor
+	# Main matte dark factory concrete floor
 	var floor_mi := MeshInstance3D.new()
 	floor_mi.mesh = _get_box("floor_" + str(int(arena_size)), Vector3(arena_size, 0.5, arena_size))
 	floor_mi.position = Vector3(0.0, -0.25, 0.0)
@@ -250,57 +306,233 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 		stripe.material_override = hazard_mat
 		parent.add_child(stripe)
 
-	# --- Tall North Industrial Factory Back Wall + Pipes + Fluorescent Lamps + 3D Diegetic CRT Monitor ---
-	# Width matches SubDeck (arena_size + 3.6) and bottom extends to -1.40 (below SubDeck bottom -1.34) for zero overhang or corner gap.
+	# --- Tall North Industrial Brick Back Wall + Buttress Columns + Exhaust Fans + Bay Light Fixtures + CRT ---
 	var back_z: float = -half - 1.38
 	var back_wall := MeshInstance3D.new()
 	back_wall.name = "FactoryBackWall"
-	back_wall.mesh = _get_box("back_wall_" + str(int(arena_size)), Vector3(arena_size + 3.6, 9.2, 0.84))
+	back_wall.mesh = _get_box("back_wall_" + str(int(arena_size)), Vector3(deck_w, 9.6, 0.84))
 	back_wall.material_override = back_wall_mat
-	back_wall.position = Vector3(0.0, 3.2, back_z)
+	back_wall.position = Vector3(0.0, 3.4, back_z)
 	parent.add_child(back_wall)
 
-	for py in [1.45, 5.10]:
+	var col_mesh := _get_box("back_col_" + str(int(arena_size)), Vector3(0.72, 9.6, 0.98))
+	var col_xs: Array = [-half - 1.85, -half * 0.55, -4.3, 4.3, half * 0.55, half + 1.85]
+	for cx in col_xs:
+		var col_mi := MeshInstance3D.new()
+		col_mi.mesh = col_mesh
+		col_mi.position = Vector3(float(cx), 3.4, back_z + 0.14)
+		col_mi.material_override = dark_metal_mat
+		parent.add_child(col_mi)
+
+	for py in [1.35, 7.35]:
 		var pipe := MeshInstance3D.new()
-		pipe.mesh = _get_cyl("back_pipe_" + str(int(arena_size)), 0.18, 0.18, arena_size + 3.0, 12)
+		pipe.mesh = _get_cyl("back_pipe_" + str(int(arena_size)), 0.20, 0.20, deck_w - 0.8, 12)
 		pipe.material_override = pipes_mat
 		pipe.rotation_degrees = Vector3(0.0, 0.0, 90.0)
 		pipe.position = Vector3(0.0, float(py), back_z + 0.58)
 		parent.add_child(pipe)
 
-	# Warm industrial fluorescent wall lamps flanking the CRT monitor + subtle warm wall wash lights
-	var tube_mat := _get_mat("fluor_tube", Color(0.95, 0.92, 0.78), 0.1, 0.2, Color(0.96, 0.90, 0.72), 1.9)
+	# Spinning industrial exhaust fans on north wall (2 for 2-team, 3 for 3-4 team)
+	var fans: Array = []
+	var fan_packed = load_optional(GLB_FAN)
+	var fan_specs: Array = [
+		Vector3(-half * 0.66, 4.35, back_z + 0.50),
+		Vector3(half * 0.66, 4.35, back_z + 0.50),
+	]
+	if team_count >= 3:
+		fan_specs.append(Vector3(0.0, 6.25, back_z + 0.50))
+	var fan_shroud_mesh := _get_cyl("fan_shroud", 0.94, 1.00, 0.34, 20)
+	for f_idx in range(fan_specs.size()):
+		var fpos: Vector3 = fan_specs[f_idx] as Vector3
+		var shroud := MeshInstance3D.new()
+		shroud.name = "ExhaustFanShroud_%d" % f_idx
+		shroud.mesh = fan_shroud_mesh
+		shroud.rotation_degrees.x = 90.0
+		shroud.position = fpos + Vector3(0.0, 0.0, -0.06)
+		shroud.material_override = dark_metal_mat
+		parent.add_child(shroud)
+
+		var fan_mount := Node3D.new()
+		fan_mount.name = "ExhaustFanMount_%d" % f_idx
+		fan_mount.position = fpos + Vector3(0.0, 0.0, 0.08)
+		fan_mount.rotation_degrees.y = 180.0
+		fan_mount.scale = Vector3(0.68, 0.68, 0.68)
+		parent.add_child(fan_mount)
+
+		if fan_packed is PackedScene:
+			var fan_inst: Node3D = (fan_packed as PackedScene).instantiate() as Node3D
+			_strip_prop_collisions(fan_inst)
+			fan_mount.add_child(fan_inst)
+			var fan_mesh := fan_inst.get_node_or_null("fan_002") as MeshInstance3D
+			if fan_mesh != null:
+				fan_mesh.position = Vector3.ZERO
+				fans.append(fan_mesh)
+			else:
+				fans.append(fan_inst)
+		else:
+			var hub_pivot := Node3D.new()
+			hub_pivot.name = "FallbackFan_%d" % f_idx
+			for b_i in range(4):
+				var blade := MeshInstance3D.new()
+				blade.mesh = _get_box("fallback_fan_blade", Vector3(1.60, 0.24, 0.08))
+				blade.rotation_degrees.z = float(b_i) * 45.0
+				blade.material_override = rust_mat
+				hub_pivot.add_child(blade)
+			fan_mount.add_child(hub_pivot)
+			fans.append(hub_pivot)
+
+	# Warm industrial fluorescent wall lamps flanking the CRT monitor + 1 subtle flicker lamp + warm wall wash
+	var tube_mat := _get_mat("fluor_tube", Color(0.95, 0.90, 0.76), 0.1, 0.2, Color(0.96, 0.88, 0.68), 1.45)
+	var flicker_lamp_mat := _get_mat("flicker_lamp", Color(1.0, 0.80, 0.44), 0.1, 0.22, Color(1.0, 0.72, 0.30), 1.75)
+	var cage_lamp_mat := _get_mat("cage_lamp", Color(1.0, 0.78, 0.40), 0.1, 0.24, Color(1.0, 0.70, 0.28), 1.65)
 	var fixture_mat := _get_mat("fluor_fixture", Color(0.24, 0.23, 0.22), 0.65, 0.48)
-	for lx in [-half * 0.78, -half * 0.46, half * 0.46, half * 0.78]:
+	var tube_xs: Array = [-half * 0.78, -half * 0.46, half * 0.46, half * 0.78]
+	for t_idx in range(tube_xs.size()):
+		var lx: float = float(tube_xs[t_idx])
 		var fix := MeshInstance3D.new()
 		fix.mesh = _get_box("lamp_fix", Vector3(2.1, 0.28, 0.36))
 		fix.material_override = fixture_mat
-		fix.position = Vector3(float(lx), 4.05, back_z + 0.56)
+		fix.position = Vector3(lx, 5.75, back_z + 0.56)
 		parent.add_child(fix)
 
 		var tube := MeshInstance3D.new()
 		tube.mesh = _get_box("lamp_tube", Vector3(1.85, 0.12, 0.16))
-		tube.material_override = tube_mat
-		tube.position = Vector3(float(lx), 3.90, back_z + 0.68)
+		tube.material_override = flicker_lamp_mat if t_idx == 1 else tube_mat
+		tube.position = Vector3(lx, 5.60, back_z + 0.68)
 		parent.add_child(tube)
 
-	for wx in [-half * 0.58, 0.0, half * 0.58]:
+	for wx in [-half * 0.64, 0.0, half * 0.64]:
 		var wall_light := OmniLight3D.new()
-		wall_light.light_color = Color(1.0, 0.88, 0.68)
-		wall_light.light_energy = 1.8
-		wall_light.omni_range = 11.5
+		wall_light.light_color = Color(1.0, 0.76, 0.44)
+		wall_light.light_energy = 2.8 if is_zero_approx(float(wx)) else 4.0
+		wall_light.omni_range = 22.0
 		wall_light.omni_attenuation = 1.15
 		wall_light.shadow_enabled = false
-		wall_light.position = Vector3(float(wx), 3.6, back_z + 2.4)
+		wall_light.position = Vector3(float(wx), 5.0, back_z + 2.6)
 		parent.add_child(wall_light)
 
 	var lamp_packed = load_optional(GLB_WALL_LAMP)
-	for lx in [-half * 0.62, half * 0.62]:
+	var wall_lamp_xs: Array = [-half * 0.44, half * 0.44]
+	for l_idx in range(wall_lamp_xs.size()):
+		var lx: float = float(wall_lamp_xs[l_idx])
+		var target_lmat: StandardMaterial3D = flicker_lamp_mat if l_idx == 0 else cage_lamp_mat
 		if lamp_packed is PackedScene:
 			var lamp := (lamp_packed as PackedScene).instantiate() as Node3D
-			lamp.position = Vector3(float(lx), 2.35, back_z + 0.56)
-			lamp.scale = Vector3(0.85, 0.85, 0.85)
+			_strip_prop_collisions(lamp)
+			lamp.position = Vector3(lx, 2.35, back_z + 0.56)
+			lamp.scale = Vector3(0.82, 0.82, 0.82)
 			parent.add_child(lamp)
+			for c in lamp.get_children():
+				if c is MeshInstance3D:
+					(c as MeshInstance3D).set_surface_override_material(0, target_lmat)
+
+	# Tucked flanking bay light fixtures (13.28m tall -> scaled down 0.22-0.24, strictly within wall silhouette & outside CRT)
+	var bay_fixture_packed = load_optional(GLB_LIGHT_FIXTURE)
+	var bay_bulb_mat := _get_mat("bay_fix_bulb", Color(1.0, 0.84, 0.54), 0.1, 0.2, Color(1.0, 0.76, 0.38), 1.6)
+	var bay_scale: float = 0.22 if team_count <= 2 else 0.24
+	for b_idx in range(2):
+		var bx: float = (-half * 0.84) if b_idx == 0 else (half * 0.84)
+		var bpos := Vector3(bx, -0.22, back_z + 0.72)
+		if bay_fixture_packed is PackedScene:
+			var finst := (bay_fixture_packed as PackedScene).instantiate() as Node3D
+			_strip_prop_collisions(finst)
+			finst.name = "NorthBayFixture_%d" % b_idx
+			finst.position = bpos
+			finst.scale = Vector3(bay_scale, bay_scale, bay_scale)
+			var cyl_mi := finst.get_node_or_null("Cylinder") as MeshInstance3D
+			if cyl_mi != null:
+				cyl_mi.set_surface_override_material(1, bay_bulb_mat)
+			parent.add_child(finst)
+		else:
+			var pole_h: float = 13.28 * bay_scale
+			var stem := MeshInstance3D.new()
+			stem.mesh = _get_cyl("bay_stem_%d" % int(arena_size), 0.08, 0.11, pole_h, 8)
+			stem.position = bpos + Vector3(0.0, pole_h * 0.5, 0.0)
+			stem.material_override = dark_metal_mat
+			parent.add_child(stem)
+			var hood := MeshInstance3D.new()
+			hood.mesh = _get_cyl("bay_hood", 0.22, 0.48, 0.32, 12)
+			hood.position = bpos + Vector3(0.0, pole_h, 0.0)
+			hood.material_override = rust_mat
+			parent.add_child(hood)
+
+	# Outer sub-deck industrial dressing (server racks, weathered pallets, scrap debris — zero playable intrusion)
+	var rack_packed = load_optional(GLB_SERVER_RACK)
+	var pallet_packed = load_optional(GLB_PALLET)
+	var debris_packed = load_optional(GLB_DEBRIS)
+	var pallet_mat := _get_mat("pallet_weathered", Color(0.36, 0.30, 0.25), 0.15, 0.85, Color.BLACK, 0.0, false, TEX_HEAVY_RUST, Vector3(1.0, 1.0, 1.0))
+
+	for r_idx in range(2):
+		var side_s: float = -1.0 if r_idx == 0 else 1.0
+		var rpos := Vector3(side_s * (half + 1.05), -0.22, -half + 2.2)
+		var ryaw: float = 18.0 * (-side_s)
+		if rack_packed is PackedScene:
+			var rinst := (rack_packed as PackedScene).instantiate() as Node3D
+			_strip_prop_collisions(rinst)
+			rinst.name = "OuterServerRack_%d" % r_idx
+			rinst.position = rpos
+			rinst.rotation_degrees.y = ryaw
+			rinst.scale = Vector3(0.45, 0.45, 0.45)
+			parent.add_child(rinst)
+		else:
+			var rbox := MeshInstance3D.new()
+			rbox.mesh = _get_box("rack_fb", Vector3(0.75, 2.4, 1.05))
+			rbox.position = rpos + Vector3(0.0, 1.2, 0.0)
+			rbox.rotation_degrees.y = ryaw
+			rbox.material_override = dark_metal_mat
+			parent.add_child(rbox)
+
+	var pallet_specs: Array = [
+		[Vector3(-half - 1.00, -0.08, half * 0.24), 7.0],
+		[Vector3(half + 1.00, -0.08, -half * 0.14), -9.0],
+	]
+	for pp_raw in pallet_specs:
+		var pp: Array = pp_raw as Array
+		var ppos: Vector3 = pp[0] as Vector3
+		var pyaw: float = float(pp[1])
+		if pallet_packed is PackedScene:
+			var pinst := (pallet_packed as PackedScene).instantiate() as Node3D
+			_strip_prop_collisions(pinst)
+			var cube := pinst.get_node_or_null("Cube_019") as MeshInstance3D
+			if cube != null:
+				cube.position = Vector3.ZERO
+				cube.rotation = Vector3.ZERO
+				cube.material_override = pallet_mat
+			pinst.position = ppos
+			pinst.rotation_degrees.y = pyaw
+			pinst.scale = Vector3(0.46, 0.46, 0.46)
+			parent.add_child(pinst)
+		else:
+			var pbox := MeshInstance3D.new()
+			pbox.mesh = _get_box("pallet_fb", Vector3(1.3, 0.22, 1.0))
+			pbox.position = ppos
+			pbox.rotation_degrees.y = pyaw
+			pbox.material_override = pallet_mat
+			parent.add_child(pbox)
+
+	var debris_specs: Array = [
+		[Vector3(-half - 1.02, -0.20, -half * 0.18), 28.0, 0.56],
+		[Vector3(half + 1.02, -0.20, half * 0.34), -38.0, 0.54],
+	]
+	for dp_raw in debris_specs:
+		var dp: Array = dp_raw as Array
+		var base_dpos: Vector3 = dp[0] as Vector3
+		var dyaw: float = float(dp[1])
+		var dscale: float = float(dp[2])
+		if debris_packed is PackedScene:
+			var dinst := (debris_packed as PackedScene).instantiate() as Node3D
+			_strip_prop_collisions(dinst)
+			dinst.position = base_dpos + Vector3(0.0, 0.725 * dscale, 0.0)
+			dinst.rotation_degrees.y = dyaw
+			dinst.scale = Vector3(dscale, dscale, dscale)
+			parent.add_child(dinst)
+		else:
+			var dbox := MeshInstance3D.new()
+			dbox.mesh = _get_box("debris_fb", Vector3(0.8, 0.65, 0.8))
+			dbox.position = base_dpos + Vector3(0.0, 0.32, 0.0)
+			dbox.rotation_degrees.y = dyaw
+			dbox.material_override = rust_mat
+			parent.add_child(dbox)
 
 	# Large 3D Diegetic Industrial CRT Monitor mounted on the north back wall
 	var crt_root := Node3D.new()
@@ -312,7 +544,7 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 	for sx in [-2.7, 2.7]:
 		var strut := MeshInstance3D.new()
 		strut.mesh = _get_box("crt_strut", Vector3(0.34, 0.34, 0.95))
-		strut.material_override = trim_mat
+		strut.material_override = steel_trim_mat
 		strut.position = Vector3(float(sx), 0.0, -0.58)
 		crt_root.add_child(strut)
 
@@ -323,13 +555,13 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 
 	var crt_trim := MeshInstance3D.new()
 	crt_trim.mesh = _get_box("back_crt_trim", Vector3(7.10, 3.10, 0.08))
-	crt_trim.material_override = _get_mat("back_crt_trim_mat", Color(0.24, 0.42, 0.26), 0.2, 0.35, Color(0.28, 0.56, 0.30), 0.55)
+	crt_trim.material_override = _get_mat("back_crt_trim_mat", Color(0.22, 0.38, 0.24), 0.2, 0.35, Color(0.26, 0.50, 0.28), 0.45)
 	crt_trim.position = Vector3(0.0, 0.0, 0.45)
 	crt_root.add_child(crt_trim)
 
 	var crt_screen := MeshInstance3D.new()
 	crt_screen.mesh = _get_box("back_crt_screen", Vector3(6.74, 2.78, 0.08))
-	crt_screen.material_override = _get_mat("back_crt_glass", Color(0.03, 0.09, 0.04), 0.1, 0.2, Color(0.05, 0.16, 0.07), 0.85)
+	crt_screen.material_override = _get_mat("back_crt_glass", Color(0.03, 0.09, 0.04), 0.1, 0.2, Color(0.05, 0.14, 0.06), 0.72)
 	crt_screen.position = Vector3(0.0, 0.0, 0.48)
 	crt_root.add_child(crt_screen)
 
@@ -356,8 +588,20 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 	monitor_phase.outline_size = 10
 	if term_font != null:
 		monitor_phase.font = term_font
-	monitor_phase.position = Vector3(0.0, -0.74, 0.56)
+	monitor_phase.position = Vector3(0.0, -0.66, 0.56)
 	crt_root.add_child(monitor_phase)
+
+	# Central Brushed-Treadplate Conveyor Apron + Ground Scorch & Oil Stain Decals
+	var conv_apron := MeshInstance3D.new()
+	conv_apron.name = "CenterConveyorApron"
+	conv_apron.mesh = _get_box("conv_apron", Vector3(float(cfg.CONVEYOR_END_X) * 2.0 + 1.3, 0.024, float(cfg.CONVEYOR_HALF_Z) * 2.0 + 1.25))
+	conv_apron.position = Vector3(0.0, 0.010, 0.0)
+	conv_apron.material_override = apron_mat
+	parent.add_child(conv_apron)
+
+	_add_floor_decal(parent, scorch_tex, Vector3(0.0, 0.04, 0.0), Vector3(4.2, 0.45, 4.2), Color(0.14, 0.12, 0.10, 0.52), 0.35)
+	for end_sign in [-1.0, 1.0]:
+		_add_floor_decal(parent, stain_tex, Vector3(end_sign * float(cfg.CONVEYOR_END_X), 0.04, 0.0), Vector3(3.2, 0.45, 2.8), Color(0.18, 0.14, 0.12, 0.58), end_sign * 0.4)
 
 	# Central Energy Reactor Station
 	var disp_root := Node3D.new()
@@ -367,7 +611,7 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 	var disp_plinth := MeshInstance3D.new()
 	disp_plinth.mesh = _get_cyl("disp_plinth", 1.55, 1.72, 0.42, 8)
 	disp_plinth.position = Vector3(0.0, 0.21, 0.0)
-	disp_plinth.material_override = trim_mat
+	disp_plinth.material_override = apron_mat
 	disp_root.add_child(disp_plinth)
 
 	var disp_base := MeshInstance3D.new()
@@ -379,7 +623,7 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 	var disp_core := MeshInstance3D.new()
 	disp_core.mesh = _get_cyl("disp_core", 0.68, 0.68, 2.35, 20)
 	disp_core.position = Vector3(0.0, 2.05, 0.0)
-	disp_core.material_override = _get_mat("disp_glow", Color(0.24, 0.88, 1.0, 0.92), 0.1, 0.15, Color(0.20, 0.86, 1.0), 2.8, true)
+	disp_core.material_override = _get_mat("disp_glow", Color(0.20, 0.78, 0.92, 0.92), 0.1, 0.18, Color(0.18, 0.76, 0.90), 1.35, true)
 	disp_root.add_child(disp_core)
 
 	# 4 armored vertical pipe ribs around the reactor core
@@ -395,7 +639,7 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 	var disp_cap := MeshInstance3D.new()
 	disp_cap.mesh = _get_cyl("disp_cap", 0.95, 1.32, 0.48, 8)
 	disp_cap.position = Vector3(0.0, 3.35, 0.0)
-	disp_cap.material_override = trim_mat
+	disp_cap.material_override = steel_trim_mat
 	disp_root.add_child(disp_cap)
 
 	var disp_beacon := MeshInstance3D.new()
@@ -409,14 +653,14 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 	disp_ring.mesh = _get_torus("disp_ring", 1.25, 1.44, 24)
 	disp_ring.position = Vector3(0.0, 1.85, 0.0)
 	disp_ring.scale = Vector3(1.0, 0.22, 1.0)
-	disp_ring.material_override = _get_mat("disp_ring_mat", Color(0.35, 0.95, 1.0), 0.2, 0.3, Color(0.35, 0.95, 1.0), 2.2)
+	disp_ring.material_override = _get_mat("disp_ring_mat", Color(0.28, 0.84, 0.92), 0.2, 0.3, Color(0.28, 0.84, 0.92), 1.05)
 	disp_root.add_child(disp_ring)
 
 	var disp_ring_b := MeshInstance3D.new()
 	disp_ring_b.mesh = _get_torus("disp_ring_b", 1.02, 1.18, 24)
 	disp_ring_b.position = Vector3(0.0, 2.55, 0.0)
 	disp_ring_b.scale = Vector3(1.0, 0.22, 1.0)
-	disp_ring_b.material_override = _get_mat("disp_ring_b_mat", Color(1.0, 0.78, 0.22), 0.2, 0.3, Color(1.0, 0.72, 0.16), 1.9)
+	disp_ring_b.material_override = _get_mat("disp_ring_b_mat", Color(0.96, 0.70, 0.20), 0.2, 0.3, Color(0.96, 0.66, 0.16), 1.05)
 	disp_root.add_child(disp_ring_b)
 
 	# Flanking conveyor chute hoods (-X and +X)
@@ -427,8 +671,8 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 		hood.material_override = panel_mat
 		disp_root.add_child(hood)
 
-	# Two short opposing conveyor belts (-X and +X) with steel side rails and end rollers
-	var chevron_mat := _get_mat("chevron", Color(0.95, 0.72, 0.22), 0.22, 0.35, Color(0.92, 0.66, 0.16), 1.2)
+	# Two short opposing conveyor belts (-X and +X) with high-specular oiled steel side rails and end rollers
+	var chevron_mat := _get_mat("chevron", Color(0.94, 0.70, 0.20), 0.22, 0.35, Color(0.90, 0.64, 0.16), 0.95)
 	var conv_len: float = float(cfg.CONVEYOR_END_X) - float(cfg.CONVEYOR_START_X)
 	var conv_mid: float = (float(cfg.CONVEYOR_END_X) + float(cfg.CONVEYOR_START_X)) * 0.5
 	var half_z: float = float(cfg.CONVEYOR_HALF_Z)
@@ -443,14 +687,14 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 			var rail := MeshInstance3D.new()
 			rail.mesh = _get_box("belt_rail", Vector3(conv_len + 0.16, 0.20, 0.14))
 			rail.position = Vector3(dir_sign * conv_mid, 0.10, side_z)
-			rail.material_override = trim_mat
+			rail.material_override = steel_trim_mat
 			parent.add_child(rail)
 
 		var roller := MeshInstance3D.new()
 		roller.mesh = _get_cyl("belt_roller", 0.14, 0.14, half_z * 2.1, 12)
 		roller.rotation.x = PI * 0.5
 		roller.position = Vector3(dir_sign * float(cfg.CONVEYOR_END_X), 0.08, 0.0)
-		roller.material_override = pipes_mat
+		roller.material_override = steel_trim_mat
 		parent.add_child(roller)
 
 		for s_idx in range(3):
@@ -462,8 +706,8 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 			parent.add_child(strip)
 
 	# 4 Core-Heist-distinct Square Armored Capacitor / Transformer Pylons
-	var pylon_fin_mat := _get_mat("pylon_fin", Color(0.22, 0.24, 0.26), 0.65, 0.44, Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(1.0, 1.0, 1.0))
-	var pylon_charge_mat := _get_mat("pylon_charge", Color(0.28, 0.96, 0.86), 0.15, 0.20, Color(0.26, 0.94, 0.82), 2.3)
+	var pylon_fin_mat := _get_mat("pylon_fin", Color(0.28, 0.29, 0.30), 0.65, 0.44, Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(1.0, 1.0, 1.0))
+	var pylon_charge_mat := _get_mat("pylon_charge", Color(0.26, 0.92, 0.84), 0.15, 0.22, Color(0.24, 0.88, 0.78), 1.55)
 	for pil_idx in range(pillars.size()):
 		var p2: Vector2 = pillars[pil_idx] as Vector2
 		var proot := Node3D.new()
@@ -471,17 +715,19 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 		proot.position = Vector3(p2.x, 0.0, p2.y)
 		parent.add_child(proot)
 
-		# Stepped square armored industrial plinth
+		_add_floor_decal(proot, stain_tex, Vector3(0.0, 0.03, 0.0), Vector3(2.8, 0.45, 2.8), Color(0.18, 0.14, 0.12, 0.58), float(pil_idx) * 0.85)
+
+		# Stepped square armored industrial plinth (treadplate base + dark metal step)
 		var pbase := MeshInstance3D.new()
 		pbase.mesh = _get_box("pylon_base", Vector3(1.78, 0.26, 1.78))
 		pbase.position = Vector3(0.0, 0.13, 0.0)
-		pbase.material_override = trim_mat
+		pbase.material_override = apron_mat
 		proot.add_child(pbase)
 
 		var pstep := MeshInstance3D.new()
 		pstep.mesh = _get_box("pylon_step", Vector3(1.52, 0.24, 1.52))
 		pstep.position = Vector3(0.0, 0.38, 0.0)
-		pstep.material_override = crt_body_mat
+		pstep.material_override = dark_metal_mat
 		proot.add_child(pstep)
 
 		# Armored square transformer chassis with control-panel detailing
@@ -491,13 +737,13 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 		pbody.material_override = panel_mat
 		proot.add_child(pbody)
 
-		# 4 corner structural armor rails
+		# 4 corner structural oiled-steel armor rails
 		for cx in [-0.62, 0.62]:
 			for cz in [-0.62, 0.62]:
 				var strut := MeshInstance3D.new()
 				strut.mesh = _get_box("pylon_strut", Vector3(0.20, 1.72, 0.20))
 				strut.position = Vector3(float(cx), 1.34, float(cz))
-				strut.material_override = trim_mat
+				strut.material_override = steel_trim_mat
 				proot.add_child(strut)
 
 		# Dark steel radiator cooling fins on both side flanks (-X / +X)
@@ -534,13 +780,13 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 		var pcollar := MeshInstance3D.new()
 		pcollar.mesh = _get_box("pylon_collar", Vector3(1.48, 0.22, 1.48))
 		pcollar.position = Vector3(0.0, 2.27, 0.0)
-		pcollar.material_override = trim_mat
+		pcollar.material_override = steel_trim_mat
 		proot.add_child(pcollar)
 
 		var pcap := MeshInstance3D.new()
 		pcap.mesh = _get_box("pylon_top_plate", Vector3(1.26, 0.14, 1.26))
 		pcap.position = Vector3(0.0, 2.45, 0.0)
-		pcap.material_override = panel_mat
+		pcap.material_override = rust_mat
 		proot.add_child(pcap)
 
 		for rx in [-0.46, 0.46]:
@@ -557,9 +803,9 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 		top_bar.material_override = pylon_charge_mat
 		proot.add_child(top_bar)
 
-	# Team Recycling Furnace Vaults with overhead gantry & CRT scoreboard
+	# Team Recycling Furnace Vaults with overhead gantry & CRT scoreboard (tamed team emissives for ACES)
 	var vault_nodes: Dictionary = {}
-	var grate_mat := _get_mat("vault_grate", Color(0.48, 0.45, 0.42), 0.42, 0.52, Color.BLACK, 0.0, false, TEX_GRATE, Vector3(2.0, 2.0, 1.0))
+	var grate_mat := _get_mat("vault_grate", Color(0.44, 0.42, 0.40), 0.65, 0.50, Color.BLACK, 0.0, false, TEX_GRATE, Vector3(0.75, 0.75, 0.75), "", true)
 	for raw_tid in team_ids:
 		var tid: int = int(raw_tid)
 		var bp: Vector2 = vault_by_team.get(tid, Vector2.ZERO) as Vector2
@@ -570,10 +816,12 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 		# Keep gantry & overhead CRT scoreboard facing the overhead camera (+Z) so south corners never appear edge-on.
 		parent.add_child(vroot)
 
+		_add_floor_decal(vroot, stain_tex, Vector3(0.0, 0.03, 0.0), Vector3(float(cfg.VAULT_RADIUS) * 2.55, 0.45, float(cfg.VAULT_RADIUS) * 2.55), Color(0.18, 0.14, 0.12, 0.58), float(tid) * 0.7)
+
 		var pad := MeshInstance3D.new()
 		pad.mesh = _get_cyl("vault_pad", float(cfg.VAULT_RADIUS) + 0.08, float(cfg.VAULT_RADIUS) + 0.24, 0.18, 24)
 		pad.position = Vector3(0.0, 0.09, 0.0)
-		pad.material_override = trim_mat
+		pad.material_override = dark_metal_mat
 		vroot.add_child(pad)
 
 		var grate := MeshInstance3D.new()
@@ -583,16 +831,16 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 		vroot.add_child(grate)
 
 		var inner_pad := MeshInstance3D.new()
-		inner_pad.mesh = _get_cyl("vault_inner", float(cfg.VAULT_RADIUS) - 0.55, float(cfg.VAULT_RADIUS) - 0.55, 0.21, 24)
+		inner_pad.mesh = _get_cyl("vault_inner", float(cfg.VAULT_RADIUS) - 0.95, float(cfg.VAULT_RADIUS) - 0.95, 0.21, 24)
 		inner_pad.position = Vector3(0.0, 0.11, 0.0)
-		inner_pad.material_override = _get_mat("vault_pad_%d" % tid, tcol * 0.78, 0.2, 0.3, tcol, 1.25)
+		inner_pad.material_override = _get_mat("vault_pad_%d" % tid, tcol * 0.48, 0.2, 0.38, tcol, 0.42)
 		vroot.add_child(inner_pad)
 
 		var arch := MeshInstance3D.new()
 		arch.mesh = _get_torus("vault_arch", float(cfg.VAULT_RADIUS) - 0.20, float(cfg.VAULT_RADIUS) + 0.02, 24)
 		arch.position = Vector3(0.0, 0.20, 0.0)
 		arch.scale = Vector3(1.0, 0.24, 1.0)
-		arch.material_override = _get_mat("vault_arch_%d" % tid, tcol, 0.2, 0.3, tcol, 1.8)
+		arch.material_override = _get_mat("vault_arch_%d" % tid, tcol * 0.75, 0.2, 0.34, tcol, 0.72)
 		vroot.add_child(arch)
 
 		# Twin gantry pylons + overhead CRT scoreboard housing
@@ -613,7 +861,7 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 		var crt_bezel := MeshInstance3D.new()
 		crt_bezel.mesh = _get_box("vault_bezel", Vector3(2.32, 1.26, 0.32))
 		crt_bezel.position = Vector3(0.0, 2.65, 0.0)
-		crt_bezel.material_override = _get_mat("vault_bezel_%d" % tid, tcol, 0.2, 0.3, tcol, 1.2)
+		crt_bezel.material_override = _get_mat("vault_bezel_%d" % tid, tcol * 0.75, 0.2, 0.34, tcol, 0.58)
 		vroot.add_child(crt_bezel)
 
 		var lock_ring := MeshInstance3D.new()
@@ -621,7 +869,7 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 		lock_ring.mesh = _get_torus("vault_lock", float(cfg.VAULT_RADIUS) + 0.16, float(cfg.VAULT_RADIUS) + 0.34, 24)
 		lock_ring.position = Vector3(0.0, 0.72, 0.0)
 		lock_ring.scale = Vector3(1.0, 0.45, 1.0)
-		lock_ring.material_override = _get_mat("vault_lock_%d" % tid, Color(tcol.r, tcol.g, tcol.b, 0.75), 0.1, 0.2, tcol, 2.8, true)
+		lock_ring.material_override = _get_mat("vault_lock_%d" % tid, Color(tcol.r, tcol.g, tcol.b, 0.75), 0.1, 0.22, tcol, 1.75, true)
 		lock_ring.visible = false
 		vroot.add_child(lock_ring)
 
@@ -654,6 +902,8 @@ func build_arena(parent: Node3D, team_ids: Array, cfg, vault_by_team: Dictionary
 		"conveyor_mat_r": conv_mat_r,
 		"monitor_timer": monitor_timer,
 		"monitor_phase": monitor_phase,
+		"fans": fans,
+		"flicker_lamp_mat": flicker_lamp_mat,
 	}
 
 

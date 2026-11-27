@@ -106,11 +106,15 @@ const TEX_THREADPLATE := "res://minigames/chisel_gauntlet_multiplayer/models/chi
 const TEX_THREADPLATE_NORMAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_threadplate normal 1024.png"
 const TEX_SHREDDER := "res://minigames/escalator_pit/models/escalator pit art11/escalator pit art11_shredder6.png"
 const TEX_HEAVY_RUST := "res://minigames/junk_platform/models/junk platform visuals2/junk platform visuals2_heavy rust2.png"
+const TEX_RUST_PAINTED := "res://minigames/junk_platform/models/junk platform visuals2/junk platform visuals2_heavy rust painted2.png"
+const TEX_DARK_METAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_shotgun device metal darkened3.png"
 const TEX_METAL_PLATE := "res://minigames/dvd_roomba/models/dvd roomba visuals1_metal plate1.png"
 const TEX_FLOOR := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba floor5.png"
 const TEX_GRATE := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba grate.png"
 const TEX_PIPES := "res://minigames/forklift_certified/models/forklift certified visuals1/forklift certified visuals1_fc pipes2.png"
 const TEX_WALL := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba walls1.png"
+const TEX_BRICK_WALL := "res://minigames/burn_recycle/models/burn recycle visuals6/burn recycle visuals6_burn and recycle brick wall bake.png"
+const TEX_PLASTER_NORMAL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel gauntlet art2/chisel gauntlet art2_plaster damaged normal.png"
 const TEX_SIDING := "res://minigames/dvd_roomba/models/dvd roomba visuals1_dvd roomba siding.png"
 const TEX_CRATE_WOOD := "res://minigames/smoke_break/models/smoke break near final3/smoke break near final3_crate3.png"
 const TEX_CRATE_SUPPLY := "res://minigames/forklift_certified/models/forklift certified visuals1/forklift certified visuals1_box2.png"
@@ -118,11 +122,17 @@ const TEX_BARREL := "res://minigames/chisel_gauntlet_multiplayer/models/chisel g
 const TEX_SCORCH := "res://textures/particles/scorch_01.png"
 const TEX_SMOKE := "res://textures/particles/smoke/smoke_07.png"
 const TEX_EXPLOSION_MARK := "res://textures/decals/explosion_mark.png"
+const TEX_DECAL_STAIN := "res://textures/decal stain masked1.png"
 
 const GLB_SYRINGE := "res://minigames/knife_at_the_office/models/kato syringe2/kato syringe2.glb"
 const GLB_SHOE := "res://models/shared/shoe_gib.glb"
 const GLB_SPRING := "res://models/manufacture gun prop spring1/manufacture gun prop spring1.glb"
 const GLB_DETONATOR := "res://minigames/chisel_gauntlet_multiplayer/models/exploding collar radio1/exploding collar radio1.glb"
+const GLB_WALL_LAMP := "res://models/elevator light2/elevator light2.glb"
+const GLB_FAN := "res://minigames/smoke_break/models/smoke break fan1/smoke break fan1.glb"
+const GLB_SERVER_RACK := "res://minigames/intermission_new/models/intermission server rack temp1/intermission server rack temp1.glb"
+const GLB_PALLET := "res://minigames/chisel_gauntlet_multiplayer/models/chisel game pallet1/chisel game pallet1.glb"
+const GLB_DEBRIS := "res://minigames/junk_platform/models/junk platform debris1/junk platform debris1.glb"
 
 static var _pck_checked: bool = false
 static var _pck_available: bool = false
@@ -166,7 +176,9 @@ static func make_std_mat(
 	transparent: bool = false,
 	tex_path: String = "",
 	uv_scale: Vector3 = Vector3.ONE,
-	normal_path: String = ""
+	normal_path: String = "",
+	world_triplanar: bool = true,
+	normal_scale: float = 0.72
 ) -> StandardMaterial3D:
 	var mat := StandardMaterial3D.new()
 	mat.albedo_color = albedo
@@ -178,13 +190,17 @@ static func make_std_mat(
 			mat.albedo_texture = tex
 			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 			mat.uv1_triplanar = true
+			mat.uv1_world_triplanar = world_triplanar
 			mat.uv1_scale = uv_scale
 	if not normal_path.is_empty():
 		var norm = load_optional(normal_path)
 		if norm is Texture2D:
 			mat.normal_enabled = true
 			mat.normal_texture = norm
-			mat.normal_scale = 0.72
+			mat.normal_scale = normal_scale
+			mat.uv1_triplanar = true
+			mat.uv1_world_triplanar = world_triplanar
+			mat.uv1_scale = uv_scale
 	if emission_energy > 0.0:
 		mat.emission_enabled = true
 		mat.emission = emission
@@ -195,46 +211,124 @@ static func make_std_mat(
 	return mat
 
 
+static func _strip_prop_collisions(node: Node) -> void:
+	var children: Array = node.get_children()
+	for raw_c in children:
+		var c: Node = raw_c as Node
+		if c is CollisionObject3D or c is CollisionShape3D:
+			node.remove_child(c)
+			c.free()
+		else:
+			_strip_prop_collisions(c)
+
+
+static func _tint_glb_meshes(node: Node, tint: Color, roughness_add: float = 0.0) -> void:
+	if node is MeshInstance3D:
+		var mi: MeshInstance3D = node as MeshInstance3D
+		if mi.mesh != null:
+			var sc: int = mi.mesh.get_surface_count()
+			for si in range(sc):
+				var mat: Material = mi.get_active_material(si)
+				if mat is StandardMaterial3D:
+					var dup: StandardMaterial3D = (mat as StandardMaterial3D).duplicate() as StandardMaterial3D
+					dup.albedo_color = dup.albedo_color * tint
+					dup.roughness = clampf(dup.roughness + roughness_add, 0.15, 0.98)
+					mi.set_surface_override_material(si, dup)
+	for child in node.get_children():
+		_tint_glb_meshes(child, tint, roughness_add)
+
+
+static func _add_floor_decal(
+	parent: Node3D,
+	tex: Texture2D,
+	pos: Vector3,
+	size: Vector3,
+	modulate: Color,
+	rot_y: float = 0.0
+) -> void:
+	if tex == null or parent == null:
+		return
+	var decal := Decal.new()
+	decal.texture_albedo = tex
+	decal.size = size
+	decal.modulate = modulate
+	decal.upper_fade = 0.30
+	decal.lower_fade = 0.30
+	decal.position = pos
+	decal.rotation.y = rot_y
+	parent.add_child(decal)
+
+
+static func clear_caches() -> void:
+	_bomb_asset_cache.clear()
+	_blast_asset_cache.clear()
+
+
 static func build_floor_and_backdrop(width: int, height: int, tile_size: float, theme_meta: Dictionary) -> Dictionary:
 	ensure_game_pck_mounted()
 	var root := Node3D.new()
 	root.name = "ArenaFloor"
 
-	var col_a: Color = theme_meta.get("floor_a", Color(0.56, 0.53, 0.50))
-	var col_b: Color = theme_meta.get("floor_b", Color(0.44, 0.42, 0.40))
-	var accent: Color = theme_meta.get("accent", Color(0.32, 0.86, 1.0))
+	var col_a: Color = theme_meta.get("floor_a", Color(0.58, 0.55, 0.52))
+	var col_b: Color = theme_meta.get("floor_b", Color(0.47, 0.45, 0.43))
 
-	# Reuse vanilla Machine Party factory floor and metal grate textures with warm low-saturation industrial tone.
-	var tint_a := Color(0.68, 0.64, 0.60).lerp(col_a, 0.16)
-	var tint_b := Color(0.50, 0.48, 0.46).lerp(col_b, 0.16)
-	var mat_a := make_std_mat(tint_a, 0.22, 0.78, Color.BLACK, 0.0, false, TEX_FLOOR, Vector3(0.35, 0.35, 0.35))
-	var mat_b := make_std_mat(tint_b, 0.30, 0.70, Color.BLACK, 0.0, false, TEX_GRATE, Vector3(0.42, 0.42, 0.42))
-	var mat_frame := make_std_mat(Color(0.24, 0.22, 0.21), 0.60, 0.65, Color.BLACK, 0.0, false, TEX_SIDING, Vector3(0.25, 0.25, 0.25))
-	var mat_wall := make_std_mat(Color(0.40, 0.30, 0.24), 0.32, 0.80, Color.BLACK, 0.0, false, TEX_HEAVY_RUST, Vector3(0.18, 0.18, 0.18))
-	var mat_pipe := make_std_mat(Color(0.44, 0.40, 0.36), 0.72, 0.44, Color.BLACK, 0.0, false, TEX_PIPES, Vector3(0.4, 0.4, 0.4))
-	var mat_trim := make_std_mat(Color(0.14, 0.14, 0.15), 0.72, 0.50, Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(0.4, 0.4, 0.4))
+	# Matte factory concrete checkerboard so blasts, crates, bombs, pickups, and 4 players stay vividly distinct.
+	var tint_a := Color(0.59, 0.56, 0.53).lerp(col_a, 0.10)
+	var tint_b := Color(0.49, 0.47, 0.45).lerp(col_b, 0.10)
+	var mat_a := make_std_mat(tint_a, 0.10, 0.86, Color.BLACK, 0.0, false, TEX_FLOOR, Vector3(0.28, 0.28, 0.28))
+	var mat_b := make_std_mat(tint_b, 0.12, 0.86, Color.BLACK, 0.0, false, TEX_FLOOR, Vector3(0.28, 0.28, 0.28))
+	var mat_frame := make_std_mat(Color(0.56, 0.52, 0.48), 0.36, 0.66, Color.BLACK, 0.0, false, TEX_THREADPLATE, Vector3(0.42, 0.42, 0.42), TEX_THREADPLATE_NORMAL, true, 0.85)
+	var mat_border := make_std_mat(Color(0.60, 0.56, 0.52), 0.66, 0.42, Color.BLACK, 0.0, false, TEX_THREADPLATE, Vector3(0.48, 0.48, 0.48), TEX_THREADPLATE_NORMAL, true, 0.85)
+	var mat_wall := make_std_mat(Color(0.72, 0.68, 0.64), 0.12, 0.86, Color.BLACK, 0.0, false, TEX_BRICK_WALL, Vector3(0.22, 0.22, 0.22), TEX_PLASTER_NORMAL, true, 0.85)
+	var mat_dark_metal := make_std_mat(Color(0.56, 0.52, 0.50), 0.60, 0.46, Color.BLACK, 0.0, false, TEX_DARK_METAL, Vector3(0.38, 0.38, 0.38))
+	var mat_rust := make_std_mat(Color(0.58, 0.46, 0.38), 0.50, 0.54, Color.BLACK, 0.0, false, TEX_RUST_PAINTED, Vector3(0.35, 0.35, 0.35))
+	var mat_pipe := make_std_mat(Color(0.58, 0.52, 0.46), 0.62, 0.40, Color.BLACK, 0.0, false, TEX_PIPES, Vector3(0.38, 0.38, 0.38))
+	var stain_tex := load_optional(TEX_DECAL_STAIN) as Texture2D
 
 	var total_w: float = float(width) * tile_size
 	var total_h: float = float(height) * tile_size
+	var back_z: float = -total_h * 0.5 - 1.35
+	var wall_w: float = total_w + 8.0
+	var deck_top_y: float = -0.08
 
-	# Heavy dark charcoal industrial sub-deck (eliminates bright neon seams between floor tiles).
+	# Heavy dark iron industrial sub-deck & rim tight beneath the arena (zero distracting tiled siding).
 	var deck := MeshInstance3D.new()
+	deck.name = "WarehouseSubDeck"
 	var deck_mesh := BoxMesh.new()
-	deck_mesh.size = Vector3(total_w + 2.8, 0.9, total_h + 2.8)
+	deck_mesh.size = Vector3(wall_w, 0.8, total_h + 3.4)
 	deck.mesh = deck_mesh
 	deck.material_override = mat_frame
-	deck.position = Vector3(0.0, -0.49, 0.0)
+	deck.position = Vector3(0.0, deck_top_y - 0.40, 0.0)
 	root.add_child(deck)
 
-	var rim := MeshInstance3D.new()
-	var rim_mesh := BoxMesh.new()
-	rim_mesh.size = Vector3(total_w + 0.32, 0.09, total_h + 0.32)
-	rim.mesh = rim_mesh
-	rim.material_override = mat_trim
-	rim.position = Vector3(0.0, -0.05, 0.0)
-	root.add_child(rim)
+	var deck_rim := MeshInstance3D.new()
+	deck_rim.name = "WarehouseSubDeckRim"
+	var dr_mesh := BoxMesh.new()
+	dr_mesh.size = Vector3(wall_w + 0.18, 0.12, total_h + 3.56)
+	deck_rim.mesh = dr_mesh
+	deck_rim.material_override = mat_dark_metal
+	deck_rim.position = Vector3(0.0, deck_top_y - 0.06, 0.0)
+	root.add_child(deck_rim)
 
-	# Checkerboard factory floor tiles using two MultiMeshInstance3D batches.
+	# Brushed treadplate perimeter border framing the playable grid.
+	var border_t: float = 0.38
+	var border_specs: Array = [
+		[Vector3(0.0, 0.02, -total_h * 0.5 - border_t * 0.5), Vector3(total_w + border_t * 2.0, 0.14, border_t)],
+		[Vector3(0.0, 0.02, total_h * 0.5 + border_t * 0.5), Vector3(total_w + border_t * 2.0, 0.14, border_t)],
+		[Vector3(-total_w * 0.5 - border_t * 0.5, 0.02, 0.0), Vector3(border_t, 0.14, total_h)],
+		[Vector3(total_w * 0.5 + border_t * 0.5, 0.02, 0.0), Vector3(border_t, 0.14, total_h)],
+	]
+	for bspec_raw in border_specs:
+		var bspec: Array = bspec_raw as Array
+		var bcurb := MeshInstance3D.new()
+		var bcm := BoxMesh.new()
+		bcm.size = bspec[1] as Vector3
+		bcurb.mesh = bcm
+		bcurb.material_override = mat_border
+		bcurb.position = bspec[0] as Vector3
+		root.add_child(bcurb)
+
+	# Checkerboard matte concrete floor tiles using two MultiMeshInstance3D batches.
 	var tile_mesh := BoxMesh.new()
 	tile_mesh.size = Vector3(tile_size * 0.995, 0.08, tile_size * 0.995)
 	var transforms_a: Array[Transform3D] = []
@@ -265,68 +359,273 @@ static func build_floor_and_backdrop(width: int, height: int, tile_size: float, 
 		mmi.material_override = pair[1]
 		root.add_child(mmi)
 
-	# --- Industrial Factory Back Wall + Pipes + Fluorescent Tubes + 3D CRT Monitor ---
-	var back_z: float = -total_h * 0.5 - 1.35
+	# Grounded oil/grime Decal stains along north wall base, perimeter rim, and arena corners.
+	var stain_spots: Array = [
+		[Vector3(-total_w * 0.32, 0.02, -total_h * 0.5 + 0.55), Vector3(2.8, 0.45, 2.2), 0.25],
+		[Vector3(total_w * 0.32, 0.02, -total_h * 0.5 + 0.55), Vector3(2.8, 0.45, 2.2), -0.40],
+		[Vector3(-total_w * 0.36, 0.02, total_h * 0.5 - 0.55), Vector3(2.6, 0.45, 2.0), 0.85],
+		[Vector3(total_w * 0.36, 0.02, total_h * 0.5 - 0.55), Vector3(2.6, 0.45, 2.0), -0.75],
+		[Vector3(0.0, 0.02, -total_h * 0.5 - 0.65), Vector3(4.2, 0.45, 1.8), 0.05],
+		[Vector3(-total_w * 0.5 - 1.0, deck_top_y + 0.04, 0.0), Vector3(2.4, 0.45, 3.6), 0.45],
+		[Vector3(total_w * 0.5 + 1.0, deck_top_y + 0.04, 0.0), Vector3(2.4, 0.45, 3.6), -0.45],
+	]
+	for st_raw in stain_spots:
+		var st: Array = st_raw as Array
+		_add_floor_decal(root, stain_tex, st[0] as Vector3, st[1] as Vector3, Color(0.16, 0.13, 0.11, 0.60), float(st[2]))
+
+	# --- Industrial Brick Warehouse North Wall + Buttress Columns + Pipes + Fans + Cage Lamps + 3D CRT Monitor ---
 	var wall := MeshInstance3D.new()
+	wall.name = "NorthBrickWall"
 	var wm := BoxMesh.new()
-	wm.size = Vector3(total_w + 14.0, 6.2, 0.7)
+	wm.size = Vector3(wall_w, 6.8, 0.7)
 	wall.mesh = wm
 	wall.material_override = mat_wall
-	wall.position = Vector3(0.0, 2.4, back_z)
+	wall.position = Vector3(0.0, 2.6, back_z)
 	root.add_child(wall)
 
-	for py in [1.1, 3.6]:
+	var col_mesh := BoxMesh.new()
+	col_mesh.size = Vector3(0.66, 6.8, 0.90)
+	var col_xs: Array = [-total_w * 0.5 - 2.6, -total_w * 0.44, -3.15, 3.15, total_w * 0.44, total_w * 0.5 + 2.6]
+	for cx in col_xs:
+		var col_mi := MeshInstance3D.new()
+		col_mi.mesh = col_mesh
+		col_mi.material_override = mat_dark_metal
+		col_mi.position = Vector3(float(cx), 2.6, back_z + 0.25)
+		root.add_child(col_mi)
+
+	for py in [0.95, 3.35]:
 		var pipe := MeshInstance3D.new()
 		var pm := CylinderMesh.new()
-		pm.top_radius = 0.14
-		pm.bottom_radius = 0.14
-		pm.height = total_w + 12.0
+		pm.top_radius = 0.16
+		pm.bottom_radius = 0.16
+		pm.height = wall_w - 0.8
 		pipe.mesh = pm
 		pipe.material_override = mat_pipe
 		pipe.rotation_degrees = Vector3(0.0, 0.0, 90.0)
 		pipe.position = Vector3(0.0, py, back_z + 0.48)
 		root.add_child(pipe)
 
-	# Warm industrial fluorescent wall tubes.
-	var tube_mat := make_std_mat(Color(0.95, 0.94, 0.82), 0.1, 0.2, Color(0.96, 0.92, 0.76), 1.8)
-	var fixture_mat := make_std_mat(Color(0.22, 0.22, 0.24), 0.7, 0.45)
-	for lx in [-total_w * 0.38, -total_w * 0.18, total_w * 0.18, total_w * 0.38]:
-		var fix := MeshInstance3D.new()
-		var fm := BoxMesh.new()
-		fm.size = Vector3(1.45, 0.22, 0.30)
-		fix.mesh = fm
-		fix.material_override = fixture_mat
-		fix.position = Vector3(lx, 2.85, back_z + 0.46)
-		root.add_child(fix)
+	# 2 spinning exhaust fans mounted on the north brick wall flanking the CRT.
+	var fans: Array = []
+	var fan_packed = load_optional(GLB_FAN)
+	var fan_shroud_mesh := CylinderMesh.new()
+	fan_shroud_mesh.top_radius = 0.84
+	fan_shroud_mesh.bottom_radius = 0.90
+	fan_shroud_mesh.height = 0.30
+	fan_shroud_mesh.radial_segments = 20
+	for f_idx in range(2):
+		var fx: float = -6.0 if f_idx == 0 else 6.0
+		var fpos := Vector3(fx, 2.15, back_z + 0.46)
+		var shroud := MeshInstance3D.new()
+		shroud.name = "ExhaustFanShroud_%d" % f_idx
+		shroud.mesh = fan_shroud_mesh
+		shroud.rotation_degrees.x = 90.0
+		shroud.position = fpos + Vector3(0.0, 0.0, -0.06)
+		shroud.material_override = mat_dark_metal
+		root.add_child(shroud)
 
-		var tube := MeshInstance3D.new()
-		var tm := BoxMesh.new()
-		tm.size = Vector3(1.25, 0.10, 0.14)
-		tube.mesh = tm
-		tube.material_override = tube_mat
-		tube.position = Vector3(lx, 2.74, back_z + 0.56)
-		root.add_child(tube)
+		var fan_mount := Node3D.new()
+		fan_mount.name = "ExhaustFanMount_%d" % f_idx
+		fan_mount.position = fpos + Vector3(0.0, 0.0, 0.10)
+		fan_mount.rotation_degrees.y = 180.0
+		fan_mount.scale = Vector3(0.62, 0.62, 0.62)
+		root.add_child(fan_mount)
+
+		if fan_packed is PackedScene:
+			var fan_inst: Node3D = (fan_packed as PackedScene).instantiate() as Node3D
+			_strip_prop_collisions(fan_inst)
+			var fan_mesh := fan_inst.get_node_or_null("fan_002") as MeshInstance3D
+			if fan_mesh != null:
+				fan_mesh.position = Vector3.ZERO
+				fans.append(fan_mesh)
+			else:
+				fans.append(fan_inst)
+			fan_mount.add_child(fan_inst)
+		else:
+			var hub_pivot := Node3D.new()
+			hub_pivot.name = "FallbackFan_%d" % f_idx
+			for b_i in range(4):
+				var blade := MeshInstance3D.new()
+				var bmesh := BoxMesh.new()
+				bmesh.size = Vector3(1.50, 0.22, 0.08)
+				blade.mesh = bmesh
+				blade.rotation_degrees.z = float(b_i) * 45.0
+				blade.material_override = mat_rust
+				hub_pivot.add_child(blade)
+			fan_mount.add_child(hub_pivot)
+			fans.append(hub_pivot)
+
+	# Warm industrial cage lamps mounted on north wall (index 1 uses subtle flicker material).
+	var lamp_packed = load_optional(GLB_WALL_LAMP)
+	var fixture_mat := make_std_mat(Color(0.24, 0.22, 0.21), 0.7, 0.45)
+	var lamp_mat := make_std_mat(Color(1.0, 0.76, 0.36), 0.1, 0.25, Color(1.0, 0.68, 0.24), 1.85)
+	var flicker_lamp_mat := make_std_mat(Color(1.0, 0.76, 0.36), 0.1, 0.25, Color(1.0, 0.68, 0.24), 1.85)
+	var lamp_xs: Array = [-8.2, -3.9, 3.9, 8.2]
+	for l_idx in range(lamp_xs.size()):
+		var lx: float = float(lamp_xs[l_idx])
+		var target_lamp_mat: StandardMaterial3D = flicker_lamp_mat if l_idx == 1 else lamp_mat
+		if lamp_packed is PackedScene:
+			var linst: Node3D = (lamp_packed as PackedScene).instantiate() as Node3D
+			_strip_prop_collisions(linst)
+			linst.position = Vector3(lx, 2.85, back_z + 0.52)
+			linst.rotation_degrees = Vector3(0.0, 90.0, 0.0)
+			linst.scale = Vector3(0.68, 0.68, 0.68)
+			root.add_child(linst)
+			for c in linst.get_children():
+				if c is MeshInstance3D:
+					(c as MeshInstance3D).set_surface_override_material(0, target_lamp_mat)
+		else:
+			var fix := MeshInstance3D.new()
+			var fm := BoxMesh.new()
+			fm.size = Vector3(1.15, 0.26, 0.30)
+			fix.mesh = fm
+			fix.material_override = fixture_mat
+			fix.position = Vector3(lx, 2.85, back_z + 0.44)
+			root.add_child(fix)
+
+			var tube := MeshInstance3D.new()
+			var tm := BoxMesh.new()
+			tm.size = Vector3(0.92, 0.14, 0.14)
+			tube.mesh = tm
+			tube.material_override = target_lamp_mat
+			tube.position = Vector3(lx, 2.82, back_z + 0.56)
+			root.add_child(tube)
+
+	# Outer sub-deck industrial dressing (racks tucked against north wall, weathered pallets, dark-tinted scrap debris).
+	var rack_packed = load_optional(GLB_SERVER_RACK)
+	var pallet_packed = load_optional(GLB_PALLET)
+	var debris_packed = load_optional(GLB_DEBRIS)
+	var pallet_mat := make_std_mat(Color(0.48, 0.38, 0.28), 0.14, 0.84, Color.BLACK, 0.0, false, TEX_CRATE_WOOD, Vector3(0.9, 0.9, 0.9))
+
+	var flank_x: float = total_w * 0.5 + 1.15
+	var rack_placements: Array = [
+		[Vector3(-total_w * 0.5 - 0.95, deck_top_y, back_z + 0.92), 14.0],
+		[Vector3(total_w * 0.5 + 0.95, deck_top_y, back_z + 0.92), -14.0],
+	]
+	for rp_raw in rack_placements:
+		var rp: Array = rp_raw as Array
+		var rpos: Vector3 = rp[0] as Vector3
+		var ryaw: float = float(rp[1])
+		if rack_packed is PackedScene:
+			var rinst: Node3D = (rack_packed as PackedScene).instantiate() as Node3D
+			_strip_prop_collisions(rinst)
+			_tint_glb_meshes(rinst, Color(0.50, 0.47, 0.45), 0.12)
+			rinst.position = rpos
+			rinst.rotation_degrees.y = ryaw
+			rinst.scale = Vector3(0.42, 0.42, 0.42)
+			root.add_child(rinst)
+		else:
+			var rbox := MeshInstance3D.new()
+			var rbm := BoxMesh.new()
+			rbm.size = Vector3(0.75, 2.25, 1.0)
+			rbox.mesh = rbm
+			rbox.position = rpos + Vector3(0.0, 1.12, 0.0)
+			rbox.rotation_degrees.y = ryaw
+			rbox.material_override = mat_dark_metal
+			root.add_child(rbox)
+
+	var pallet_placements: Array = [
+		[Vector3(-flank_x, deck_top_y + 0.14, -total_h * 0.14), 8.0],
+		[Vector3(flank_x, deck_top_y + 0.14, total_h * 0.12), -10.0],
+	]
+	for pp_raw in pallet_placements:
+		var pp: Array = pp_raw as Array
+		var ppos: Vector3 = pp[0] as Vector3
+		var pyaw: float = float(pp[1])
+		if pallet_packed is PackedScene:
+			var pinst: Node3D = (pallet_packed as PackedScene).instantiate() as Node3D
+			_strip_prop_collisions(pinst)
+			var cube := pinst.get_node_or_null("Cube_019") as MeshInstance3D
+			if cube != null:
+				cube.position = Vector3.ZERO
+				cube.rotation = Vector3.ZERO
+				cube.material_override = pallet_mat
+			pinst.position = ppos
+			pinst.rotation_degrees.y = pyaw
+			pinst.scale = Vector3(0.54, 0.54, 0.54)
+			root.add_child(pinst)
+		else:
+			var pbox := MeshInstance3D.new()
+			var pbm := BoxMesh.new()
+			pbm.size = Vector3(1.5, 0.24, 1.2)
+			pbox.mesh = pbm
+			pbox.position = ppos
+			pbox.rotation_degrees.y = pyaw
+			pbox.material_override = pallet_mat
+			root.add_child(pbox)
+
+	var debris_placements: Array = [
+		[Vector3(-flank_x - 0.15, deck_top_y + 0.725 * 0.54, total_h * 0.20), 26.0, 0.54],
+		[Vector3(flank_x + 0.15, deck_top_y + 0.725 * 0.54, -total_h * 0.22), -34.0, 0.54],
+		[Vector3(-flank_x - 0.10, deck_top_y + 0.725 * 0.50, -total_h * 0.36), 112.0, 0.50],
+	]
+	for dp_raw in debris_placements:
+		var dp: Array = dp_raw as Array
+		var dpos: Vector3 = dp[0] as Vector3
+		var dyaw: float = float(dp[1])
+		var dscale: float = float(dp[2])
+		if debris_packed is PackedScene:
+			var dinst: Node3D = (debris_packed as PackedScene).instantiate() as Node3D
+			_strip_prop_collisions(dinst)
+			_tint_glb_meshes(dinst, Color(0.50, 0.45, 0.41), 0.14)
+			dinst.position = dpos
+			dinst.rotation_degrees.y = dyaw
+			dinst.scale = Vector3(dscale, dscale, dscale)
+			root.add_child(dinst)
+		else:
+			var dbox := MeshInstance3D.new()
+			var dbm := BoxMesh.new()
+			dbm.size = Vector3(0.80, 0.80, 0.80)
+			dbox.mesh = dbm
+			dbox.position = Vector3(dpos.x, deck_top_y + 0.40, dpos.z)
+			dbox.rotation_degrees.y = dyaw
+			dbox.material_override = mat_rust
+			root.add_child(dbox)
+
+	# Warm north wall & outer corner wash lights so brick wall, pipes, CRT, fans, and corner racks read clearly.
+	for g_spec_raw in [
+		["NorthWallGlowLeft", Vector3(-8.8, 3.4, back_z + 2.8), 4.2, 18.0],
+		["NorthWallGlowRight", Vector3(8.8, 3.4, back_z + 2.8), 4.2, 18.0],
+		["NorthWallGlowCenter", Vector3(0.0, 3.5, back_z + 2.8), 2.8, 14.0],
+	]:
+		var g_spec: Array = g_spec_raw as Array
+		var wall_omni := OmniLight3D.new()
+		wall_omni.name = str(g_spec[0])
+		wall_omni.light_color = Color(1.0, 0.68, 0.34)
+		wall_omni.light_energy = float(g_spec[2])
+		wall_omni.omni_range = float(g_spec[3])
+		wall_omni.shadow_enabled = false
+		wall_omni.position = g_spec[1] as Vector3
+		root.add_child(wall_omni)
 
 	# 3D CRT Countdown & Theme Monitor mounted on back wall (authentic Machine Party style).
 	var crt_root := Node3D.new()
 	crt_root.name = "BackWallCRT"
-	crt_root.position = Vector3(0.0, 2.15, back_z + 0.62)
-	crt_root.rotation_degrees = Vector3(24.0, 0.0, 0.0)
+	crt_root.position = Vector3(0.0, 2.08, back_z + 0.68)
+	crt_root.rotation_degrees = Vector3(22.0, 0.0, 0.0)
 	root.add_child(crt_root)
 
 	var casing := MeshInstance3D.new()
 	var cm := BoxMesh.new()
 	cm.size = Vector3(4.6, 2.1, 0.65)
 	casing.mesh = cm
-	casing.material_override = make_std_mat(Color(0.10, 0.11, 0.12), 0.6, 0.5, Color.BLACK, 0.0, false, TEX_METAL_PLATE, Vector3(0.4, 0.4, 0.4))
+	casing.material_override = make_std_mat(Color(0.46, 0.40, 0.36), 0.54, 0.52, Color.BLACK, 0.0, false, TEX_RUST_PAINTED, Vector3(0.45, 0.45, 0.45))
 	crt_root.add_child(casing)
+
+	var bezel := MeshInstance3D.new()
+	var bzm := BoxMesh.new()
+	bzm.size = Vector3(4.32, 1.82, 0.12)
+	bezel.mesh = bzm
+	bezel.material_override = make_std_mat(Color(0.16, 0.15, 0.15), 0.45, 0.58)
+	bezel.position = Vector3(0.0, 0.0, 0.29)
+	crt_root.add_child(bezel)
 
 	var screen := MeshInstance3D.new()
 	var sm := BoxMesh.new()
-	sm.size = Vector3(4.15, 1.65, 0.06)
+	sm.size = Vector3(4.12, 1.62, 0.06)
 	screen.mesh = sm
-	screen.material_override = make_std_mat(Color(0.02, 0.05, 0.03), 0.1, 0.2, Color(0.03, 0.10, 0.05), 0.65)
-	screen.position = Vector3(0.0, 0.0, 0.34)
+	screen.material_override = make_std_mat(Color(0.02, 0.05, 0.03), 0.1, 0.2, Color(0.04, 0.12, 0.05), 0.55)
+	screen.position = Vector3(0.0, 0.0, 0.35)
 	crt_root.add_child(screen)
 
 	var term_font: Font = load_terminal_font()
@@ -340,26 +639,28 @@ static func build_floor_and_backdrop(width: int, height: int, tile_size: float, 
 	monitor_timer.outline_size = 10
 	if term_font != null:
 		monitor_timer.font = term_font
-	monitor_timer.position = Vector3(0.0, 0.22, 0.39)
+	monitor_timer.position = Vector3(0.0, 0.22, 0.41)
 	crt_root.add_child(monitor_timer)
 
 	var monitor_theme := Label3D.new()
 	monitor_theme.name = "MonitorTheme"
 	monitor_theme.text = "BUBBLE BLITZ"
-	monitor_theme.font_size = 46
-	monitor_theme.pixel_size = 0.0068
-	monitor_theme.modulate = Color(0.64, 0.96, 0.68)
+	monitor_theme.font_size = 54
+	monitor_theme.pixel_size = 0.0074
+	monitor_theme.modulate = Color(0.68, 0.98, 0.72)
 	monitor_theme.outline_modulate = Color.BLACK
-	monitor_theme.outline_size = 8
+	monitor_theme.outline_size = 9
 	if term_font != null:
 		monitor_theme.font = term_font
-	monitor_theme.position = Vector3(0.0, -0.46, 0.39)
+	monitor_theme.position = Vector3(0.0, -0.43, 0.41)
 	crt_root.add_child(monitor_theme)
 
 	return {
 		"root": root,
 		"monitor_timer": monitor_timer,
 		"monitor_theme": monitor_theme,
+		"fans": fans,
+		"flicker_lamp_mat": flicker_lamp_mat,
 	}
 
 
@@ -370,35 +671,40 @@ static func build_steel_pillar(tile_size: float, accent: Color) -> Node3D:
 	bm.size = Vector3(tile_size * 0.94, tile_size * 0.88, tile_size * 0.94)
 	body.mesh = bm
 	body.material_override = make_std_mat(
-		Color(0.56, 0.58, 0.60),
-		0.72,
-		0.48,
+		Color(0.64, 0.60, 0.58),
+		0.58,
+		0.44,
 		Color.BLACK,
 		0.0,
 		false,
-		TEX_THREADPLATE,
-		Vector3(0.65, 0.65, 0.65),
-		TEX_THREADPLATE_NORMAL
+		TEX_DARK_METAL,
+		Vector3(0.65, 0.65, 0.65)
 	)
 	body.position = Vector3(0.0, tile_size * 0.44, 0.0)
 	n.add_child(body)
 
 	var cap := MeshInstance3D.new()
 	var cm := BoxMesh.new()
-	cm.size = Vector3(tile_size * 0.74, tile_size * 0.14, tile_size * 0.74)
+	cm.size = Vector3(tile_size * 0.76, tile_size * 0.14, tile_size * 0.76)
 	cap.mesh = cm
 	cap.material_override = make_std_mat(
-		Color(0.46, 0.44, 0.42),
-		0.80,
-		0.36,
-		accent * 0.18,
-		0.22,
+		Color(0.70, 0.68, 0.65),
+		0.86,
+		0.26,
+		accent * 0.14,
+		0.18,
 		false,
-		TEX_METAL_PLATE,
-		Vector3(0.7, 0.7, 0.7)
+		TEX_THREADPLATE,
+		Vector3(0.7, 0.7, 0.7),
+		TEX_THREADPLATE_NORMAL,
+		true,
+		0.82
 	)
 	cap.position = Vector3(0.0, tile_size * 0.91, 0.0)
 	n.add_child(cap)
+
+	var stain_tex := load_optional(TEX_DECAL_STAIN) as Texture2D
+	_add_floor_decal(n, stain_tex, Vector3(0.0, 0.02, 0.0), Vector3(tile_size * 1.35, 0.35, tile_size * 1.35), Color(0.16, 0.13, 0.11, 0.50), 0.35)
 	return n
 
 
@@ -454,16 +760,16 @@ static func build_crate(tile_size: float, is_gold: bool, base_color: Color) -> N
 	return n
 
 
-static func build_conveyor_tile(tile_size: float, dir: Vector2i, accent: Color) -> Node3D:
+static func build_conveyor_tile(tile_size: float, dir: Vector2i, _accent: Color) -> Node3D:
 	var n := Node3D.new()
 	var belt := MeshInstance3D.new()
 	var bm := BoxMesh.new()
 	bm.size = Vector3(tile_size * 0.94, 0.06, tile_size * 0.94)
 	belt.mesh = bm
 	belt.material_override = make_std_mat(
-		Color(0.30, 0.32, 0.34),
-		0.45,
-		0.72,
+		Color(0.32, 0.33, 0.35),
+		0.52,
+		0.62,
 		Color.BLACK,
 		0.0,
 		false,
@@ -473,13 +779,31 @@ static func build_conveyor_tile(tile_size: float, dir: Vector2i, accent: Color) 
 	belt.position = Vector3(0.0, 0.03, 0.0)
 	n.add_child(belt)
 
+	# High-specular steel conveyor rollers at entry/exit lips.
+	var roller_mesh := CylinderMesh.new()
+	roller_mesh.top_radius = 0.028
+	roller_mesh.bottom_radius = 0.028
+	roller_mesh.height = tile_size * 0.88
+	roller_mesh.radial_segments = 10
+	var roller_mat := make_std_mat(Color(0.46, 0.45, 0.44), 0.88, 0.24)
+	for rz in [-tile_size * 0.43, tile_size * 0.43]:
+		var roller := MeshInstance3D.new()
+		roller.mesh = roller_mesh
+		roller.material_override = roller_mat
+		roller.rotation_degrees = Vector3(0.0, 0.0, 90.0)
+		roller.position = Vector3(0.0, 0.032, rz)
+		n.add_child(roller)
+
+	var stain_tex := load_optional(TEX_DECAL_STAIN) as Texture2D
+	_add_floor_decal(n, stain_tex, Vector3(0.0, 0.02, 0.0), Vector3(tile_size * 1.15, 0.30, tile_size * 1.15), Color(0.16, 0.13, 0.11, 0.38), 0.0)
+
 	# Industrial stencil hazard chevron painted on conveyor belt (low-saturation ochre, no neon).
 	var arrow := MeshInstance3D.new()
 	var am := PrismMesh.new()
 	am.size = Vector3(tile_size * 0.38, tile_size * 0.40, 0.03)
 	arrow.mesh = am
-	var arrow_col := Color(0.76, 0.56, 0.16)
-	arrow.material_override = make_std_mat(arrow_col, 0.15, 0.62, arrow_col, 0.18)
+	var arrow_col := Color(0.82, 0.60, 0.18)
+	arrow.material_override = make_std_mat(arrow_col, 0.15, 0.62, arrow_col, 0.16)
 	arrow.position = Vector3(0.0, 0.072, 0.0)
 	arrow.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
 	var yaw: float = 0.0
@@ -503,14 +827,17 @@ static func build_crusher_block(tile_size: float) -> Node3D:
 	bm.size = Vector3(tile_size * 0.95, tile_size * 1.12, tile_size * 0.95)
 	body.mesh = bm
 	body.material_override = make_std_mat(
-		Color(0.36, 0.32, 0.30),
-		0.78,
-		0.42,
+		Color(0.50, 0.46, 0.44),
+		0.68,
+		0.40,
 		Color.BLACK,
 		0.0,
 		false,
-		TEX_SHREDDER,
-		Vector3(0.7, 0.7, 0.7)
+		TEX_THREADPLATE,
+		Vector3(0.7, 0.7, 0.7),
+		TEX_THREADPLATE_NORMAL,
+		true,
+		0.88
 	)
 	body.position = Vector3(0.0, tile_size * 0.56, 0.0)
 	n.add_child(body)
@@ -519,7 +846,7 @@ static func build_crusher_block(tile_size: float) -> Node3D:
 	var sm := BoxMesh.new()
 	sm.size = Vector3(tile_size * 0.98, tile_size * 0.22, tile_size * 0.98)
 	stripe.mesh = sm
-	stripe.material_override = make_std_mat(Color(0.96, 0.70, 0.10), 0.3, 0.45, Color(0.96, 0.50, 0.06), 0.65)
+	stripe.material_override = make_std_mat(Color(0.96, 0.70, 0.10), 0.3, 0.45, Color(0.96, 0.50, 0.06), 0.55)
 	stripe.position = Vector3(0.0, tile_size * 0.96, 0.0)
 	n.add_child(stripe)
 	return n

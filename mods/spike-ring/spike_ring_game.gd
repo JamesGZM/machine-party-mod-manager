@@ -76,6 +76,8 @@ var _timer_label: Label3D = null
 var _phase_label: Label3D = null
 var _alive_label: Label3D = null
 var _nozzles: Array = []
+var _fans: Array = []
+var _world_env: Environment = null
 
 var _hud_layer: CanvasLayer = null
 var _shader_layer: CanvasLayer = null
@@ -224,33 +226,78 @@ func _exit_tree() -> void:
 
 func _setup_environment() -> void:
 	var env := Environment.new()
+	env.tonemap_mode = Environment.TONE_MAPPER_ACES
 	env.background_mode = Environment.BG_COLOR
-	# 对齐 Machine Party / Bubble Blitz 深沉工业车间氛围，突出黄铜舞台与机关发光对比。
-	env.background_color = Color(0.025, 0.025, 0.03)
+	# 对齐 Machine Party 重工业车间氛围：ACES + SSAO + 深度雾，突出中央冷混凝土地板与外圈压花钢环。
+	env.background_color = Color(0.020, 0.018, 0.018)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.42, 0.44, 0.48)
-	env.ambient_light_energy = 0.28
+	env.ambient_light_color = Color(0.40, 0.42, 0.46)
+	env.ambient_light_energy = 0.38
 	env.adjustment_enabled = true
-	env.adjustment_brightness = 1.01
-	env.adjustment_contrast = 1.18
-	env.adjustment_saturation = 0.72
+	env.adjustment_brightness = 1.02
+	env.adjustment_contrast = 1.09
+	env.adjustment_saturation = 0.78
 	env.glow_enabled = true
-	env.glow_intensity = 0.34
-	env.glow_bloom = 0.08
+	env.glow_intensity = 0.32
+	env.glow_bloom = 0.09
+	env.ssao_enabled = true
+	env.ssao_radius = 0.75
+	env.ssao_intensity = 1.75
+	env.ssao_power = 1.45
+	env.fog_enabled = true
+	env.fog_mode = Environment.FOG_MODE_DEPTH
+	env.fog_light_color = Color(0.028, 0.025, 0.024)
+	env.fog_depth_begin = 32.0
+	env.fog_depth_end = 68.0
+	env.fog_depth_curve = 1.2
+	_world_env = env
 	var world_env := WorldEnvironment.new()
+	world_env.name = "WorldEnv"
 	world_env.environment = env
 	add_child(world_env)
 
 	var sun := DirectionalLight3D.new()
 	sun.name = "KeyLight"
-	sun.light_color = Color(0.96, 0.92, 0.85)
-	sun.light_energy = 1.55
+	sun.light_color = Color(0.92, 0.91, 0.94)
+	sun.light_energy = 0.90
 	sun.rotation_degrees = Vector3(-52.0, 26.0, 0.0)
 	sun.shadow_enabled = true
-	sun.shadow_bias = 0.05
-	sun.shadow_blur = 1.2
-	sun.directional_shadow_max_distance = 55.0
+	sun.shadow_bias = 0.04
+	sun.shadow_blur = 1.3
+	sun.directional_shadow_max_distance = 60.0
 	add_child(sun)
+
+	var rig := Node3D.new()
+	rig.name = "FoundryLightRig"
+	add_child(rig)
+
+	var center_spot := SpotLight3D.new()
+	center_spot.name = "PitCenterSpot"
+	center_spot.position = Vector3(0.0, 14.5, 0.8)
+	center_spot.rotation_degrees = Vector3(-84.0, 0.0, 0.0)
+	center_spot.light_color = Color(1.0, 0.90, 0.76)
+	center_spot.light_energy = 14.0
+	center_spot.spot_range = 32.0
+	center_spot.spot_angle = 66.0
+	center_spot.spot_angle_attenuation = 0.85
+	center_spot.spot_attenuation = 1.15
+	center_spot.shadow_enabled = true
+	center_spot.shadow_bias = 0.05
+	center_spot.shadow_blur = 1.4
+	rig.add_child(center_spot)
+
+	for rim_spec in [["WestRimSpot", -9.6], ["EastRimSpot", 9.6]]:
+		var rim_spot := SpotLight3D.new()
+		rim_spot.name = str(rim_spec[0])
+		rim_spot.position = Vector3(float(rim_spec[1]), 12.0, 0.4)
+		rim_spot.rotation_degrees = Vector3(-84.0, 0.0, 0.0)
+		rim_spot.light_color = Color(0.96, 0.84, 0.68)
+		rim_spot.light_energy = 9.2
+		rim_spot.spot_range = 28.0
+		rim_spot.spot_angle = 62.0
+		rim_spot.spot_attenuation = 1.12
+		rim_spot.shadow_enabled = false
+		rig.add_child(rim_spot)
 
 	_camera = Camera3D.new()
 	_camera.name = "SpikeRingCamera"
@@ -308,10 +355,10 @@ func _setup_post_fx() -> void:
 		vig_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var vm := ShaderMaterial.new()
 		vm.shader = vig_shader as Shader
-		vm.set_shader_parameter("radius", 0.91)
-		vm.set_shader_parameter("softness", 0.38)
-		vm.set_shader_parameter("intensity", 1.85)
-		vm.set_shader_parameter("contrast", 1.55)
+		vm.set_shader_parameter("radius", 0.93)
+		vm.set_shader_parameter("softness", 0.44)
+		vm.set_shader_parameter("intensity", 1.28)
+		vm.set_shader_parameter("contrast", 1.22)
 		vm.set_shader_parameter("vignette_color", Color(0.0, 0.0, 0.0, 1.0))
 		vig_rect.material = vm
 		vig_holder.add_child(vig_rect)
@@ -364,6 +411,9 @@ func _frame_arena() -> void:
 	_cam_base_pos = look_target + Vector3(0.0, dist * sin(pitch_rad), dist * cos(pitch_rad))
 	_camera.position = _cam_base_pos
 	_camera.look_at(look_target, Vector3.UP)
+	if _world_env != null:
+		_world_env.fog_depth_begin = dist + 6.0
+		_world_env.fog_depth_end = dist + 42.0
 
 
 func _on_viewport_resized() -> void:
@@ -371,10 +421,12 @@ func _on_viewport_resized() -> void:
 	_frame_arena()
 
 
-func _make_audio_player(res_path: String, volume_db: float) -> AudioStreamPlayer:
+func _make_audio_player(res_path: String, volume_db: float, loop_audio: bool = false) -> AudioStreamPlayer:
 	var stream = M.load_optional(res_path)
 	if not (stream is AudioStream):
 		return null
+	if loop_audio and stream is AudioStreamOggVorbis:
+		(stream as AudioStreamOggVorbis).loop = true
 	var p := AudioStreamPlayer.new()
 	p.stream = stream as AudioStream
 	p.volume_db = volume_db
@@ -383,21 +435,25 @@ func _make_audio_player(res_path: String, volume_db: float) -> AudioStreamPlayer
 
 
 func _setup_audio_and_fx() -> void:
-	# 全部复用原版 Machine Party 音效资源，不引入外部素材。
-	_sfx_push = _make_audio_player("res://audio/unique/disco dodge/dd shove.ogg", -4.0)
-	_sfx_elim = _make_audio_player("res://audio/unique/disco dodge/dd fall scream impact.ogg", -2.0)
-	_sfx_warn = _make_audio_player("res://audio/unique/exploding collar race/mine_detected.ogg", -6.0)
-	_sfx_ding = _make_audio_player("res://audio/sfx/airplane ding.ogg", -2.0)
-	_sfx_beep = _make_audio_player("res://audio/sfx/ekg_beep.ogg", -5.0)
-	_sfx_flame = _make_audio_player("res://audio/sfx/bad_explosion.ogg", -8.0)
-	_ambience = _make_audio_player("res://audio/unique/dvd roomba/dvd roomba ambience.ogg", -15.0)
+	# 全部复用原版 Machine Party 音效资源，不引入外部素材；自测与截图模式跳过音频加载与播放。
+	_term_font = M.load_terminal_font()
 	var hit = M.load_optional("res://prefabs/managed_effects/hit_blood.tscn")
 	if hit is PackedScene:
 		_fx_hit_scene = hit as PackedScene
 	var dust = M.load_optional("res://prefabs/managed_effects/dustplume.tscn")
 	if dust is PackedScene:
 		_fx_dust_scene = dust as PackedScene
-	_term_font = M.load_terminal_font()
+	if _is_self_test or not _screenshot_path.is_empty():
+		return
+	_sfx_push = _make_audio_player("res://audio/unique/disco dodge/dd shove.ogg", -4.0)
+	_sfx_elim = _make_audio_player("res://audio/unique/disco dodge/dd fall scream impact.ogg", -2.0)
+	_sfx_warn = _make_audio_player("res://audio/unique/exploding collar race/mine_detected.ogg", -6.0)
+	_sfx_ding = _make_audio_player("res://audio/sfx/airplane ding.ogg", -2.0)
+	_sfx_beep = _make_audio_player("res://audio/sfx/ekg_beep.ogg", -5.0)
+	_sfx_flame = _make_audio_player("res://audio/sfx/bad_explosion.ogg", -8.0)
+	_ambience = _make_audio_player("res://audio/ambience/industrial-machine-cycle_loop.ogg", -16.0, true)
+	if _ambience == null:
+		_ambience = _make_audio_player("res://audio/unique/dvd roomba/dvd roomba ambience.ogg", -15.0, true)
 
 
 func _mk_label(font_size: int, color: Color) -> Label:
@@ -601,6 +657,7 @@ func _clear_arena() -> void:
 	if _fx_pool != null:
 		_fx_pool.clear()
 	_active_saw_lights = 0
+	_fans.clear()
 	_players.clear()
 	_client_inputs.clear()
 	_pos_history.clear()
@@ -651,6 +708,8 @@ func _setup_match_local(round_index: int, seed_val: int, roster: Array, is_previ
 	_shrink_ring = stage.get("shrink_ring", null) as Node3D
 	_shrink_warn = stage.get("shrink_warn", null) as Node3D
 	_nozzles = stage["nozzles"]
+	var raw_fans = stage.get("fans", [])
+	_fans = raw_fans as Array if raw_fans is Array else []
 
 	var spawns: Array = C.compute_spawns(synced_roster.size(), seed_val, _arena_radius)
 	for i in range(synced_roster.size()):
@@ -731,7 +790,7 @@ func _setup_match_local(round_index: int, seed_val: int, roster: Array, is_previ
 	_init_fx_pools()
 	_banner_label.text = str(int(ceil(_prep_remaining))) if _prep_remaining > 0.0 else ""
 	_update_hud()
-	if _ambience != null and not _ambience.playing and _screenshot_path.is_empty():
+	if _ambience != null and not _ambience.playing and not _is_self_test and _screenshot_path.is_empty():
 		_ambience.play()
 
 
@@ -1180,9 +1239,9 @@ func _spawn_shockwave(world_pos: Vector3) -> void:
 		_fx_pool.spawn_shockwave(self, world_pos)
 
 
-func _step_popups_and_shockwaves(delta: float) -> void:
-	if _fx_pool != null:
-		_fx_pool.step_popups_and_shockwaves(delta)
+func _step_popups_and_shockwaves(_delta: float) -> void:
+	# Pooled popups & shockwaves are ticked once per frame in _step_fx_pools(delta) via _animate_visuals.
+	pass
 
 
 func _step_airdrops(delta: float) -> void:
@@ -1414,6 +1473,9 @@ func _eliminate_player(p: Dictionary, reason: String, _killer: int) -> void:
 	p["out_reason"] = reason
 	p["elim_time"] = _elapsed_time
 	_spawn_fx(_fx_dust_scene, Vector3(p["pos"].x, 0.7, p["pos"].z), 0.5, 2.0)
+	if _fx_pool != null:
+		_fx_pool.spawn_scorch_decal(p["pos"] as Vector3, 1.9)
+		_fx_pool.spawn_flash_light(p["pos"] as Vector3, Color(1.0, 0.42, 0.16), 3.6, 6.0, 0.22)
 	if _sfx_elim != null:
 		_sfx_elim.play()
 	if _is_server_sim and not _standalone_mode:
@@ -1430,6 +1492,9 @@ func _rpc_elimination(net_id: int, reason: String) -> void:
 	p["out_reason"] = reason
 	_players[net_id] = p
 	_spawn_fx(_fx_dust_scene, Vector3(p["pos"].x, 0.7, p["pos"].z), 0.5, 2.0)
+	if _fx_pool != null:
+		_fx_pool.spawn_scorch_decal(p["pos"] as Vector3, 1.9)
+		_fx_pool.spawn_flash_light(p["pos"] as Vector3, Color(1.0, 0.42, 0.16), 3.6, 6.0, 0.22)
 	if _sfx_elim != null:
 		_sfx_elim.play()
 
@@ -1819,6 +1884,10 @@ func _animate_visuals(delta: float) -> void:
 		_slap_box.scale = Vector2(s, s)
 	elif _slap_box != null and _slap_box.scale != Vector2.ONE:
 		_slap_box.scale = Vector2.ONE
+	for raw_fan in _fans:
+		var fan := raw_fan as Node3D
+		if fan != null and is_instance_valid(fan):
+			fan.rotate_z(delta * 4.5)
 	_step_fx_pools(delta)
 
 	# 观战：保持俯视全景相机不动，出局玩家仍能完整看到整个场地与所有存活玩家，
@@ -1924,6 +1993,9 @@ func _update_hud() -> void:
 func _stage_screenshot_action() -> void:
 	if _self_test_runner != null:
 		_self_test_runner.stage_screenshot_action(self)
+	if _fx_pool != null:
+		_fx_pool.spawn_scorch_decal(Vector3(-2.6, 0.0, 1.4), 2.2)
+		_fx_pool.tick(0.05)
 
 
 func _save_screenshot_and_quit() -> void:

@@ -89,8 +89,12 @@ var _conveyor_mat_l: StandardMaterial3D = null
 var _conveyor_mat_r: StandardMaterial3D = null
 var _monitor_timer: Label3D = null
 var _monitor_phase: Label3D = null
+var _fans: Array = []
+var _flicker_lamp_mat: StandardMaterial3D = null
 var _last_crt_timer_text: String = ""
 var _last_crt_phase_text: String = ""
+var _last_crt_timer_col: Color = Color(-1.0, -1.0, -1.0, -1.0)
+var _last_crt_phase_col: Color = Color(-1.0, -1.0, -1.0, -1.0)
 var _bat_vis_cache: Array = []
 var _cam_base_pos: Vector3 = Vector3.ZERO
 var _cam_shake: float = 0.0
@@ -176,6 +180,9 @@ func _ready() -> void:
 		if st_cls3 != null:
 			_self_test_runner = st_cls3.new()
 			_self_test_runner.stage_screenshot_action(self)
+		if _fx_pool != null:
+			_fx_pool.spawn_scorch_decal(Vector3(-1.8, 0.0, 4.6), 2.3)
+			_fx_pool.tick(0.05)
 		call_deferred("_capture_and_quit")
 		return
 
@@ -325,8 +332,12 @@ func _clear_scene_children() -> void:
 	_warn_beacon_node = null
 	_monitor_timer = null
 	_monitor_phase = null
+	_fans.clear()
+	_flicker_lamp_mat = null
 	_last_crt_timer_text = ""
 	_last_crt_phase_text = ""
+	_last_crt_timer_col = Color(-1.0, -1.0, -1.0, -1.0)
+	_last_crt_phase_col = Color(-1.0, -1.0, -1.0, -1.0)
 
 
 func _setup_match_local(round_idx: int, seed_val: int, roster: Array, all_ai: bool = false) -> void:
@@ -424,6 +435,10 @@ func _setup_match_local(round_idx: int, seed_val: int, roster: Array, all_ai: bo
 			_conveyor_mat_r = arena_info.get("conveyor_mat_r", null) as StandardMaterial3D
 			_monitor_timer = arena_info.get("monitor_timer", null) as Label3D
 			_monitor_phase = arena_info.get("monitor_phase", null) as Label3D
+			var raw_fans = arena_info.get("fans", [])
+			_fans = raw_fans as Array if raw_fans is Array else []
+			var raw_flicker = arena_info.get("flicker_lamp_mat", null)
+			_flicker_lamp_mat = raw_flicker as StandardMaterial3D if raw_flicker is StandardMaterial3D else null
 		if _fx_pool != null:
 			_fx_pool.init_pools(_fx_root, not _screenshot_path.is_empty())
 			for _b in range(4):
@@ -459,44 +474,126 @@ func _ensure_environment_and_camera() -> void:
 		_camera.look_at(Vector3(0.0, 0.2, 1.3), Vector3.UP)
 	_cam_base_pos = _camera.position
 
-	if get_node_or_null("WorldEnv") == null:
-		# Authentic Machine Party warm low-saturation dark industrial workshop atmosphere.
-		var env_node := WorldEnvironment.new()
+	# Indoor industrial light pools + SSAO + depth fog + ACES
+	var env_node := get_node_or_null("WorldEnv") as WorldEnvironment
+	if env_node == null:
+		env_node = WorldEnvironment.new()
 		env_node.name = "WorldEnv"
-		var env := Environment.new()
-		env.background_mode = Environment.BG_COLOR
-		env.background_color = Color(0.025, 0.027, 0.032)
-		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-		env.ambient_light_color = Color(0.40, 0.43, 0.48)
-		env.ambient_light_energy = 0.28
-		env.adjustment_enabled = true
-		env.adjustment_brightness = 1.01
-		env.adjustment_contrast = 1.18
-		env.adjustment_saturation = 0.72
-		env.glow_enabled = true
-		env.glow_intensity = 0.34
-		env.glow_bloom = 0.10
-		env_node.environment = env
 		add_child(env_node)
+	var env: Environment = env_node.environment
+	if env == null:
+		env = Environment.new()
+		env_node.environment = env
+	env.tonemap_mode = Environment.TONE_MAPPER_ACES
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = Color(0.018, 0.016, 0.016)
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color(0.36, 0.38, 0.43)
+	env.ambient_light_energy = 0.40
+	env.adjustment_enabled = true
+	env.adjustment_brightness = 1.02
+	env.adjustment_contrast = 1.09
+	env.adjustment_saturation = 0.78
+	env.glow_enabled = true
+	env.glow_intensity = 0.32
+	env.glow_bloom = 0.09
+	env.ssao_enabled = true
+	env.ssao_radius = 0.75
+	env.ssao_intensity = 1.75
+	env.ssao_power = 1.45
+	env.fog_enabled = true
+	env.fog_mode = Environment.FOG_MODE_DEPTH
+	env.fog_light_color = Color(0.028, 0.025, 0.024)
+	env.fog_depth_begin = 24.0 if _team_count <= 2 else 28.0
+	env.fog_depth_end = 56.0 if _team_count <= 2 else 66.0
+	env.fog_depth_curve = 1.2
 
-	if get_node_or_null("KeyLight") == null:
-		var sun := DirectionalLight3D.new()
+	var old_fill := get_node_or_null("FillLight")
+	if old_fill != null and is_instance_valid(old_fill):
+		old_fill.queue_free()
+
+	var sun := get_node_or_null("KeyLight") as DirectionalLight3D
+	if sun == null:
+		sun = DirectionalLight3D.new()
 		sun.name = "KeyLight"
-		sun.rotation_degrees = Vector3(-52.0, 24.0, 0.0)
-		sun.light_color = Color(0.96, 0.92, 0.85)
-		sun.light_energy = 1.55
-		sun.shadow_enabled = true
-		sun.shadow_bias = 0.05
-		sun.shadow_blur = 1.2
 		add_child(sun)
+	sun.rotation_degrees = Vector3(-52.0, 26.0, 0.0)
+	sun.light_color = Color(0.92, 0.91, 0.93)
+	sun.light_energy = 0.90
+	sun.shadow_enabled = true
+	sun.shadow_bias = 0.04
+	sun.shadow_blur = 1.3
 
-	if get_node_or_null("FillLight") == null:
-		var fill := DirectionalLight3D.new()
-		fill.name = "FillLight"
-		fill.rotation_degrees = Vector3(-32.0, -145.0, 0.0)
-		fill.light_color = Color(0.62, 0.72, 0.86)
-		fill.light_energy = 0.10
-		add_child(fill)
+	var rig := get_node_or_null("WorkshopLightRig") as Node3D
+	if rig == null:
+		rig = Node3D.new()
+		rig.name = "WorkshopLightRig"
+		add_child(rig)
+
+	var is_multi: bool = _team_count >= 3
+	var center_spot := rig.get_node_or_null("CenterConveyorSpot") as SpotLight3D
+	if center_spot == null:
+		center_spot = SpotLight3D.new()
+		center_spot.name = "CenterConveyorSpot"
+		rig.add_child(center_spot)
+	center_spot.position = Vector3(0.0, 14.5 if is_multi else 12.2, 0.8)
+	center_spot.rotation_degrees = Vector3(-84.0, 0.0, 0.0)
+	center_spot.light_color = Color(1.0, 0.90, 0.76)
+	center_spot.light_energy = 12.0 if is_multi else 10.5
+	center_spot.spot_range = 34.0 if is_multi else 26.0
+	center_spot.spot_angle = 68.0
+	center_spot.spot_angle_attenuation = 0.85
+	center_spot.spot_attenuation = 1.15
+	center_spot.shadow_enabled = true
+	center_spot.shadow_bias = 0.05
+	center_spot.shadow_blur = 1.4
+
+	var flank_x: float = 10.2 if is_multi else 8.2
+	var flank_y: float = 12.6 if is_multi else 10.8
+	var flank_specs: Array = [
+		["WestBaySpot", Vector3(-flank_x, flank_y, 0.4)],
+		["EastBaySpot", Vector3(flank_x, flank_y, 0.4)],
+	]
+	for f_raw in flank_specs:
+		var f_spec: Array = f_raw as Array
+		var s_name: String = str(f_spec[0])
+		var s_pos: Vector3 = f_spec[1] as Vector3
+		var flank_spot := rig.get_node_or_null(s_name) as SpotLight3D
+		if flank_spot == null:
+			flank_spot = SpotLight3D.new()
+			flank_spot.name = s_name
+			rig.add_child(flank_spot)
+		flank_spot.position = s_pos
+		flank_spot.rotation_degrees = Vector3(-84.0, 0.0, 0.0)
+		flank_spot.light_color = Color(0.96, 0.84, 0.68)
+		flank_spot.light_energy = 9.5 if is_multi else 7.6
+		flank_spot.spot_range = 32.0 if is_multi else 24.0
+		flank_spot.spot_angle = 68.0 if is_multi else 62.0
+		flank_spot.spot_attenuation = 1.20
+		flank_spot.shadow_enabled = false
+
+	var ns_specs: Array = [
+		["NorthBaySpot", Vector3(0.0, 12.5, -8.8)],
+		["SouthBaySpot", Vector3(0.0, 12.5, 8.8)],
+	]
+	for ns_raw in ns_specs:
+		var ns_spec: Array = ns_raw as Array
+		var ns_name: String = str(ns_spec[0])
+		var ns_pos: Vector3 = ns_spec[1] as Vector3
+		var ns_spot := rig.get_node_or_null(ns_name) as SpotLight3D
+		if ns_spot == null:
+			ns_spot = SpotLight3D.new()
+			ns_spot.name = ns_name
+			rig.add_child(ns_spot)
+		ns_spot.position = ns_pos
+		ns_spot.rotation_degrees = Vector3(-84.0, 0.0, 0.0)
+		ns_spot.light_color = Color(0.96, 0.84, 0.68)
+		ns_spot.light_energy = 8.5
+		ns_spot.spot_range = 26.0
+		ns_spot.spot_angle = 60.0
+		ns_spot.spot_attenuation = 1.20
+		ns_spot.shadow_enabled = false
+		ns_spot.visible = is_multi
 
 	_setup_post_fx()
 
@@ -534,10 +631,10 @@ func _setup_post_fx() -> void:
 		vig_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var vm := ShaderMaterial.new()
 		vm.shader = vig_shader as Shader
-		vm.set_shader_parameter("radius", 0.91)
-		vm.set_shader_parameter("softness", 0.38)
-		vm.set_shader_parameter("intensity", 1.88)
-		vm.set_shader_parameter("contrast", 1.55)
+		vm.set_shader_parameter("radius", 0.94)
+		vm.set_shader_parameter("softness", 0.45)
+		vm.set_shader_parameter("intensity", 1.24)
+		vm.set_shader_parameter("contrast", 1.20)
 		vm.set_shader_parameter("vignette_color", Color(0.0, 0.0, 0.0, 1.0))
 		vig_rect.material = vm
 		vig_holder.add_child(vig_rect)
@@ -565,12 +662,14 @@ func _setup_post_fx() -> void:
 		post_holder.add_child(post_rect)
 
 
-func _make_audio_player(res_path: String, vol_db: float) -> AudioStreamPlayer:
+func _make_audio_player(res_path: String, vol_db: float, loop_audio: bool = false) -> AudioStreamPlayer:
 	if not ResourceLoader.exists(res_path):
 		return null
 	var stream = ResourceLoader.load(res_path)
 	if not (stream is AudioStream):
 		return null
+	if loop_audio and stream is AudioStreamOggVorbis:
+		(stream as AudioStreamOggVorbis).loop = true
 	var ap := AudioStreamPlayer.new()
 	ap.stream = stream as AudioStream
 	ap.volume_db = vol_db
@@ -579,7 +678,7 @@ func _make_audio_player(res_path: String, vol_db: float) -> AudioStreamPlayer:
 
 
 func _init_audio() -> void:
-	if not _screenshot_path.is_empty():
+	if _is_self_test or not _screenshot_path.is_empty():
 		return
 	if _sfx_push == null:
 		_sfx_push = _make_audio_player("res://audio/unique/disco dodge/dd shove.ogg", -4.0)
@@ -590,7 +689,9 @@ func _init_audio() -> void:
 	if _sfx_warn == null:
 		_sfx_warn = _make_audio_player("res://audio/unique/exploding collar race/mine_detected.ogg", -5.0)
 	if _ambience == null:
-		_ambience = _make_audio_player("res://audio/unique/dvd roomba/dvd roomba ambience.ogg", -16.0)
+		_ambience = _make_audio_player("res://audio/ambience/industrial-machine-cycle_loop.ogg", -16.0, true)
+		if _ambience == null:
+			_ambience = _make_audio_player("res://audio/unique/dvd roomba/dvd roomba ambience.ogg", -16.0, true)
 		if _ambience != null and not _ambience.playing:
 			_ambience.play()
 
@@ -860,13 +961,26 @@ func _rpc_fx_event(kind: String, pos: Vector3, scale_val: float) -> void:
 	if _is_self_test:
 		return
 	if _fx_pool != null:
-		_fx_pool.spawn_burst(kind, pos, 0.35 if kind == "deposit" else 0.25, scale_val)
+		if kind == "core_drop":
+			_fx_pool.spawn_scorch_decal(pos, scale_val)
+			_fx_pool.spawn_flash_light(pos, Color(1.0, 0.52, 0.16), 4.6, 7.5, 0.28)
+			_fx_pool.spawn_burst("deposit", pos + Vector3(0.0, 0.2, 0.0), 0.35, 1.35)
+		elif kind == "overdrive_burst":
+			_fx_pool.spawn_scorch_decal(pos, scale_val)
+			_fx_pool.spawn_flash_light(pos, Color(1.0, 0.72, 0.22), 4.2, 7.0, 0.25)
+			_fx_pool.spawn_burst("shove", pos + Vector3(0.0, 0.2, 0.0), 0.32, 1.4)
+		else:
+			_fx_pool.spawn_burst(kind, pos, 0.35 if kind == "deposit" else 0.25, scale_val)
+			if kind == "deposit":
+				_fx_pool.spawn_flash_light(pos, Color(0.45, 0.95, 0.72), 2.6, 5.2, 0.20)
 	if kind == "shove":
 		if _sfx_push != null:
 			_sfx_push.play()
 		_cam_shake = maxf(_cam_shake, 0.14)
 	elif kind == "deposit" and _sfx_ding != null:
 		_sfx_ding.play()
+	elif kind == "core_drop" or kind == "overdrive_burst":
+		_cam_shake = maxf(_cam_shake, 0.20)
 
 
 func _emit_popup(pos: Vector3, text: String, color: Color) -> void:
@@ -923,10 +1037,12 @@ func _step_phase_events(delta: float) -> void:
 		if _core1_warn_timer <= 0.0 and not _core1_dropped:
 			_core1_dropped = true
 			_spawn_battery(int(C.CELL_CORE), Vector3(0.0, 0.0, 3.0))
+			_emit_fx("core_drop", Vector3(0.0, 0.0, 3.0), 2.3)
 
 	if not _overdrive_announced and _elapsed_time >= float(C.PHASE3_START):
 		_overdrive_announced = true
 		_emit_banner("overdrive", 0)
+		_emit_fx("overdrive_burst", Vector3(0.0, 0.0, 0.0), 2.4)
 
 	if not _core2_warned and _elapsed_time >= float(C.SECOND_CORE_TIME):
 		_core2_warned = true
@@ -937,6 +1053,7 @@ func _step_phase_events(delta: float) -> void:
 		if _core2_warn_timer <= 0.0 and not _core2_dropped:
 			_core2_dropped = true
 			_spawn_battery(int(C.CELL_CORE), Vector3(0.0, 0.0, -3.0))
+			_emit_fx("core_drop", Vector3(0.0, 0.0, -3.0), 2.3)
 
 
 func _step_spawner(delta: float) -> void:
@@ -1516,6 +1633,14 @@ func _animate_visuals(delta: float) -> void:
 		_dispenser_ring.rotate_y(delta * 1.4)
 	if _dispenser_ring_b != null and is_instance_valid(_dispenser_ring_b):
 		_dispenser_ring_b.rotate_y(-delta * 1.9)
+	for raw_fan in _fans:
+		var fan := raw_fan as Node3D
+		if fan != null and is_instance_valid(fan):
+			fan.rotate_z(delta * 4.5)
+	if _flicker_lamp_mat != null:
+		var fl_wave: float = sin(_srv_time * 13.7) * sin(_srv_time * 31.3)
+		var fl_dip: float = 0.52 if fl_wave > 0.72 else 1.0
+		_flicker_lamp_mat.emission_energy_multiplier = 1.75 * fl_dip + 0.10 * sin(_srv_time * 5.3)
 	if _phase == PH_LIVE:
 		if _conveyor_mat_l != null:
 			_conveyor_mat_l.uv1_offset.x = fmod(_conveyor_mat_l.uv1_offset.x - delta * 0.65, 1.0)
@@ -1683,7 +1808,9 @@ func _update_crt_monitor() -> void:
 		if t_txt != _last_crt_timer_text:
 			_last_crt_timer_text = t_txt
 			_monitor_timer.text = t_txt
-		_monitor_timer.modulate = t_col
+		if not t_col.is_equal_approx(_last_crt_timer_col):
+			_last_crt_timer_col = t_col
+			_monitor_timer.modulate = t_col
 
 	if _monitor_phase != null and is_instance_valid(_monitor_phase):
 		var ph_txt: String = "STANDARD LINE"
@@ -1702,4 +1829,6 @@ func _update_crt_monitor() -> void:
 		if ph_txt != _last_crt_phase_text:
 			_last_crt_phase_text = ph_txt
 			_monitor_phase.text = ph_txt
-		_monitor_phase.modulate = ph_col
+		if not ph_col.is_equal_approx(_last_crt_phase_col):
+			_last_crt_phase_col = ph_col
+			_monitor_phase.modulate = ph_col

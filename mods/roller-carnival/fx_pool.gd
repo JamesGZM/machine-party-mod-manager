@@ -5,14 +5,17 @@ extends RefCounted
 const POOL_HIT_BLOOD_FX := 6
 const POOL_BLOODMIST_FX := 4
 const POOL_IMPACT_DECALS := 24
+const LAVA_EMBER_COUNT := 24
 
 var decals: Array[Node3D] = []
 var particles: Array[Dictionary] = []
 var hit_blood_pool: Array[Dictionary] = []
 var bloodmist_pool: Array[Dictionary] = []
+var lava_embers: Array[Dictionary] = []
 var hit_blood_cursor: int = 0
 var bloodmist_cursor: int = 0
 var decal_cursor: int = 0
+var _ember_time: float = 0.0
 var burst_box_mesh: BoxMesh = null
 
 
@@ -21,9 +24,11 @@ func clear() -> void:
 	particles.clear()
 	hit_blood_pool.clear()
 	bloodmist_pool.clear()
+	lava_embers.clear()
 	hit_blood_cursor = 0
 	bloodmist_cursor = 0
 	decal_cursor = 0
+	_ember_time = 0.0
 
 
 func _build_fx_pool(fx_layer: Node3D, packed: PackedScene, count: int) -> Array[Dictionary]:
@@ -71,6 +76,39 @@ func init_pools(stage: Node3D) -> void:
 			dec.visible = false
 			fx_layer.add_child(dec)
 			decals.append(dec)
+	# Pre-allocate drifting lava embers rising from left shredder pit (zero runtime alloc)
+	var ember_mesh := QuadMesh.new()
+	ember_mesh.size = Vector2(0.09, 0.09)
+	var ember_mat := StandardMaterial3D.new()
+	ember_mat.albedo_color = Color(1.0, 0.68, 0.22, 0.85)
+	ember_mat.emission_enabled = true
+	ember_mat.emission = Color(1.0, 0.50, 0.10)
+	ember_mat.emission_energy_multiplier = 2.1
+	ember_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	ember_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	ember_mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	var left_x: float = float(stage.config.stage_left_lava_x)
+	for e_i in range(LAVA_EMBER_COUNT):
+		var emi := MeshInstance3D.new()
+		emi.mesh = ember_mesh
+		emi.material_override = ember_mat
+		emi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var bx: float = left_x - 0.35 - fposmod(float(e_i) * 1.37, 4.8)
+		var bz: float = -4.0 + float(e_i % 8) * 1.12 + sin(float(e_i) * 1.9) * 0.28
+		var e_pos := Vector3(bx, -0.45, bz)
+		emi.position = e_pos
+		fx_layer.add_child(emi)
+		lava_embers.append({
+			"node": emi,
+			"base_x": bx,
+			"base_z": bz,
+			"phase": float(e_i) * 0.43,
+			"speed": 0.24 + float(e_i % 5) * 0.06,
+			"rise": 2.4 + float(e_i % 4) * 0.45,
+			"drift": 0.26 + float(e_i % 3) * 0.10,
+			"scale": 0.68 + float(e_i % 4) * 0.18,
+		})
+
 	if str(stage._screenshot_path).is_empty() and stage.is_inside_tree():
 		var spawn_x: float = float(stage.config.player_spawn_x)
 		var warm_pos := Vector3(spawn_x, 0.35, 0.0)
@@ -106,6 +144,21 @@ func trigger_fx_entry(entry: Dictionary, origin: Vector3, eff_scale: float, life
 
 
 func step_fx_pools(delta: float) -> void:
+	_ember_time += delta
+	for e_raw in lava_embers:
+		var ed: Dictionary = e_raw as Dictionary
+		var en := ed["node"] as MeshInstance3D
+		if en == null or not is_instance_valid(en):
+			continue
+		var phase: float = float(ed["phase"])
+		var cycle: float = fposmod(phase + _ember_time * float(ed["speed"]), 1.0)
+		var ey: float = -0.52 + cycle * float(ed["rise"])
+		var ex: float = float(ed["base_x"]) + sin(_ember_time * 1.4 + phase * 6.28) * float(ed["drift"])
+		var ez: float = float(ed["base_z"]) + cos(_ember_time * 1.1 + phase * 5.1) * float(ed["drift"])
+		en.position = Vector3(ex, ey, ez)
+		var env_scale: float = sin(cycle * PI) * float(ed["scale"])
+		en.scale = Vector3(env_scale, env_scale, env_scale)
+
 	for pool in [hit_blood_pool, bloodmist_pool]:
 		for entry in pool:
 			var rem: float = float(entry["timer"])

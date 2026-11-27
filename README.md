@@ -29,7 +29,7 @@ Browse hand-curated mods for [Machine Party](https://store.steampowered.com/app/
   <img src="docs/images/screenshot-catalog.png" width="100%" alt="Mod catalog with version and category tags">
 </p>
 
-<p align="center"><sub>The catalog shows each mod’s version, category, live-counted status &amp; category filters, and batch mode.</sub></p>
+<p align="center"><sub>The catalog shows each mod’s version, category, per-mod enable/disable switch, live-counted status &amp; category filters, and batch mode.</sub></p>
 
 ## At a glance
 
@@ -45,7 +45,7 @@ Download builds directly from the project mirror below or from [GitHub Releases]
 
 | Platform | Architecture | Download | Notes |
 | --- | --- | --- | --- |
-| Windows | x64 | [Stable v0.2.5 (`setup.exe`)](https://machineparty.ailaogong.men/v1/app-downloads/0.2.5/setup.exe) | NSIS installer, signed in-app updates |
+| Windows | x64 | [Stable v0.2.7 (`setup.exe`)](https://machineparty.ailaogong.men/v1/app-downloads/0.2.7/setup.exe) | NSIS installer, signed in-app updates |
 
 Run the Windows x64 NSIS installer.
 
@@ -60,7 +60,7 @@ Machine Party is available on Windows. macOS support is planned for a future rel
 1. Launch the manager — it automatically locates your Steam copy of *Machine Party* (App ID `4108000`), or lets you pick a game folder manually in Settings.
 2. Browse or search mods across all three languages; open any entry to check multiplayer requirements, conflicts, supported game versions and the author's repository.
 3. Select **Install**. If the game is running, save your progress and choose **Close game and continue**. The manager verifies the package and backs up the files before applying it.
-4. Filter by status (**All**, **Installed**, **Not installed**, **Updates**) or category (**Expansion**, **Game**, **Tool**, **Graphics**), enter **Batch** mode to install, update or uninstall multiple mods at once, or click the top-right gear icon to open **Settings** (language, game folder, built-in loader, Steam restore and app updates).
+4. Use the card switch to enable or disable individual mods, filter by status (**All**, **Enabled**, **Disabled**, **Not installed**, **Updates**) or category (**Expansion**, **Game**, **Tool**, **Graphics**), enter **Batch** mode to install, enable, disable or uninstall multiple mods at once, or click the top-right gear icon to open **Settings** (language, game folder, built-in loader, Steam restore and app updates).
 
 ## The desktop app
 
@@ -68,7 +68,7 @@ Machine Party is available on Windows. macOS support is planned for a future rel
 | --- | --- |
 | ![Settings modal](docs/images/screenshot-settings.png) | ![In-app update prompt](docs/images/screenshot-update.png) |
 
-**v0.2.5** · Streamlined top-bar layout · Live-counted status & category filters · Batch mode · Settings modal (built-in loader & Steam restore)
+**v0.2.7** · Per-mod enable/disable switches · Live-counted status & category filters · Batch install/enable/disable/uninstall · Automatic dependency resolution · Settings modal (built-in loader v6 & Steam restore)
 
 The update prompt illustrates a simulated upgrade from 0.1.2-11 to 0.1.2-12.
 
@@ -95,7 +95,8 @@ See [candidate mods and inclusion rules](docs/en/catalog/mods.md) for acceptance
 
 ## Release notes
 
-**v0.2.7** · Adds **Bomb Cart (`v0.1.0`)** (strict 2-team rail tug-of-war) and **Core Heist (`v0.1.0`)** (2–4 team energy heist) to the verified stable catalog, backed by `mpm-core` (`v0.1.1`) minigame admission gating and `team-party` (`v0.1.1`). [Full changelog](CHANGELOG.md).
+- **App `v0.2.7`** · Opens **Bomb Cart** and **Core Heist** in the verified stable catalog, backed by `mpm-core` (`v0.1.1`) minigame admission gating and `team-party` (`v0.1.1`).
+- **Catalog `2026-11-27.3-mpml1`** · Adds **Voltage Greed (`v0.1.0`)**, expands **Bomb Cart (`v0.1.2`)** to 2–4 team adaptive tracks, and overhauls lighting, shadows, de-moire concrete/steel materials, and covers across **Roller Carnival (`v0.1.13`)**, **Bubble Blitz (`v0.1.7`)**, **Spike Ring (`v0.1.5`)**, **Core Heist (`v0.1.2`)**, and **Bomb Cart (`v0.1.2`)**. [Full changelog](CHANGELOG.md).
 
 ## Documentation
 

@@ -89,7 +89,7 @@ The table lists the versions in this repository’s [catalog](catalog/mods.json)
 | [Team Party](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/team-party) | `v0.1.1` | Room-level 2-4 team setup & chair swapping, vanilla minigame hooks, and shared team registry API | Native MPML |
 | [Core Heist](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/core-heist) | `v0.1.1` | Team-only 75s 2-4 squad energy heist with dual-team Core resonance, vault raids, and Overdrive steal bonuses | Native MPML |
 | [Bomb Cart](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/bomb-cart) | `v0.1.1` | 2-4 team 75s adaptive rail assault (straight / Y / Cross turntable) with Power Ram, Steam Valve Rocket Surges, Shockwave Pulses, and Sudden Death | Native MPML |
-| [Voltage Greed](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/voltage-greed) | `v0.1.0` | 3-round close-up electric-chair push-your-luck (2-8+P, FFA & team-party): hold to farm KPI, release to bank, live-only S +12% kick, factory monitor slacker penalty & industrial events | Native MPML (pending Windows check) |
+| [Voltage Greed](https://github.com/JamesGZM/machine-party-mod-manager/tree/main/mods/voltage-greed) | `v0.1.0` | 3-round close-up electric-chair push-your-luck (2-8+P, FFA & team-party): hold to farm KPI, release to bank, live-only S +12% kick, factory monitor slacker penalty & industrial events | Native MPML |
 
 See [candidate mods and inclusion rules](docs/en/catalog/mods.md) for acceptance checklists, upstream licensing notes and conflict groups.
 

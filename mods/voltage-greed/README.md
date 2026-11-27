@@ -2,6 +2,8 @@
 
 Close-up theatrical 2–8+ player push-your-luck industrial minigame (`both` mode: FFA + native [`team-party`](../team-party/README.md) + local couch) built on [`mpm-core`](../mpm-core/README.md) (`minigame_sdk` Hub v2 dynamic slot `>= 1000`).
 
+![Voltage Greed cover](../../catalog/covers/voltage-greed.png)
+
 ## Gameplay
 
 - **Admission (`both`, 2–8+ Players)**:

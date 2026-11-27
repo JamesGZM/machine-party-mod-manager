@@ -20,9 +20,9 @@ This directory holds GDScript mods authored in `machine-party-mod-manager`. Ever
 | `spike-ring` | Spike Ring (尖刺圆环) | `0.1.4` | `spike-ring-0.1.4.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Spike Ring](spike-ring/README.md) |
 | `team-party` | Team Party (組隊派對) | `0.1.1` | `team-party-0.1.1.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Team Party](team-party/README.md) |
 | `mpm-core` | MPM Core (MPM 核心運行庫) | `0.1.1` | `mpm-core-0.1.1.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [MPM Core](mpm-core/README.md) |
-| `core-heist` | Core Heist (能源搶奪戰) | `0.1.0` | `core-heist-0.1.0.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Core Heist](core-heist/README.md) |
-| `bomb-cart` | Bomb Cart (炸彈推車) | `0.1.0` | `bomb-cart-0.1.0.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Bomb Cart](bomb-cart/README.md) |
-| `voltage-greed` | Voltage Greed (高壓績效) | `0.1.0` | `voltage-greed-0.1.0.zip` | Steam `v2.1.2` | Pending Windows verification | [Voltage Greed](voltage-greed/README.md) |
+| `core-heist` | Core Heist (能源搶奪戰) | `0.1.1` | `core-heist-0.1.1.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Core Heist](core-heist/README.md) |
+| `bomb-cart` | Bomb Cart (炸彈推車) | `0.1.1` | `bomb-cart-0.1.1.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Bomb Cart](bomb-cart/README.md) |
+| `voltage-greed` | Voltage Greed (高壓績效) | `0.1.0` | `voltage-greed-0.1.0.zip` | Steam `v2.1.2` | Verified on Steam `v2.1.2` | [Voltage Greed](voltage-greed/README.md) |
 
 ## Deterministic ZIP packaging rules
 
